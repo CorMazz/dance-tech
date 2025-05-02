@@ -1,9 +1,5 @@
-use serde::{Serialize, Deserialize};
 use crate::utils::get_env_var;
-
-
-
-
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct SMTPConfig {

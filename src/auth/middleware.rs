@@ -1,18 +1,19 @@
 use std::sync::Arc;
 
 use axum::{
-    body::Body, extract::State, http::{header, HeaderMap, Request}, middleware::Next, response::{IntoResponse, Redirect},
+    body::Body,
+    extract::State,
+    http::{header, HeaderMap, Request},
+    middleware::Next,
+    response::{IntoResponse, Redirect},
 };
 
 use axum_extra::extract::cookie::CookieJar;
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    auth::{
-        models::User,
-        handlers,
-     },
-     AppState,
+    auth::{handlers, models::User},
+    AppState,
 };
 use redis::AsyncCommands;
 
@@ -60,14 +61,12 @@ pub enum AuthError {
 //     }
 // }
 
-
 #[allow(dead_code)]
 #[derive(Debug, Clone)]
 pub enum AuthStatus {
     Authorized(AuthorizedUser),
     Unauthorized(AuthError),
 }
-
 
 /// This function checks if the user is authorized. This is not to be used directly as middleware.
 pub async fn check_auth_utility(
@@ -83,14 +82,17 @@ pub async fn check_auth_utility(
                 .get(header::AUTHORIZATION)
                 .and_then(|auth_header| auth_header.to_str().ok())
                 .and_then(|auth_value| {
-                   auth_value.strip_prefix("Bearer ").map(std::string::ToString::to_string)
+                    auth_value
+                        .strip_prefix("Bearer ")
+                        .map(std::string::ToString::to_string)
                 })
         });
 
     let access_token = access_token.ok_or(AuthError::NotLoggedIn)?;
 
-    let access_token_details = handlers::verify_jwt_token(data.env.access_token_public_key.clone(), &access_token)
-        .map_err(|e| AuthError::InternalServerError(Some(format!("{e:?}"))))?;
+    let access_token_details =
+        handlers::verify_jwt_token(data.env.access_token_public_key.clone(), &access_token)
+            .map_err(|e| AuthError::InternalServerError(Some(format!("{e:?}"))))?;
 
     let access_token_uuid = uuid::Uuid::parse_str(&access_token_details.token_uuid.to_string())
         .map_err(|_| AuthError::InvalidToken)?;
@@ -106,7 +108,8 @@ pub async fn check_auth_utility(
         .await
         .map_err(|_| AuthError::ExpiredSession)?;
 
-    let user_id_uuid = uuid::Uuid::parse_str(&redis_token_user_id).map_err(|_| AuthError::ExpiredSession)?;
+    let user_id_uuid =
+        uuid::Uuid::parse_str(&redis_token_user_id).map_err(|_| AuthError::ExpiredSession)?;
 
     let user = sqlx::query_as!(User, "SELECT * FROM users WHERE id = $1", user_id_uuid)
         .fetch_optional(&data.db)
@@ -119,7 +122,6 @@ pub async fn check_auth_utility(
         user,
         access_token_uuid,
     })
-
 }
 
 /// Inserts the auth status into the request
@@ -129,13 +131,14 @@ pub async fn check_auth_middleware(
     mut req: Request<Body>,
     next: Next,
 ) -> impl IntoResponse {
-
     match check_auth_utility(cookie_jar, data, req.headers()).await {
         Ok(auth_data) => {
-            req.extensions_mut().insert(AuthStatus::Authorized(auth_data));
-        },
+            req.extensions_mut()
+                .insert(AuthStatus::Authorized(auth_data));
+        }
         Err(auth_error) => {
-            req.extensions_mut().insert(AuthStatus::Unauthorized(auth_error));
+            req.extensions_mut()
+                .insert(AuthStatus::Unauthorized(auth_error));
         }
     }
     next.run(req).await
@@ -150,9 +153,10 @@ pub async fn require_auth_middleware(
 ) -> impl IntoResponse {
     match check_auth_utility(cookie_jar, data, req.headers()).await {
         Ok(auth_data) => {
-            req.extensions_mut().insert(AuthStatus::Authorized(auth_data));
+            req.extensions_mut()
+                .insert(AuthStatus::Authorized(auth_data));
             next.run(req).await
-        },
+        }
         // Purposefully leaving auth_error here so that I can remember to eventually handle the error itself
         Err(auth_error) => Redirect::to("/login").into_response(),
     }

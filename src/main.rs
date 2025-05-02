@@ -6,19 +6,19 @@
 #![warn(clippy::cargo)]
 #![warn(missing_docs)]
 #![allow(clippy::missing_errors_doc)]
-#![allow(clippy::module_name_repetitions)] 
+#![allow(clippy::module_name_repetitions)]
 #![allow(clippy::multiple_crate_versions)]
 
+mod auth;
 mod config;
 mod router;
-mod auth;
-mod views;
 mod utils;
+mod views;
 
 use auth::config::{GoogleOAuthConfig, SecretsConfig};
 use config::SMTPConfig;
-use lettre::{transport::smtp::authentication::Credentials, AsyncSmtpTransport, Tokio1Executor};
 use lettre::transport::smtp::PoolConfig;
+use lettre::{transport::smtp::authentication::Credentials, AsyncSmtpTransport, Tokio1Executor};
 use oauth2::reqwest;
 use std::{sync::Arc, time::Duration};
 
@@ -44,38 +44,34 @@ pub struct AppState {
     http_client: reqwest::Client,
 }
 
-
 #[tokio::main]
 async fn main() {
-
     dotenv().ok();
 
     let config = SecretsConfig::init();
 
     let smtp_config = SMTPConfig::init();
-    let smtp_mailer: Option<AsyncSmtpTransport<Tokio1Executor>> = smtp_config.as_ref().and_then(|config| {
-        let creds = Credentials::new(
-            config.user_login.clone(),
-            config.user_password.clone(),
-        );
-    
-        match AsyncSmtpTransport::<Tokio1Executor>::relay(&config.server_host) {
-            Ok(transport) => Some(
-                transport
-                    .credentials(creds)
-                    .pool_config(
-                        PoolConfig::new()
-                            .max_size(10)
-                            .idle_timeout(Duration::from_secs(60))
-                    )
-                    .build()
-            ),
-            Err(e) => {
-                eprintln!("Error: Unable to connect to email server: {e}");
-                None
+    let smtp_mailer: Option<AsyncSmtpTransport<Tokio1Executor>> =
+        smtp_config.as_ref().and_then(|config| {
+            let creds = Credentials::new(config.user_login.clone(), config.user_password.clone());
+
+            match AsyncSmtpTransport::<Tokio1Executor>::relay(&config.server_host) {
+                Ok(transport) => Some(
+                    transport
+                        .credentials(creds)
+                        .pool_config(
+                            PoolConfig::new()
+                                .max_size(10)
+                                .idle_timeout(Duration::from_secs(60)),
+                        )
+                        .build(),
+                ),
+                Err(e) => {
+                    eprintln!("Error: Unable to connect to email server: {e}");
+                    None
+                }
             }
-        }
-    });
+        });
 
     let google_oauth_config = GoogleOAuthConfig::init();
 
@@ -129,7 +125,12 @@ async fn main() {
     }))
     .layer(cors);
 
-    println!("🚀 Server started successfully on port {}", config.server_port);
-    let listener = tokio::net::TcpListener::bind(format!("0.0.0.0:{}", config.server_port)).await.unwrap();
+    println!(
+        "🚀 Server started successfully on port {}",
+        config.server_port
+    );
+    let listener = tokio::net::TcpListener::bind(format!("0.0.0.0:{}", config.server_port))
+        .await
+        .unwrap();
     axum::serve(listener, app).await.unwrap();
 }

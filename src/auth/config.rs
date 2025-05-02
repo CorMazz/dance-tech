@@ -22,20 +22,30 @@ pub struct SecretsConfig {
 
 impl SecretsConfig {
     pub fn init() -> Self {
-        let is_demo_mode = get_env_var("DEMO_MODE_ACTIVE").to_lowercase().trim().parse().expect("DEMO_MODE_ACTIVE should be TRUE or FALSE.");
-        let server_port = get_env_var("SERVER_PORT").parse::<i64>().expect("Server port (ENV_VAR=SERVER_PORT) should be an integer.");
+        let is_demo_mode = get_env_var("DEMO_MODE_ACTIVE")
+            .to_lowercase()
+            .trim()
+            .parse()
+            .expect("DEMO_MODE_ACTIVE should be TRUE or FALSE.");
+        let server_port = get_env_var("SERVER_PORT")
+            .parse::<i64>()
+            .expect("Server port (ENV_VAR=SERVER_PORT) should be an integer.");
         let database_url = get_env_var("DATABASE_URL");
         let redis_url = get_env_var("REDIS_URL");
 
         let access_token_private_key = get_env_var("ACCESS_TOKEN_PRIVATE_KEY");
         let access_token_public_key = get_env_var("ACCESS_TOKEN_PUBLIC_KEY");
         let access_token_expires_in = get_env_var("ACCESS_TOKEN_EXPIRED_IN");
-        let access_token_max_age = get_env_var("ACCESS_TOKEN_MAXAGE").parse::<i64>().expect("Access token max age (ENV_VAR=ACCESS_TOKEN_MAXAGE) should be an integer.");
+        let access_token_max_age = get_env_var("ACCESS_TOKEN_MAXAGE")
+            .parse::<i64>()
+            .expect("Access token max age (ENV_VAR=ACCESS_TOKEN_MAXAGE) should be an integer.");
 
         let refresh_token_private_key = get_env_var("REFRESH_TOKEN_PRIVATE_KEY");
         let refresh_token_public_key = get_env_var("REFRESH_TOKEN_PUBLIC_KEY");
         let refresh_token_expires_in = get_env_var("REFRESH_TOKEN_EXPIRED_IN");
-        let refresh_token_max_age = get_env_var("REFRESH_TOKEN_MAXAGE").parse::<i64>().expect("Refresh token max age (ENV_VAR=REFRESH_TOKEN_MAXAGE) should be an integer.");
+        let refresh_token_max_age = get_env_var("REFRESH_TOKEN_MAXAGE")
+            .parse::<i64>()
+            .expect("Refresh token max age (ENV_VAR=REFRESH_TOKEN_MAXAGE) should be an integer.");
 
         Self {
             is_demo_mode,
@@ -86,7 +96,9 @@ impl GoogleOAuthConfig {
                 None
             }
             (_, "", _, _, _) => {
-                println!("\nGoogle OAuth functionality disabled: missing GOOGLE_OAUTH_CLIENT_SECRET.");
+                println!(
+                    "\nGoogle OAuth functionality disabled: missing GOOGLE_OAUTH_CLIENT_SECRET."
+                );
                 None
             }
             (_, _, "", _, _) => {
@@ -98,20 +110,23 @@ impl GoogleOAuthConfig {
                 None
             }
             (_, _, _, _, "") => {
-                println!("\nGoogle OAuth functionality disabled: missing GOOGLE_OAUTH_REDIRECT_URI.");
+                println!(
+                    "\nGoogle OAuth functionality disabled: missing GOOGLE_OAUTH_REDIRECT_URI."
+                );
                 None
             }
             (client_id, client_secret, auth_uri, token_uri, redirect_uri) => {
-                println!(
-                    "✅ Google OAuth functionality is enabled.",
-                );
+                println!("✅ Google OAuth functionality is enabled.",);
 
                 Some(Self {
                     client_id: ClientId::new(client_id.to_string()),
                     client_secret: ClientSecret::new(client_secret.to_string()),
-                    auth_uri: AuthUrl::new(auth_uri.to_string()).expect("Unable to parse GOOGLE_OAUTH_AUTH_URI."),
-                    token_uri: TokenUrl::new(token_uri.to_string()).expect("Unable to parse GOOGLE_OAUTH_TOKEN_URI."),
-                    redirect_uri: RedirectUrl::new(redirect_uri.to_string()).expect("Unable to parse GOOGLE_OAUTH_REDIRECT_URI."),
+                    auth_uri: AuthUrl::new(auth_uri.to_string())
+                        .expect("Unable to parse GOOGLE_OAUTH_AUTH_URI."),
+                    token_uri: TokenUrl::new(token_uri.to_string())
+                        .expect("Unable to parse GOOGLE_OAUTH_TOKEN_URI."),
+                    redirect_uri: RedirectUrl::new(redirect_uri.to_string())
+                        .expect("Unable to parse GOOGLE_OAUTH_REDIRECT_URI."),
                 })
             }
         }
