@@ -1,5 +1,5 @@
-use lettre::transport::smtp::{client, commands::Auth};
-use oauth2::{basic::BasicClient, AuthUrl, Client, ClientId, ClientSecret, EndpointNotSet, EndpointSet, RedirectUrl, TokenUrl};
+use oauth2::{AuthUrl, ClientId, ClientSecret, RedirectUrl, TokenUrl};
+use serde::{Serialize, Deserialize};
 
 pub fn get_env_var(var_name: &str) -> String {
     std::env::var(var_name).unwrap_or_else(|_| panic!("{} must be set as an environment variable. Use an empty string if this is for optional functionality.", var_name))
@@ -54,7 +54,7 @@ impl GoogleOAuthConfig {
             }
             (client_id, client_secret, auth_uri, token_uri, redirect_uri) => {
                 println!(
-                    "\nGoogle OAuth functionality is enabled.",
+                    "✅ Google OAuth functionality is enabled.",
                 );
 
                 Some(GoogleOAuthConfig {
@@ -124,6 +124,64 @@ impl SecretsConfig {
             refresh_token_expires_in,
             access_token_max_age,
             refresh_token_max_age,
+        }
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct SMTPConfig {
+    pub server_host: String,
+    pub user_login: String,
+    pub user_password: String,
+    pub user_email: String,
+}
+
+impl SMTPConfig {
+    pub fn init() -> Option<SMTPConfig> {
+        let server_host = get_env_var("SMTP_SERVER_HOST");
+        let user_login = get_env_var("SMTP_USER_LOGIN");
+        let user_password = get_env_var("SMTP_USER_PASSWORD");
+        let user_email = get_env_var("SMTP_USER_EMAIL");
+
+        match (
+            server_host.as_str(),
+            user_login.as_str(),
+            user_password.as_str(),
+            user_email.as_str(),
+        ) {
+            ("", "", "", "") => {
+                println!("\nEmail functionality disabled since all SMTP environment variables were left blank.");
+                None
+            }
+            ("", _, _, _) => {
+                println!("\nEmail functionality disabled: missing SMTP_SERVER_HOST.");
+                None
+            }
+            (_, "", _, _) => {
+                println!("\nEmail functionality disabled: missing SMTP_USER_LOGIN.");
+                None
+            }
+            (_, _, "", _) => {
+                println!("\nEmail functionality disabled: missing SMTP_USER_PASSWORD.");
+                None
+            }
+            (_, _, _, "") => {
+                println!("\nEmail functionality disabled: missing SMTP_USER_EMAIL.");
+                None
+            }
+            (host, user, password, email) => {
+                println!(
+                    "\nEmail functionality is enabled with the following settings:\n\tServer: {}\n\tUsername: {}\n\tEmail: {}\n",
+                    host, user, email
+                );
+
+                Some(SMTPConfig {
+                    server_host: host.to_string(),
+                    user_login: user.to_string(),
+                    user_password: password.to_string(),
+                    user_email: email.to_string(),
+                })
+            }
         }
     }
 }

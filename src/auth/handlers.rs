@@ -1,7 +1,6 @@
 use std::sync::Arc;
 
-use argon2::{password_hash::SaltString, Argon2, PasswordHash, PasswordHasher, PasswordVerifier};
-use askama_axum::Response;
+use argon2::{password_hash::{rand_core::OsRng, SaltString}, Argon2, PasswordHash, PasswordHasher, PasswordVerifier};
 use axum::{
     http::{header, HeaderMap},
     response::{IntoResponse, Redirect},
@@ -11,7 +10,6 @@ use axum_extra::extract::{
     CookieJar,
 };
 use oauth2::{basic::BasicClient, AuthorizationCode, CsrfToken, PkceCodeChallenge, PkceCodeVerifier, Scope, TokenResponse};
-use rand_core::OsRng;
 use serde::Deserialize;
 use sqlx::{Pool, Postgres};
 
@@ -98,7 +96,7 @@ pub async fn login_user_handler(
 
     let jar = login_user(user, &data, cookie_jar).await?;
 
-    Ok((jar, Redirect::to("/dashboard")))
+    Ok((jar, Redirect::to("/")))
 }
 
 // #######################################################################################################################################################
@@ -264,7 +262,7 @@ pub async fn google_oauth_callback_handler(
     match user {
         Some(user) => {
             let jar = login_user(user, &data, cookie_jar).await?;
-            Ok((jar, Redirect::to("/dashboard")).into_response())
+            Ok((jar, Redirect::to("/")).into_response())
         }
         None => Err(AuthError::AccountNotFound),
     }

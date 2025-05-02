@@ -3,10 +3,8 @@ mod router;
 mod auth;
 mod views;
 mod filters;
-mod exam;
 
-use config::{GoogleOAuthConfig, SecretsConfig};
-use exam::{handlers::parse_test_definition_from_str, models::{SMTPConfig, TestDefinitionYaml}};
+use config::{GoogleOAuthConfig, SecretsConfig, SMTPConfig};
 use lettre::{transport::smtp::authentication::Credentials, AsyncSmtpTransport, Tokio1Executor};
 use lettre::transport::smtp::PoolConfig;
 use oauth2::reqwest;
@@ -30,7 +28,6 @@ pub struct AppState {
     smtp_mailer: Option<AsyncSmtpTransport<Tokio1Executor>>,
     google_oauth_config: Option<GoogleOAuthConfig>,
     http_client: reqwest::Client,
-    test_configurations: TestDefinitionYaml,
 }
 
 
@@ -67,16 +64,6 @@ async fn main() {
     });
 
     let google_oauth_config = GoogleOAuthConfig::init();
-
-    let file_path = "test_definitions.yaml";
-    let mut file = File::open(file_path).expect(&format!("couldn't open file: {}", file_path));
-    let mut yaml_string = String::new();
-    file.read_to_string(&mut yaml_string).expect(&format!("Couldn't read file '{}' to string. This should work...", file_path));
-    let mut tests = parse_test_definition_from_str(&yaml_string).expect("Error parsing test_definition.yaml");
-
-    for test in &mut tests.tests {
-        test.validate().expect("Invalid test definition");
-    }
 
     let pool = match PgPoolOptions::new()
         .max_connections(10)
@@ -125,7 +112,6 @@ async fn main() {
         google_oauth_config,
         http_client,
         redis_client: redis_client.clone(),
-        test_configurations: tests,
     }))
     .layer(cors);
 
