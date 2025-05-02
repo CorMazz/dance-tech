@@ -21,7 +21,7 @@ pub struct SecretsConfig {
 }
 
 impl SecretsConfig {
-    pub fn init() -> SecretsConfig {
+    pub fn init() -> Self {
         let is_demo_mode = get_env_var("DEMO_MODE_ACTIVE").to_lowercase().trim().parse().expect("DEMO_MODE_ACTIVE should be TRUE or FALSE.");
         let server_port = get_env_var("SERVER_PORT").parse::<i64>().expect("Server port (ENV_VAR=SERVER_PORT) should be an integer.");
         let database_url = get_env_var("DATABASE_URL");
@@ -37,18 +37,18 @@ impl SecretsConfig {
         let refresh_token_expires_in = get_env_var("REFRESH_TOKEN_EXPIRED_IN");
         let refresh_token_max_age = get_env_var("REFRESH_TOKEN_MAXAGE").parse::<i64>().expect("Refresh token max age (ENV_VAR=REFRESH_TOKEN_MAXAGE) should be an integer.");
 
-        SecretsConfig {
+        Self {
             is_demo_mode,
             server_port,
             database_url,
             redis_url,
             access_token_private_key,
             access_token_public_key,
+            access_token_expires_in,
+            access_token_max_age,
             refresh_token_private_key,
             refresh_token_public_key,
-            access_token_expires_in,
             refresh_token_expires_in,
-            access_token_max_age,
             refresh_token_max_age,
         }
     }
@@ -63,7 +63,7 @@ pub struct GoogleOAuthConfig {
     pub redirect_uri: RedirectUrl,
 }
 impl GoogleOAuthConfig {
-    pub fn init() -> Option<GoogleOAuthConfig> {
+    pub fn init() -> Option<Self> {
         let client_id = get_env_var("GOOGLE_OAUTH_CLIENT_ID");
         let client_secret = get_env_var("GOOGLE_OAUTH_CLIENT_SECRET");
         let auth_uri = get_env_var("GOOGLE_OAUTH_AUTH_URI");
@@ -106,7 +106,7 @@ impl GoogleOAuthConfig {
                     "✅ Google OAuth functionality is enabled.",
                 );
 
-                Some(GoogleOAuthConfig {
+                Some(Self {
                     client_id: ClientId::new(client_id.to_string()),
                     client_secret: ClientSecret::new(client_secret.to_string()),
                     auth_uri: AuthUrl::new(auth_uri.to_string()).expect("Unable to parse GOOGLE_OAUTH_AUTH_URI."),

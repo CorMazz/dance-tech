@@ -14,7 +14,7 @@ pub struct SMTPConfig {
 }
 
 impl SMTPConfig {
-    pub fn init() -> Option<SMTPConfig> {
+    pub fn init() -> Option<Self> {
         let server_host = get_env_var("SMTP_SERVER_HOST");
         let user_login = get_env_var("SMTP_USER_LOGIN");
         let user_password = get_env_var("SMTP_USER_PASSWORD");
@@ -48,11 +48,10 @@ impl SMTPConfig {
             }
             (host, user, password, email) => {
                 println!(
-                    "\nEmail functionality is enabled with the following settings:\n\tServer: {}\n\tUsername: {}\n\tEmail: {}\n",
-                    host, user, email
+                    "\nEmail functionality is enabled with the following settings:\n\tServer: {host}\n\tUsername: {user}\n\tEmail: {email}\n"
                 );
 
-                Some(SMTPConfig {
+                Some(Self {
                     server_host: host.to_string(),
                     user_login: user.to_string(),
                     user_password: password.to_string(),

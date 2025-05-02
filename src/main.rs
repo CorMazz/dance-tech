@@ -70,7 +70,7 @@ async fn main() {
                     .build()
             ),
             Err(e) => {
-                eprintln!("Error: Unable to connect to email server: {}", e);
+                eprintln!("Error: Unable to connect to email server: {e}");
                 None
             }
         }
@@ -130,5 +130,5 @@ async fn main() {
 
     println!("🚀 Server started successfully on port {}", config.server_port);
     let listener = tokio::net::TcpListener::bind(format!("0.0.0.0:{}", config.server_port)).await.unwrap();
-    axum::serve(listener, app).await.unwrap()
+    axum::serve(listener, app).await.unwrap();
 }

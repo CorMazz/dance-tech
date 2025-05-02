@@ -44,7 +44,7 @@ pub async fn register_user_handler(
     let salt = SaltString::generate(&mut OsRng);
     let hashed_password = Argon2::default()
         .hash_password(password.as_bytes(), &salt)
-        .map_err(|e| AuthError::InternalServerError(Some(format!("Error while hashing password: {}", e))))
+        .map_err(|e| AuthError::InternalServerError(Some(format!("Error while hashing password: {e}"))))
         .map(|hash| hash.to_string())?;
 
     sqlx::query_as!(
@@ -57,7 +57,7 @@ pub async fn register_user_handler(
     )
     .execute(&data.db)
     .await
-    .map_err(|e| AuthError::InternalServerError(Some(format!("Database error: {}", e))))?;
+    .map_err(|e| AuthError::InternalServerError(Some(format!("Database error: {e}"))))?;
     Ok(())
 }
 
@@ -76,12 +76,12 @@ pub async fn login_user_handler(
 
     let user = get_user(&email, &data.db)
         .await?
-        .ok_or_else(|| AuthError::InvalidEmailOrPassword)?;
+        .ok_or(AuthError::InvalidEmailOrPassword)?;
     
     let is_valid = match PasswordHash::new(&user.password) {
         Ok(parsed_hash) => Argon2::default()
             .verify_password(password.as_bytes(), &parsed_hash)
-            .map_or(false, |_| true),
+            .is_ok_and(|()| true),
         Err(_) => false,
     };
 
@@ -276,17 +276,17 @@ pub async fn logout_handler(
     let refresh_token = cookie_jar
         .get("refresh_token")
         .map(|cookie| cookie.value().to_string())
-        .ok_or_else(|| AuthError::NotLoggedIn)?;
+        .ok_or(AuthError::NotLoggedIn)?;
 
-    let refresh_token_details = verify_jwt_token(data.env.refresh_token_public_key.to_owned(), &refresh_token)
-            .map_err(|e| AuthError::InternalServerError(Some(format!("{:?}", e))))?;
+    let refresh_token_details = verify_jwt_token(data.env.refresh_token_public_key.clone(), &refresh_token)
+            .map_err(|e| AuthError::InternalServerError(Some(format!("{e:?}"))))?;
 
     let mut redis_client = data
         .redis_client
         .get_multiplexed_async_connection()
         .await
         .map_err(|e: RedisError| {
-            AuthError::InternalServerError(Some(format!("Redis error: {}", e)))
+            AuthError::InternalServerError(Some(format!("Redis error: {e}")))
         })?;
 
     redis_client
@@ -296,7 +296,7 @@ pub async fn logout_handler(
         ])
         .await
         .map_err(|e: RedisError| {
-            AuthError::InternalServerError(Some(format!("Redis error: {}", e)))
+            AuthError::InternalServerError(Some(format!("Redis error: {e}")))
         })?;
 
     let access_cookie = Cookie::build(("access_token", ""))
@@ -370,7 +370,7 @@ pub async fn get_user(
     )
         .fetch_optional(db)
         .await
-        .map_err(|e| AuthError::InternalServerError(Some(format!("Database error: {}", e))))
+        .map_err(|e| AuthError::InternalServerError(Some(format!("Database error: {e}"))))
 }
 
 async fn login_user(
@@ -381,32 +381,32 @@ async fn login_user(
     let access_token_details = generate_jwt_token(
         user.id,
         data.env.access_token_max_age,
-        data.env.access_token_private_key.to_owned()
+        data.env.access_token_private_key.clone()
     ).map_err(|e: jsonwebtoken::errors::Error| {
-            AuthError::InternalServerError(Some(format!("JWT error: {}", e)))
+            AuthError::InternalServerError(Some(format!("JWT error: {e}")))
     })?;
 
     let refresh_token_details = generate_jwt_token(
         user.id,
         data.env.refresh_token_max_age,
-        data.env.refresh_token_private_key.to_owned(),
+        data.env.refresh_token_private_key.clone(),
     ).map_err(|e: jsonwebtoken::errors::Error| {
-        AuthError::InternalServerError(Some(format!("JWT error: {}", e)))
+        AuthError::InternalServerError(Some(format!("JWT error: {e}")))
     })?;
 
-    save_token_data_to_redis(&data, &access_token_details, data.env.access_token_max_age).await
+    save_token_data_to_redis(data, &access_token_details, data.env.access_token_max_age).await
         .map_err(|e: RedisError| {
-        AuthError::InternalServerError(Some(format!("Redis error: {}", e)))
+        AuthError::InternalServerError(Some(format!("Redis error: {e}")))
         })?;
 
     save_token_data_to_redis(
-        &data,
+        data,
         &refresh_token_details,
         data.env.refresh_token_max_age,
     )
         .await    
         .map_err(|e: RedisError| {
-            AuthError::InternalServerError(Some(format!("Redis error: {}", e)))
+            AuthError::InternalServerError(Some(format!("Redis error: {e}")))
         })?;
 
     let access_cookie = Cookie::build(
