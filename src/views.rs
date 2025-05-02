@@ -9,15 +9,10 @@ use crate::{
     auth::{
         handlers::{google_oauth_callback_handler, google_oauth_init_flow_handler, login_user_handler, logout_handler, register_user_handler, GoogleOAuthCallbackParams}, 
         middleware::{AuthError, AuthStatus},
-        model::User
+        models::User
     },
     AppState
 };
-
-/// A helper function to handle errors consistently
-fn error_response(message: &str) -> impl IntoResponse {
-    (StatusCode::OK, Html(format!("<h1 id=\"primary-content\">{}</h1>", message))).into_response()
-}
 
 // #######################################################################################################################################################
 // home.html
@@ -25,7 +20,7 @@ fn error_response(message: &str) -> impl IntoResponse {
 
 #[derive(Template)]
 #[template(path = "./primary_templates/home.html")] 
-pub struct HomeTemplate { is_demo_mode: bool }
+pub struct HomeTemplate {}
 
 // Block rendering functionality is currently not implemented in Askama. Instead of using server-side partial rendering,
 // I will just use hx-select to grab <div id="primary-content"> that is in my base template
@@ -33,8 +28,8 @@ pub struct HomeTemplate { is_demo_mode: bool }
 // #[template(path = "./primary_templates/home.html", block = "content")] 
 // pub struct HomeTemplateContent {}
 
-pub async fn get_home_page(    State(data): State<Arc<AppState>>) -> impl IntoResponse  {
-    let template: HomeTemplate = HomeTemplate { is_demo_mode: data.env.is_demo_mode };
+pub async fn get_home_page() -> impl IntoResponse  {
+    let template: HomeTemplate = HomeTemplate {} ;
 
     (StatusCode::OK, Html(template.render().unwrap()))
 }
@@ -86,7 +81,6 @@ pub struct SignUpForm {
     email: String,
     password: String,
     confirm_password: String,
-    licensing_key: String,
 }
 
 /// All the errors must return the OK status code for HTMX. Also, they must have an outer element with an id of primary-content
@@ -103,13 +97,12 @@ pub async fn post_signup_form(
         ).into_response();
     }
 
-    let user_registered = register_user_handler(data, sign_up.first_name, sign_up.last_name, sign_up.email, sign_up.password, sign_up.licensing_key).await;
+    let user_registered = register_user_handler(data, sign_up.first_name, sign_up.last_name, sign_up.email, sign_up.password).await;
 
     match user_registered {
         Ok(_) => return Redirect::to("/login").into_response(),
         Err(e) => match e {
             AuthError::DuplicateEmail => return (StatusCode::OK, Html("<h1 id=\"primary-content\">Error: Duplicate Email</h1>")).into_response(),
-            AuthError::InvalidLicensingKey => return (StatusCode::OK, Html("<h1 id=\"primary-content\">Error: Invalid Licensing Key</h1>")).into_response(),
             AuthError::InternalServerError(ee) => return (StatusCode::OK, Html(format!("<h1 id=\"primary-content\">Error: {:?}</h1>", ee))).into_response(),
             _ => return (StatusCode::INTERNAL_SERVER_ERROR, Html("<h1 id=\"primary-content\">Unexpected error occurred, this should be impossible.</h1>")).into_response() // This should never happen
         }

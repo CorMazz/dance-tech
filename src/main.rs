@@ -1,14 +1,25 @@
+//! # Main entry point for the Axum web application
+
+#![warn(clippy::all)]
+#![warn(clippy::pedantic)]
+#![warn(clippy::nursery)]
+#![warn(clippy::cargo)]
+#![warn(missing_docs)]
+#![allow(clippy::missing_errors_doc)]
+#![allow(clippy::module_name_repetitions)] 
+
 mod config;
 mod router;
 mod auth;
 mod views;
-mod filters;
+mod utils;
 
-use config::{GoogleOAuthConfig, SecretsConfig, SMTPConfig};
+use auth::config::{GoogleOAuthConfig, SecretsConfig};
+use config::SMTPConfig;
 use lettre::{transport::smtp::authentication::Credentials, AsyncSmtpTransport, Tokio1Executor};
 use lettre::transport::smtp::PoolConfig;
 use oauth2::reqwest;
-use std::{fs::File, io::Read, sync::Arc, time::Duration};
+use std::{sync::Arc, time::Duration};
 
 use axum::http::{
     header::{ACCEPT, AUTHORIZATION, CONTENT_TYPE},
@@ -20,6 +31,8 @@ use router::create_router;
 use sqlx::{postgres::PgPoolOptions, Pool, Postgres};
 use tower_http::cors::CorsLayer;
 
+/// The global application state shared across features.
+#[allow(dead_code)]
 pub struct AppState {
     db: Pool<Postgres>,
     env: SecretsConfig,
@@ -74,19 +87,19 @@ async fn main() {
             println!("✅ Connection to the database is successful!");
             pool
         }
-        Err(err) => {
-            println!("🔥 Failed to connect to the database: {:?}", err);
+        Err(e) => {
+            println!("🔥 Failed to connect to the database: {e:?}");
             std::process::exit(1);
         }
     };
 
-    let redis_client = match Client::open(config.redis_url.to_owned()) {
+    let redis_client = match Client::open(config.redis_url.clone()) {
         Ok(client) => {
             println!("✅ Connection to the redis server is successful!");
             client
         }
         Err(e) => {
-            println!("🔥 Error connecting to Redis: {}", e);
+            println!("🔥 Error connecting to Redis: {e}");
             std::process::exit(1);
         }
     };
