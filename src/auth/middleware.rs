@@ -32,6 +32,7 @@ pub enum AuthError {
     ExpiredSession,
     InvalidUser,
     CSRFTokenMismatch,
+    #[allow(clippy::enum_variant_names)]
     OAuthError(Option<String>),
     AccountNotFound,
 }
@@ -60,6 +61,7 @@ pub enum AuthError {
 // }
 
 
+#[allow(dead_code)]
 #[derive(Debug, Clone)]
 pub enum AuthStatus {
     Authorized(AuthorizedUser),
@@ -81,46 +83,42 @@ pub async fn check_auth_utility(
                 .get(header::AUTHORIZATION)
                 .and_then(|auth_header| auth_header.to_str().ok())
                 .and_then(|auth_value| {
-                    if auth_value.starts_with("Bearer ") {
-                        Some(auth_value[7..].to_owned())
-                    } else {
-                        None
-                    }
+                   auth_value.strip_prefix("Bearer ").map(std::string::ToString::to_string)
                 })
         });
 
-        let access_token = access_token.ok_or(AuthError::NotLoggedIn)?;
+    let access_token = access_token.ok_or(AuthError::NotLoggedIn)?;
 
-        let access_token_details = handlers::verify_jwt_token(data.env.access_token_public_key.clone(), &access_token)
+    let access_token_details = handlers::verify_jwt_token(data.env.access_token_public_key.clone(), &access_token)
         .map_err(|e| AuthError::InternalServerError(Some(format!("{e:?}"))))?;
 
-        let access_token_uuid = uuid::Uuid::parse_str(&access_token_details.token_uuid.to_string())
+    let access_token_uuid = uuid::Uuid::parse_str(&access_token_details.token_uuid.to_string())
         .map_err(|_| AuthError::InvalidToken)?;
 
-        let mut redis_client = data
+    let mut redis_client = data
         .redis_client
         .get_multiplexed_async_connection()
         .await
         .map_err(|e| AuthError::InternalServerError(Some(format!("Redis error (this shouldn't happen, try again or contact the server administrator): {e}"))))?;
 
-        let redis_token_user_id = redis_client
+    let redis_token_user_id = redis_client
         .get::<_, String>(access_token_uuid.clone().to_string())
         .await
         .map_err(|_| AuthError::ExpiredSession)?;
 
-        let user_id_uuid = uuid::Uuid::parse_str(&redis_token_user_id).map_err(|_| AuthError::ExpiredSession)?;
-    
-        let user = sqlx::query_as!(User, "SELECT * FROM users WHERE id = $1", user_id_uuid)
-            .fetch_optional(&data.db)
-            .await
-            .map_err(|e| AuthError::InternalServerError(Some(format!("Error fetching user from database (this shouldn't happen, try again or contact the server administrator): {e}"))))?;
-    
-        let user = user.ok_or(AuthError::InvalidUser)?;
+    let user_id_uuid = uuid::Uuid::parse_str(&redis_token_user_id).map_err(|_| AuthError::ExpiredSession)?;
 
-        Ok(AuthorizedUser {
-            user,
-            access_token_uuid,
-        })
+    let user = sqlx::query_as!(User, "SELECT * FROM users WHERE id = $1", user_id_uuid)
+        .fetch_optional(&data.db)
+        .await
+        .map_err(|e| AuthError::InternalServerError(Some(format!("Error fetching user from database (this shouldn't happen, try again or contact the server administrator): {e}"))))?;
+
+    let user = user.ok_or(AuthError::InvalidUser)?;
+
+    Ok(AuthorizedUser {
+        user,
+        access_token_uuid,
+    })
 
 }
 

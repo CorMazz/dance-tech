@@ -7,6 +7,7 @@
 #![warn(missing_docs)]
 #![allow(clippy::missing_errors_doc)]
 #![allow(clippy::module_name_repetitions)] 
+#![allow(clippy::multiple_crate_versions)]
 
 mod config;
 mod router;

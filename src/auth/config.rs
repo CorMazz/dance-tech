@@ -1,7 +1,7 @@
 use crate::utils::get_env_var;
 use oauth2::{AuthUrl, ClientId, ClientSecret, RedirectUrl, TokenUrl};
 
-
+#[allow(dead_code)]
 #[derive(Debug, Clone)]
 pub struct SecretsConfig {
     pub is_demo_mode: bool,

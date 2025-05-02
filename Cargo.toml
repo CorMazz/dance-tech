@@ -2,6 +2,13 @@
 name = "dancetech"
 version = "1.0.0"
 edition = "2021"
+license = "Private"
+description = "A web application for managing dance events, users, and registrations."
+repository = "https://github.com/CorMazz/dance-tech"
+authors = ["Corrado Mazzarelli"]
+keywords = ["web", "dance", "events",]
+categories = ["Web Application"]
+
 
 [dependencies]
 argon2 = "0.5.3"
