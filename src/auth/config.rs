@@ -88,7 +88,9 @@ impl GoogleOAuthConfig {
             redirect_uri.as_str(),
         ) {
             ("", "", "", "", "") => {
-                println!("\nGoogle OAuth functionality disabled since all environment variables were left blank.");
+                println!(
+                    "\nGoogle OAuth functionality disabled since all environment variables were left blank."
+                );
                 None
             }
             ("", _, _, _, _) => {

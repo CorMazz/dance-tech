@@ -23,7 +23,9 @@ impl SMTPConfig {
             user_email.as_str(),
         ) {
             ("", "", "", "") => {
-                println!("\nEmail functionality disabled since all SMTP environment variables were left blank.");
+                println!(
+                    "\nEmail functionality disabled since all SMTP environment variables were left blank."
+                );
                 None
             }
             ("", _, _, _) => {

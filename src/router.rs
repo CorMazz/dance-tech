@@ -1,14 +1,14 @@
 use std::sync::Arc;
 
-use axum::{middleware, routing::get, Router};
+use axum::{Router, middleware, routing::get};
 
 use crate::{
+    AppState,
     auth::middleware::{check_auth_middleware, require_auth_middleware},
     views::{
         get_google_oauth_callback, get_google_oauth_init_flow, get_home_page, get_login_page,
         get_logout_page, get_signup_page, get_user_dropdown, post_login_form, post_signup_form,
     },
-    AppState,
 };
 
 use tower_http::services::ServeDir;

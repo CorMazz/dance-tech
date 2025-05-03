@@ -1,19 +1,19 @@
 use argon2::{
-    password_hash::{rand_core::OsRng, SaltString},
     Argon2, PasswordHash, PasswordHasher, PasswordVerifier,
+    password_hash::{SaltString, rand_core::OsRng},
 };
 use axum::{
-    http::{header, HeaderMap},
+    http::{HeaderMap, header},
     response::{IntoResponse, Redirect},
 };
 use axum_extra::extract::{
-    cookie::{Cookie, SameSite},
     CookieJar,
+    cookie::{Cookie, SameSite},
 };
-use base64::{engine::general_purpose, Engine as _};
+use base64::{Engine as _, engine::general_purpose};
 use oauth2::{
-    basic::BasicClient, AuthorizationCode, CsrfToken, PkceCodeChallenge, PkceCodeVerifier, Scope,
-    TokenResponse,
+    AuthorizationCode, CsrfToken, PkceCodeChallenge, PkceCodeVerifier, Scope, TokenResponse,
+    basic::BasicClient,
 };
 use serde::Deserialize;
 use sqlx::{Pool, Postgres};
@@ -21,11 +21,11 @@ use std::sync::Arc;
 use uuid::Uuid;
 
 use crate::{
+    AppState,
     auth::{
         middleware::{AuthError, AuthorizedUser},
         models::{TokenClaims, TokenDetails, User},
     },
-    AppState,
 };
 
 use redis::{AsyncCommands, RedisError};

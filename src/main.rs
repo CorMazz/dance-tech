@@ -18,18 +18,18 @@ mod views;
 use auth::config::{GoogleOAuthConfig, SecretsConfig};
 use config::SMTPConfig;
 use lettre::transport::smtp::PoolConfig;
-use lettre::{transport::smtp::authentication::Credentials, AsyncSmtpTransport, Tokio1Executor};
+use lettre::{AsyncSmtpTransport, Tokio1Executor, transport::smtp::authentication::Credentials};
 use oauth2::reqwest;
 use std::{sync::Arc, time::Duration};
 
 use axum::http::{
-    header::{ACCEPT, AUTHORIZATION, CONTENT_TYPE},
     HeaderValue, Method,
+    header::{ACCEPT, AUTHORIZATION, CONTENT_TYPE},
 };
 use dotenv::dotenv;
 use redis::Client;
 use router::create_router;
-use sqlx::{postgres::PgPoolOptions, Pool, Postgres};
+use sqlx::{Pool, Postgres, postgres::PgPoolOptions};
 use tower_http::cors::CorsLayer;
 
 /// The global application state shared across features.

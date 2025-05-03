@@ -1,20 +1,21 @@
 use crate::{
+    AppState,
     auth::{
         handlers::{
-            google_oauth_callback_handler, google_oauth_init_flow_handler, login_user_handler,
-            logout_handler, register_user_handler, GoogleOAuthCallbackParams,
+            GoogleOAuthCallbackParams, google_oauth_callback_handler,
+            google_oauth_init_flow_handler, login_user_handler, logout_handler,
+            register_user_handler,
         },
         middleware::{AuthError, AuthStatus},
         models::User,
     },
-    AppState,
 };
 use askama::Template;
 use axum::{
+    Extension, Form,
     extract::{Query, State},
     http::StatusCode,
     response::{Html, IntoResponse, Redirect},
-    Extension, Form,
 };
 use axum_extra::extract::CookieJar;
 use serde::Deserialize;

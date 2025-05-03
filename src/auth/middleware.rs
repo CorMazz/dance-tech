@@ -3,7 +3,7 @@ use std::sync::Arc;
 use axum::{
     body::Body,
     extract::State,
-    http::{header, HeaderMap, Request},
+    http::{HeaderMap, Request, header},
     middleware::Next,
     response::{IntoResponse, Redirect},
 };
@@ -12,8 +12,8 @@ use axum_extra::extract::cookie::CookieJar;
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    auth::{handlers, models::User},
     AppState,
+    auth::{handlers, models::User},
 };
 use redis::AsyncCommands;
 

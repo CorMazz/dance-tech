@@ -1,7 +1,7 @@
 [package]
 name = "dancetech"
 version = "1.0.0"
-edition = "2021"
+edition = "2024"
 license = "Private"
 description = "A web application for managing dance events, users, and registrations."
 repository = "https://github.com/CorMazz/dance-tech"
