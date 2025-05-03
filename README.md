@@ -11,7 +11,7 @@ for the dev container, and the other docker files out here define how to create 
 
 #### Development Environment
 
-The dev environment for this project is a dev container. The dev container pins the `rust` version. To update that, configure the `.devcontainer/devcontainer.json` file.
+The dev environment for this project is a dev container. The dev container pins the `rust` version. To update that, configure the `.devcontainer/Dockerfile`.
 
 #### Environment Variables
 
