@@ -1,7 +1,7 @@
-use std::sync::Arc;
-
-use argon2::{password_hash::SaltString, Argon2, PasswordHash, PasswordHasher, PasswordVerifier};
-use askama_axum::Response;
+use argon2::{
+    password_hash::{rand_core::OsRng, SaltString},
+    Argon2, PasswordHash, PasswordHasher, PasswordVerifier,
+};
 use axum::{
     http::{header, HeaderMap},
     response::{IntoResponse, Redirect},
@@ -10,16 +10,20 @@ use axum_extra::extract::{
     cookie::{Cookie, SameSite},
     CookieJar,
 };
-use oauth2::{basic::BasicClient, AuthorizationCode, CsrfToken, PkceCodeChallenge, PkceCodeVerifier, Scope, TokenResponse};
-use rand_core::OsRng;
+use base64::{engine::general_purpose, Engine as _};
+use oauth2::{
+    basic::BasicClient, AuthorizationCode, CsrfToken, PkceCodeChallenge, PkceCodeVerifier, Scope,
+    TokenResponse,
+};
 use serde::Deserialize;
 use sqlx::{Pool, Postgres};
+use std::sync::Arc;
+use uuid::Uuid;
 
 use crate::{
     auth::{
-        model::User,
-        token::{TokenDetails, generate_jwt_token, verify_jwt_token},
-        middleware::{AuthorizedUser, AuthError}
+        middleware::{AuthError, AuthorizedUser},
+        models::{TokenClaims, TokenDetails, User},
     },
     AppState,
 };
@@ -37,13 +41,7 @@ pub async fn register_user_handler(
     last_name: String,
     email: String,
     password: String,
-    licensing_key: String,
 ) -> Result<(), AuthError> {
-
-    if licensing_key != data.env.signup_licensing_key {
-        return Err(AuthError::InvalidLicensingKey)
-    }
-
     if get_user(&email, &data.db).await?.is_some() {
         return Err(AuthError::DuplicateEmail);
     }
@@ -51,7 +49,9 @@ pub async fn register_user_handler(
     let salt = SaltString::generate(&mut OsRng);
     let hashed_password = Argon2::default()
         .hash_password(password.as_bytes(), &salt)
-        .map_err(|e| AuthError::InternalServerError(Some(format!("Error while hashing password: {}", e))))
+        .map_err(|e| {
+            AuthError::InternalServerError(Some(format!("Error while hashing password: {e}")))
+        })
         .map(|hash| hash.to_string())?;
 
     sqlx::query_as!(
@@ -64,15 +64,13 @@ pub async fn register_user_handler(
     )
     .execute(&data.db)
     .await
-    .map_err(|e| AuthError::InternalServerError(Some(format!("Database error: {}", e))))?;
+    .map_err(|e| AuthError::InternalServerError(Some(format!("Database error: {e}"))))?;
     Ok(())
 }
-
 
 // #######################################################################################################################################################
 // Login
 // #######################################################################################################################################################
-
 
 pub async fn login_user_handler(
     data: Arc<AppState>,
@@ -80,17 +78,15 @@ pub async fn login_user_handler(
     email: String,
     password: String,
 ) -> Result<impl IntoResponse, AuthError> {
-
     let user = get_user(&email, &data.db)
         .await?
-        .ok_or_else(|| AuthError::InvalidEmailOrPassword)?;
-    
-    let is_valid = match PasswordHash::new(&user.password) {
-        Ok(parsed_hash) => Argon2::default()
+        .ok_or(AuthError::InvalidEmailOrPassword)?;
+
+    let is_valid = PasswordHash::new(&user.password).is_ok_and(|parsed_hash| {
+        Argon2::default()
             .verify_password(password.as_bytes(), &parsed_hash)
-            .map_or(false, |_| true),
-        Err(_) => false,
-    };
+            .is_ok_and(|()| true)
+    });
 
     if !is_valid {
         return Err(AuthError::InvalidEmailOrPassword);
@@ -98,7 +94,7 @@ pub async fn login_user_handler(
 
     let jar = login_user(user, &data, cookie_jar).await?;
 
-    Ok((jar, Redirect::to("/dashboard")))
+    Ok((jar, Redirect::to("/")))
 }
 
 // #######################################################################################################################################################
@@ -111,43 +107,48 @@ pub async fn google_oauth_init_flow_handler(
 ) -> Result<impl IntoResponse, AuthError> {
     let (pkce_challenge, pkce_verifier) = PkceCodeChallenge::new_random_sha256();
 
-    if let Some(config) = &data.google_oauth_config {
-        let client = BasicClient::new(config.client_id.clone())
-            .set_client_secret(config.client_secret.clone())
-            .set_auth_uri(config.auth_uri.clone())
-            .set_token_uri(config.token_uri.clone())
-            .set_redirect_uri(config.redirect_uri.clone());
-    
-        let (auth_url, csrf_token) = client
-            .authorize_url(CsrfToken::new_random)
-            .add_scope(Scope::new("profile".to_string()))
-            .add_scope(Scope::new("email".to_string()))
-            .set_pkce_challenge(pkce_challenge)
-            .url();
+    data.google_oauth_config.as_ref().map_or_else(
+        || {
+            Err(AuthError::InternalServerError(Some(
+                "Google OAuth is not configured, unable to continue with the authorization flow."
+                    .to_string(),
+            )))
+        },
+        |config| {
+            let client = BasicClient::new(config.client_id.clone())
+                .set_client_secret(config.client_secret.clone())
+                .set_auth_uri(config.auth_uri.clone())
+                .set_token_uri(config.token_uri.clone())
+                .set_redirect_uri(config.redirect_uri.clone());
 
-        let csrf_cookie = Cookie::build(("oauth_csrf", csrf_token.secret().clone()))
-            .path("/")
-            .http_only(true)
-            .same_site(SameSite::Lax)
-            .secure(true)
-            .max_age(time::Duration::minutes(5));
-        
-        let pkce_cookie =  Cookie::build(("oauth_pkce_verifier", pkce_verifier.secret().clone()))
-            .path("/")
-            .http_only(true)
-            .same_site(SameSite::Lax)
-            .secure(true)
-            .max_age(time::Duration::minutes(5));
+            let (auth_url, csrf_token) = client
+                .authorize_url(CsrfToken::new_random)
+                .add_scope(Scope::new("profile".to_string()))
+                .add_scope(Scope::new("email".to_string()))
+                .set_pkce_challenge(pkce_challenge)
+                .url();
 
-        let jar = cookie_jar.add(csrf_cookie).add(pkce_cookie);
+            let csrf_cookie = Cookie::build(("oauth_csrf", csrf_token.secret().clone()))
+                .path("/")
+                .http_only(true)
+                .same_site(SameSite::Lax)
+                .secure(true)
+                .max_age(time::Duration::minutes(5));
 
-        Ok((jar, Redirect::to(auth_url.as_str())))
+            let pkce_cookie =
+                Cookie::build(("oauth_pkce_verifier", pkce_verifier.secret().clone()))
+                    .path("/")
+                    .http_only(true)
+                    .same_site(SameSite::Lax)
+                    .secure(true)
+                    .max_age(time::Duration::minutes(5));
 
-    } else {
-        Err(AuthError::InternalServerError(Some("Google OAuth is not configured, unable to continue with the authorization flow.".to_string())))
-    }
+            let jar = cookie_jar.add(csrf_cookie).add(pkce_cookie);
 
-}   
+            Ok((jar, Redirect::to(auth_url.as_str())))
+        },
+    )
+}
 
 // #######################################################################################################################################################
 // Google OAuth Flow Callback Handler
@@ -159,6 +160,7 @@ pub struct GoogleOAuthCallbackParams {
     state: String,
 }
 
+#[allow(dead_code)]
 #[derive(Deserialize)]
 pub struct GoogleAccessTokenPayload {
     pub email_verified: Option<bool>,
@@ -168,7 +170,6 @@ pub struct GoogleAccessTokenPayload {
     pub name: Option<String>,
     pub picture: Option<String>,
     pub sub: String,
-
 }
 
 pub async fn google_oauth_callback_handler(
@@ -182,19 +183,16 @@ pub async fn google_oauth_callback_handler(
 
     let pkce_cookie = cookie_jar
         .get("oauth_pkce_verifier")
-        .ok_or(AuthError::OAuthError(Some("Unable to get PKCE cookie.".to_string())))?;
+        .ok_or_else(|| AuthError::OAuthError(Some("Unable to get PKCE cookie.".to_string())))?;
 
     if csrf_cookie.value() != callback_params.state {
         return Err(AuthError::CSRFTokenMismatch);
     }
 
-    let config = data
-        .google_oauth_config
-        .as_ref()
-        .ok_or_else(|| {
-            eprintln!("Google OAuth config is missing.");
-            AuthError::OAuthError(Some("OAuth config not found.".to_string()))
-        })?;
+    let config = data.google_oauth_config.as_ref().ok_or_else(|| {
+        eprintln!("Google OAuth config is missing.");
+        AuthError::OAuthError(Some("OAuth config not found.".to_string()))
+    })?;
 
     let oauth_client = BasicClient::new(config.client_id.clone())
         .set_client_secret(config.client_secret.clone())
@@ -264,7 +262,7 @@ pub async fn google_oauth_callback_handler(
     match user {
         Some(user) => {
             let jar = login_user(user, &data, cookie_jar).await?;
-            Ok((jar, Redirect::to("/dashboard")).into_response())
+            Ok((jar, Redirect::to("/")).into_response())
         }
         None => Err(AuthError::AccountNotFound),
     }
@@ -278,21 +276,21 @@ pub async fn logout_handler(
     authorized_user: AuthorizedUser,
     data: Arc<AppState>,
 ) -> Result<impl IntoResponse, AuthError> {
-
     let refresh_token = cookie_jar
         .get("refresh_token")
         .map(|cookie| cookie.value().to_string())
-        .ok_or_else(|| AuthError::NotLoggedIn)?;
+        .ok_or(AuthError::NotLoggedIn)?;
 
-    let refresh_token_details = verify_jwt_token(data.env.refresh_token_public_key.to_owned(), &refresh_token)
-            .map_err(|e| AuthError::InternalServerError(Some(format!("{:?}", e))))?;
+    let refresh_token_details =
+        verify_jwt_token(data.env.refresh_token_public_key.clone(), &refresh_token)
+            .map_err(|e| AuthError::InternalServerError(Some(format!("{e:?}"))))?;
 
     let mut redis_client = data
         .redis_client
         .get_multiplexed_async_connection()
         .await
         .map_err(|e: RedisError| {
-            AuthError::InternalServerError(Some(format!("Redis error: {}", e)))
+            AuthError::InternalServerError(Some(format!("Redis error: {e}")))
         })?;
 
     redis_client
@@ -302,7 +300,7 @@ pub async fn logout_handler(
         ])
         .await
         .map_err(|e: RedisError| {
-            AuthError::InternalServerError(Some(format!("Redis error: {}", e)))
+            AuthError::InternalServerError(Some(format!("Redis error: {e}")))
         })?;
 
     let access_cookie = Cookie::build(("access_token", ""))
@@ -350,33 +348,30 @@ async fn save_token_data_to_redis(
     token_details: &TokenDetails,
     max_age: i64,
 ) -> Result<(), RedisError> {
-    let mut redis_client = data
-        .redis_client
-        .get_multiplexed_async_connection()
-        .await?;
+    let mut redis_client = data.redis_client.get_multiplexed_async_connection().await?;
     redis_client
         .set_ex::<_, _, ()>(
             token_details.token_uuid.to_string(),
             token_details.user_id.to_string(),
-            (max_age * 60) as u64,
+            #[allow(clippy::cast_sign_loss)]
+            {
+                (max_age * 60) as u64
+            },
         )
         .await?;
     Ok(())
 }
 
 /// Gets a user from the database
-pub async fn get_user(
-    email: &str,
-    db: &Pool<Postgres>,
-) -> Result<Option<User>, AuthError> {
+pub async fn get_user(email: &str, db: &Pool<Postgres>) -> Result<Option<User>, AuthError> {
     sqlx::query_as!(
         User,
         "SELECT * FROM users WHERE email = $1",
         email.to_ascii_lowercase()
     )
-        .fetch_optional(db)
-        .await
-        .map_err(|e| AuthError::InternalServerError(Some(format!("Database error: {}", e))))
+    .fetch_optional(db)
+    .await
+    .map_err(|e| AuthError::InternalServerError(Some(format!("Database error: {e}"))))
 }
 
 async fn login_user(
@@ -387,51 +382,50 @@ async fn login_user(
     let access_token_details = generate_jwt_token(
         user.id,
         data.env.access_token_max_age,
-        data.env.access_token_private_key.to_owned()
-    ).map_err(|e: jsonwebtoken::errors::Error| {
-            AuthError::InternalServerError(Some(format!("JWT error: {}", e)))
+        data.env.access_token_private_key.clone(),
+    )
+    .map_err(|e: jsonwebtoken::errors::Error| {
+        AuthError::InternalServerError(Some(format!("JWT error: {e}")))
     })?;
 
     let refresh_token_details = generate_jwt_token(
         user.id,
         data.env.refresh_token_max_age,
-        data.env.refresh_token_private_key.to_owned(),
-    ).map_err(|e: jsonwebtoken::errors::Error| {
-        AuthError::InternalServerError(Some(format!("JWT error: {}", e)))
+        data.env.refresh_token_private_key.clone(),
+    )
+    .map_err(|e: jsonwebtoken::errors::Error| {
+        AuthError::InternalServerError(Some(format!("JWT error: {e}")))
     })?;
 
-    save_token_data_to_redis(&data, &access_token_details, data.env.access_token_max_age).await
+    save_token_data_to_redis(data, &access_token_details, data.env.access_token_max_age)
+        .await
         .map_err(|e: RedisError| {
-        AuthError::InternalServerError(Some(format!("Redis error: {}", e)))
+            AuthError::InternalServerError(Some(format!("Redis error: {e}")))
         })?;
 
-    save_token_data_to_redis(
-        &data,
-        &refresh_token_details,
-        data.env.refresh_token_max_age,
-    )
-        .await    
+    save_token_data_to_redis(data, &refresh_token_details, data.env.refresh_token_max_age)
+        .await
         .map_err(|e: RedisError| {
-            AuthError::InternalServerError(Some(format!("Redis error: {}", e)))
+            AuthError::InternalServerError(Some(format!("Redis error: {e}")))
         })?;
 
-    let access_cookie = Cookie::build(
-        ("access_token",
-        access_token_details.token.clone().unwrap_or_default()),
-    )
-        .path("/")
-        .max_age(time::Duration::minutes(data.env.access_token_max_age * 60))
-        .same_site(SameSite::Lax)
-        .http_only(true);
+    let access_cookie = Cookie::build((
+        "access_token",
+        access_token_details.token.clone().unwrap_or_default(),
+    ))
+    .path("/")
+    .max_age(time::Duration::minutes(data.env.access_token_max_age * 60))
+    .same_site(SameSite::Lax)
+    .http_only(true);
 
-    let refresh_cookie = Cookie::build(
-        ("refresh_token",
-        refresh_token_details.token.unwrap_or_default()),
-    )
-        .path("/")
-        .max_age(time::Duration::minutes(data.env.refresh_token_max_age * 60))
-        .same_site(SameSite::Lax)
-        .http_only(true);
+    let refresh_cookie = Cookie::build((
+        "refresh_token",
+        refresh_token_details.token.unwrap_or_default(),
+    ))
+    .path("/")
+    .max_age(time::Duration::minutes(data.env.refresh_token_max_age * 60))
+    .same_site(SameSite::Lax)
+    .http_only(true);
 
     let logged_in_cookie = Cookie::build(("logged_in", "true"))
         .path("/")
@@ -443,4 +437,64 @@ async fn login_user(
         .add(access_cookie)
         .add(refresh_cookie)
         .add(logged_in_cookie))
+}
+
+pub fn generate_jwt_token(
+    user_id: uuid::Uuid,
+    ttl: i64,
+    private_key: String,
+) -> Result<TokenDetails, jsonwebtoken::errors::Error> {
+    let bytes_private_key = general_purpose::STANDARD.decode(private_key).unwrap();
+    let decoded_private_key = String::from_utf8(bytes_private_key).unwrap();
+
+    let now = chrono::Utc::now();
+    let mut token_details = TokenDetails {
+        user_id,
+        token_uuid: Uuid::new_v4(),
+        expires_in: Some((now + chrono::Duration::minutes(ttl)).timestamp()),
+        token: None,
+    };
+
+    let claims = TokenClaims {
+        sub: token_details.user_id.to_string(),
+        token_uuid: token_details.token_uuid.to_string(),
+        exp: token_details.expires_in.unwrap(),
+        iat: now.timestamp(),
+        nbf: now.timestamp(),
+    };
+
+    let header = jsonwebtoken::Header::new(jsonwebtoken::Algorithm::RS256);
+    let token = jsonwebtoken::encode(
+        &header,
+        &claims,
+        &jsonwebtoken::EncodingKey::from_rsa_pem(decoded_private_key.as_bytes())?,
+    )?;
+    token_details.token = Some(token);
+    Ok(token_details)
+}
+
+pub fn verify_jwt_token(
+    public_key: String,
+    token: &str,
+) -> Result<TokenDetails, jsonwebtoken::errors::Error> {
+    let bytes_public_key = general_purpose::STANDARD.decode(public_key).unwrap();
+    let decoded_public_key = String::from_utf8(bytes_public_key).unwrap();
+
+    let validation = jsonwebtoken::Validation::new(jsonwebtoken::Algorithm::RS256);
+
+    let decoded = jsonwebtoken::decode::<TokenClaims>(
+        token,
+        &jsonwebtoken::DecodingKey::from_rsa_pem(decoded_public_key.as_bytes())?,
+        &validation,
+    )?;
+
+    let user_id = Uuid::parse_str(decoded.claims.sub.as_str()).unwrap();
+    let token_uuid = Uuid::parse_str(decoded.claims.token_uuid.as_str()).unwrap();
+
+    Ok(TokenDetails {
+        token: None,
+        token_uuid,
+        user_id,
+        expires_in: None,
+    })
 }

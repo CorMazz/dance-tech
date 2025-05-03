@@ -1,4 +1,5 @@
+pub mod config;
+pub mod errors;
 pub mod handlers;
 pub mod middleware;
-pub mod model;
-pub mod token;
+pub mod models;

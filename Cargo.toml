@@ -1,32 +1,38 @@
 [package]
-name = "dancer_test"
+name = "dancetech"
 version = "1.0.0"
 edition = "2021"
+license = "Private"
+description = "A web application for managing dance events, users, and registrations."
+repository = "https://github.com/CorMazz/dance-tech"
+authors = ["Corrado Mazzarelli"]
+keywords = ["web", "dance", "events",]
+categories = ["Web Application"]
+
 
 [dependencies]
 argon2 = "0.5.3"
-askama = "0.12.1"
-askama_axum = "0.4.0"
-axum = "0.7.5"
-axum-extra = { version = "0.9.4", features = ["cookie", "query"] }
+askama = "0.14.0"
+axum = "0.8.4"
+axum-extra = { version = "0.10.1", features = ["cookie", "query"] }
 base64 = "0.22.1"
-chrono = { version = "0.4.38", features = ["serde"] }
+chrono = { version = "0.4.41", features = ["serde"] }
 dotenv = "0.15.0"
-jsonwebtoken = "9.3.0"
-lettre = { version = "0.11.9", default-features = false, features = ["smtp-transport", "pool", "tokio1", "tokio1-rustls-tls", "builder", ] }
+jsonwebtoken = "9.3.1"
+lettre = { version = "0.11.15", default-features = false, features = ["smtp-transport", "pool", "tokio1", "tokio1-rustls-tls", "builder", ] }
 oauth2 = "5.0.0"
-rand_core = { version = "0.6.4", features = ["getrandom"] }
-redis = { version = "0.25.4", features = ["aio", "tokio-comp"] }
+rand_core = { version = "0.9.3"}
+redis = { version = "0.30.0", features = ["aio", "tokio-comp"] }
 reqwest = { version = "0.12.15", features = ["json"] }
-serde = { version = "1.0.204", features = ["derive"] }
-serde_json = "1.0.120"
+serde = { version = "1.0.219", features = ["derive"] }
+serde_json = "1.0.140"
 serde_yaml = "0.9.34"
-sqlx = { version = "0.8.1", features = ["chrono", "postgres", "runtime-tokio", "uuid"] }
-strum = "0.26.3"
-strum_macros = "0.26.4"
-time = "0.3.36"
-tokio = { version = "1.38.0", features = ["full"] }
-tower-http = { version = "0.5.2", features = ["cors", "fs"] }
-tracing = "0.1.40"
-tracing-subscriber = "0.3.18"
-uuid = { version = "1.10.0", features = ["serde", "v4"] }
+sqlx = { version = "0.8.5", features = ["chrono", "postgres", "runtime-tokio", "uuid"] }
+strum = "0.27.1"
+strum_macros = "0.27.1"
+time = "0.3.41"
+tokio = { version = "1.44.2", features = ["full"] }
+tower-http = { version = "0.6.2", features = ["cors", "fs"] }
+tracing = "0.1.41"
+tracing-subscriber = "0.3.19"
+uuid = { version = "1.16.0", features = ["serde", "v4"] }
