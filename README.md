@@ -1,11 +1,50 @@
 # Dancetech
 
-## Note from Cory
+## About
+
+This is a 4 pronged dance technology infrastructure setup, originally created for the Greenville Westies, but designed with flexiblity in mind.
+
+### Architecture
+
+```mermaid
+graph TD
+    subgraph WebApp ["Dance-Tech"]
+        direction TB
+            Auth(<b>Authentication</b><br/>• Single-Sign-On<br/>• Google OAuth)
+            P(<b>Payment Portal</b><br/>• Stripe<br/>• Venmo)
+            E(<b>Dancexam Portal</b><br/>• Test Registration<br/>• Results Tracking)
+            S(<b>Spotify Integration</b><br/>• Playlist Embeds<br/>• Now Playing)
+            T(<b>Dance Skill Tree</b><br/>• Skill Tracking<br/>• Prereqs & Progress)
+            
+            Auth --> P
+            Auth --> E
+            Auth --> S
+            Auth --> T
+
+            PPUV(<b>User View</b><br/>• Pay for Classes<br/>• Pay for Dance)
+            PPAV(<b>Admin View</b><br/>• Create Events<br/>• Define Prereqs for Classes<br/>• Set Prices)
+
+            P --> PPUV
+            P --> PPAV
+
+            DPUV(<b>User View</b><br/>• View Results<br/>• Register for Test)
+            DPAV(<b>Admin View</b><br/>• Modify Results<br/>• Proctor Tests<br/>)
+
+            E --> DPUV
+            E --> DPAV
+
+            SPUV(<b>Suggest Songs View</b><br/>• Like/Dislike Songs<br/>• View Popularity)
+            SPAV(<b>Now Playing View</b><br/>• See Current Playlist<br/>• Like/Dislike Songs)
+
+            S --> SPUV
+            S --> SPAV
+    end
+```
+
+## Developer Notes
 
 This application is containerized, and was also developed in a dev container. Everything within the .devcontainer folder defines the configuration
 for the dev container, and the other docker files out here define how to create the production containers. 
-
-## Developer Notes
 
 ### Getting Started
 
