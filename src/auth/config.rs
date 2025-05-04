@@ -3,12 +3,7 @@ use oauth2::{AuthUrl, ClientId, ClientSecret, RedirectUrl, TokenUrl};
 
 #[allow(dead_code)]
 #[derive(Debug, Clone)]
-pub struct SecretsConfig {
-    pub is_demo_mode: bool,
-    pub server_port: i64,
-    pub database_url: String,
-    pub redis_url: String,
-
+pub struct AuthConfig {
     pub access_token_private_key: String,
     pub access_token_public_key: String,
     pub access_token_expires_in: String,
@@ -20,19 +15,8 @@ pub struct SecretsConfig {
     pub refresh_token_max_age: i64,
 }
 
-impl SecretsConfig {
+impl AuthConfig {
     pub fn init() -> Self {
-        let is_demo_mode = get_env_var("DEMO_MODE_ACTIVE")
-            .to_lowercase()
-            .trim()
-            .parse()
-            .expect("DEMO_MODE_ACTIVE should be TRUE or FALSE.");
-        let server_port = get_env_var("SERVER_PORT")
-            .parse::<i64>()
-            .expect("Server port (ENV_VAR=SERVER_PORT) should be an integer.");
-        let database_url = get_env_var("DATABASE_URL");
-        let redis_url = get_env_var("REDIS_URL");
-
         let access_token_private_key = get_env_var("ACCESS_TOKEN_PRIVATE_KEY");
         let access_token_public_key = get_env_var("ACCESS_TOKEN_PUBLIC_KEY");
         let access_token_expires_in = get_env_var("ACCESS_TOKEN_EXPIRED_IN");
@@ -48,10 +32,6 @@ impl SecretsConfig {
             .expect("Refresh token max age (ENV_VAR=REFRESH_TOKEN_MAXAGE) should be an integer.");
 
         Self {
-            is_demo_mode,
-            server_port,
-            database_url,
-            redis_url,
             access_token_private_key,
             access_token_public_key,
             access_token_expires_in,

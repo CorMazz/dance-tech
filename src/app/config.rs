@@ -1,6 +1,32 @@
 use crate::app::utils::get_env_var;
 use serde::{Deserialize, Serialize};
 
+#[derive(Debug, Clone)]    
+pub struct AppConfig {
+    pub is_demo_mode: bool,
+    pub server_port: i64,
+    pub database_url: String,
+    pub redis_url: String,
+}
+
+impl AppConfig {
+    pub fn init() -> Self {
+        let is_demo_mode = get_env_var("DEMO_MODE").parse::<bool>().unwrap_or(false);
+        let server_port = get_env_var("SERVER_PORT")
+            .parse::<i64>()
+            .expect("Server port (ENV_VAR=SERVER_PORT) should be an integer.");
+        let database_url = get_env_var("DATABASE_URL");
+        let redis_url = get_env_var("REDIS_URL");
+
+        Self {
+            is_demo_mode,
+            server_port,
+            database_url,
+            redis_url,
+        }
+    }
+}
+
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct SMTPConfig {
     pub server_host: String,

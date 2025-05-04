@@ -106,7 +106,7 @@ pub struct LoginTemplate {
 
 pub async fn get_login_page(State(data): State<Arc<AppState>>) -> impl IntoResponse {
     let template: LoginTemplate = LoginTemplate {
-        is_demo_mode: data.env.is_demo_mode,
+        is_demo_mode: data.app_config.is_demo_mode,
         google_oauth_enabled: data.google_oauth_config.is_some(),
     };
 

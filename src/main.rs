@@ -12,8 +12,8 @@
 mod app;
 mod auth;
 
-use app::config::SMTPConfig;
-use auth::config::{GoogleOAuthConfig, SecretsConfig};
+use app::config::{AppConfig, SMTPConfig};
+use auth::config::{GoogleOAuthConfig, AuthConfig};
 use lettre::transport::smtp::PoolConfig;
 use lettre::{AsyncSmtpTransport, Tokio1Executor, transport::smtp::authentication::Credentials};
 use oauth2::reqwest;
@@ -33,7 +33,8 @@ use tower_http::cors::CorsLayer;
 #[allow(dead_code)]
 pub struct AppState {
     db: Pool<Postgres>,
-    env: SecretsConfig,
+    app_config: AppConfig,
+    auth_config: AuthConfig,
     redis_client: Client,
     smtp_config: Option<SMTPConfig>,
     smtp_mailer: Option<AsyncSmtpTransport<Tokio1Executor>>,
@@ -45,7 +46,8 @@ pub struct AppState {
 async fn main() {
     dotenv().ok();
 
-    let config = SecretsConfig::init();
+    let app_config = AppConfig::init();
+    let auth_config = AuthConfig::init();
 
     let smtp_config = SMTPConfig::init();
     let smtp_mailer: Option<AsyncSmtpTransport<Tokio1Executor>> =
@@ -74,7 +76,7 @@ async fn main() {
 
     let pool = match PgPoolOptions::new()
         .max_connections(10)
-        .connect(&config.database_url)
+        .connect(&app_config.database_url)
         .await
     {
         Ok(pool) => {
@@ -87,7 +89,7 @@ async fn main() {
         }
     };
 
-    let redis_client = match Client::open(config.redis_url.clone()) {
+    let redis_client = match Client::open(app_config.redis_url.clone()) {
         Ok(client) => {
             println!("✅ Connection to the redis server is successful!");
             client
@@ -113,7 +115,8 @@ async fn main() {
 
     let app = create_router(Arc::new(AppState {
         db: pool.clone(),
-        env: config.clone(),
+        app_config: app_config.clone(),
+        auth_config: auth_config.clone(),
         smtp_config,
         smtp_mailer,
         google_oauth_config,
@@ -124,9 +127,10 @@ async fn main() {
 
     println!(
         "🚀 Server started successfully on port {}",
-        config.server_port
+        app_config.server_port
     );
-    let listener = tokio::net::TcpListener::bind(format!("0.0.0.0:{}", config.server_port))
+
+    let listener = tokio::net::TcpListener::bind(format!("0.0.0.0:{}", app_config.server_port))
         .await
         .unwrap();
     axum::serve(listener, app).await.unwrap();

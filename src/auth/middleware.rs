@@ -91,7 +91,7 @@ pub async fn check_auth_utility(
     let access_token = access_token.ok_or(AuthError::NotLoggedIn)?;
 
     let access_token_details =
-        handlers::verify_jwt_token(data.env.access_token_public_key.clone(), &access_token)
+        handlers::verify_jwt_token(data.auth_config.access_token_public_key.clone(), &access_token)
             .map_err(|e| AuthError::InternalServerError(Some(format!("{e:?}"))))?;
 
     let access_token_uuid = uuid::Uuid::parse_str(&access_token_details.token_uuid.to_string())
