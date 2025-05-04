@@ -1,7 +1,7 @@
 use crate::app::utils::get_env_var;
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone)]    
+#[derive(Debug, Clone)]
 pub struct AppConfig {
     pub is_demo_mode: bool,
     pub server_port: i64,

@@ -13,11 +13,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     AppState,
-    auth::{
-        errors::AuthError,
-        handlers,
-        models::User
-    },
+    auth::{errors::AuthError, handlers, models::User},
 };
 use redis::AsyncCommands;
 
@@ -56,9 +52,11 @@ pub async fn check_auth_utility(
 
     let access_token = access_token.ok_or(AuthError::NotLoggedIn)?;
 
-    let access_token_details =
-        handlers::verify_jwt_token(data.auth_config.access_token_public_key.clone(), &access_token)
-            .map_err(|e| AuthError::InternalServerError(Some(format!("{e:?}"))))?;
+    let access_token_details = handlers::verify_jwt_token(
+        data.auth_config.access_token_public_key.clone(),
+        &access_token,
+    )
+    .map_err(|e| AuthError::InternalServerError(Some(format!("{e:?}"))))?;
 
     let access_token_uuid = uuid::Uuid::parse_str(&access_token_details.token_uuid.to_string())
         .map_err(|_| AuthError::InvalidToken)?;
@@ -110,7 +108,7 @@ pub async fn check_auth_middleware(
     next.run(req).await
 }
 
-/// Redirect to login page if auth failed, otherwise continue
+/// Check if the user is authorized and redirect to the login page if not
 pub async fn require_auth_middleware(
     cookie_jar: CookieJar,
     State(data): State<Arc<AppState>>,
@@ -123,7 +121,9 @@ pub async fn require_auth_middleware(
                 .insert(AuthStatus::Authorized(auth_data));
             next.run(req).await
         }
-        // Purposefully leaving auth_error here so that I can remember to eventually handle the error itself
-        Err(auth_error) => Redirect::to("/login").into_response(),
+        Err(e) => match e {
+            AuthError::NotLoggedIn => Redirect::to("/login").into_response(),
+            _ => e.into_response(req.headers()),
+        },
     }
 }

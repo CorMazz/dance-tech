@@ -12,18 +12,13 @@ pub fn get_env_var(var_name: &str) -> String {
     })
 }
 
-
 /// Utility function to render a template and handle errors.
 pub fn render<T: Template>(template: T) -> Html<String> {
-    match template.render() {
-        Ok(content) => Html(content),
-        Err(_) => Html("Failed to render the HTML template. Something went terribly wrong. Contact the site administrator.".to_string()),
-    }
+    template.render().map_or_else(|_| Html("Failed to render the HTML template. Something went terribly wrong. Contact the site administrator.".to_string()),Html)
 }
 
-
 /// Check if the request is an HTMX request by looking for the "HX-Request" header.
-/// 
+///
 /// The HX-Request header is added by HTMX to indicate that the request is an HTMX request, and it is always `true`, so we just check for its presence.
 pub fn is_htmx_request(headers: &axum::http::HeaderMap) -> bool {
     headers.contains_key("HX-Request")

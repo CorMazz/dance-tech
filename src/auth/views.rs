@@ -12,17 +12,14 @@ use axum_extra::extract::CookieJar;
 use reqwest::StatusCode;
 use serde::Deserialize;
 
-use crate::app::utils::{is_htmx_request, render};
 use crate::AppState;
+use crate::app::utils::{is_htmx_request, render};
 use crate::auth::handlers::{
-    google_oauth_callback_handler, google_oauth_init_flow_handler, login_user_handler,
-    logout_handler, register_user_handler, GoogleOAuthCallbackParams,
-};
-use crate::auth::{
-    errors::AuthError,
-    middleware::AuthStatus,
+    GoogleOAuthCallbackParams, google_oauth_callback_handler, google_oauth_init_flow_handler,
+    login_user_handler, logout_handler, register_user_handler,
 };
 use crate::auth::models::User;
+use crate::auth::{errors::AuthError, middleware::AuthStatus};
 
 #[derive(Template)]
 #[template(path = "./partial_templates/user_dropdown.html")]
@@ -90,7 +87,7 @@ pub async fn post_signup_form(
 
     match user_registered {
         Ok(()) => Redirect::to("/login").into_response(),
-        Err(e) => e.into_response(&headers)
+        Err(e) => e.into_response(&headers),
     }
 }
 
@@ -105,7 +102,10 @@ pub struct LoginTemplate {
     google_oauth_enabled: bool,
 }
 
-pub async fn get_login_page(State(data): State<Arc<AppState>>, headers: axum::http::HeaderMap) -> impl IntoResponse {
+pub async fn get_login_page(
+    State(data): State<Arc<AppState>>,
+    headers: axum::http::HeaderMap,
+) -> impl IntoResponse {
     let template: LoginTemplate = LoginTemplate {
         is_demo_mode: data.app_config.is_demo_mode,
         google_oauth_enabled: data.google_oauth_config.is_some(),
@@ -134,7 +134,7 @@ pub async fn post_login_form(
 ) -> impl IntoResponse {
     match login_user_handler(data, cookie_jar, login.email, login.password).await {
         Ok(response) => response.into_response(),
-        Err(e) => e.into_response(&headers)
+        Err(e) => e.into_response(&headers),
     }
 }
 
@@ -150,7 +150,7 @@ pub async fn get_google_oauth_init_flow(
 ) -> impl IntoResponse {
     match google_oauth_init_flow_handler(data, cookie_jar).await {
         Ok(response) => response.into_response(),
-        Err(e) => e.into_response(&headers)
+        Err(e) => e.into_response(&headers),
     }
 }
 
@@ -163,7 +163,7 @@ pub async fn get_google_oauth_callback(
 ) -> impl IntoResponse {
     match google_oauth_callback_handler(data, cookie_jar, callback_params).await {
         Ok(response) => response.into_response(),
-        Err(e) => e.into_response(&headers)
+        Err(e) => e.into_response(&headers),
     }
 }
 

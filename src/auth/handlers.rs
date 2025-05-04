@@ -282,9 +282,11 @@ pub async fn logout_handler(
         .map(|cookie| cookie.value().to_string())
         .ok_or(AuthError::NotLoggedIn)?;
 
-    let refresh_token_details =
-        verify_jwt_token(data.auth_config.refresh_token_public_key.clone(), &refresh_token)
-            .map_err(|e| AuthError::InternalServerError(Some(format!("{e:?}"))))?;
+    let refresh_token_details = verify_jwt_token(
+        data.auth_config.refresh_token_public_key.clone(),
+        &refresh_token,
+    )
+    .map_err(|e| AuthError::InternalServerError(Some(format!("{e:?}"))))?;
 
     let mut redis_client = data
         .redis_client
@@ -398,24 +400,30 @@ async fn login_user(
         AuthError::InternalServerError(Some(format!("JWT error: {e}")))
     })?;
 
-    save_token_data_to_redis(data, &access_token_details, data.auth_config.access_token_max_age)
-        .await
-        .map_err(|e: RedisError| {
-            AuthError::InternalServerError(Some(format!("Redis error: {e}")))
-        })?;
+    save_token_data_to_redis(
+        data,
+        &access_token_details,
+        data.auth_config.access_token_max_age,
+    )
+    .await
+    .map_err(|e: RedisError| AuthError::InternalServerError(Some(format!("Redis error: {e}"))))?;
 
-    save_token_data_to_redis(data, &refresh_token_details, data.auth_config.refresh_token_max_age)
-        .await
-        .map_err(|e: RedisError| {
-            AuthError::InternalServerError(Some(format!("Redis error: {e}")))
-        })?;
+    save_token_data_to_redis(
+        data,
+        &refresh_token_details,
+        data.auth_config.refresh_token_max_age,
+    )
+    .await
+    .map_err(|e: RedisError| AuthError::InternalServerError(Some(format!("Redis error: {e}"))))?;
 
     let access_cookie = Cookie::build((
         "access_token",
         access_token_details.token.clone().unwrap_or_default(),
     ))
     .path("/")
-    .max_age(time::Duration::minutes(data.auth_config.access_token_max_age * 60))
+    .max_age(time::Duration::minutes(
+        data.auth_config.access_token_max_age * 60,
+    ))
     .same_site(SameSite::Lax)
     .http_only(true);
 
@@ -424,13 +432,17 @@ async fn login_user(
         refresh_token_details.token.unwrap_or_default(),
     ))
     .path("/")
-    .max_age(time::Duration::minutes(data.auth_config.refresh_token_max_age * 60))
+    .max_age(time::Duration::minutes(
+        data.auth_config.refresh_token_max_age * 60,
+    ))
     .same_site(SameSite::Lax)
     .http_only(true);
 
     let logged_in_cookie = Cookie::build(("logged_in", "true"))
         .path("/")
-        .max_age(time::Duration::minutes(data.auth_config.access_token_max_age * 60))
+        .max_age(time::Duration::minutes(
+            data.auth_config.access_token_max_age * 60,
+        ))
         .same_site(SameSite::Lax)
         .http_only(false);
 

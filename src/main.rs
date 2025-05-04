@@ -13,7 +13,7 @@ mod app;
 mod auth;
 
 use app::config::{AppConfig, SMTPConfig};
-use auth::config::{GoogleOAuthConfig, AuthConfig};
+use auth::config::{AuthConfig, GoogleOAuthConfig};
 use lettre::transport::smtp::PoolConfig;
 use lettre::{AsyncSmtpTransport, Tokio1Executor, transport::smtp::authentication::Credentials};
 use oauth2::reqwest;

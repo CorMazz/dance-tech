@@ -114,3 +114,7 @@ mv htmx.min.js static/js/
 #### `static/` Not Served Properly (404 Errors on Assets)
 
 Ensure you are launching the server from the root of this repository. File paths are relative to the directory that the server is launched from.
+
+## Time Spent
+5/1/2025: 3 hrs
+5/3/2025: 8 hrs

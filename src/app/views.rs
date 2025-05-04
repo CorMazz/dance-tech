@@ -1,11 +1,11 @@
+use crate::app::utils::render;
 use askama::Template;
 use axum::{
     http::StatusCode,
     response::{Html, IntoResponse},
 };
-use crate::app::utils::render;
 
-use super::utils::is_htmx_request; 
+use super::utils::is_htmx_request;
 
 // #######################################################################################################################################################
 // home.html
@@ -15,9 +15,9 @@ use super::utils::is_htmx_request;
 #[template(path = "./primary_templates/home.html", blocks = ["content"])]
 pub struct HomeTemplate {}
 
-/// Serve the home page template. 
-/// 
-/// If the request has the "HX-Request" header, it will return just the primary content block.
+/// Serve the home page template.
+///
+/// If the request is an HTMX request, it will return just the content block.
 pub async fn get_home_page(headers: axum::http::HeaderMap) -> impl IntoResponse {
     let template: HomeTemplate = HomeTemplate {};
 
@@ -27,4 +27,3 @@ pub async fn get_home_page(headers: axum::http::HeaderMap) -> impl IntoResponse 
         (StatusCode::OK, Html(render(template)))
     }
 }
-
