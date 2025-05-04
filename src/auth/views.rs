@@ -1,0 +1,223 @@
+// #######################################################################################################################################################
+// user_dropdown.html
+// #######################################################################################################################################################
+
+use std::sync::Arc;
+
+use askama::Template;
+use axum::extract::{Query, State};
+use axum::response::{Html, IntoResponse, Redirect};
+use axum::{Extension, Form};
+use axum_extra::extract::CookieJar;
+use reqwest::StatusCode;
+use serde::Deserialize;
+
+use crate::AppState;
+use crate::auth::handlers::{
+    google_oauth_callback_handler, google_oauth_init_flow_handler, login_user_handler,
+    logout_handler, register_user_handler, GoogleOAuthCallbackParams,
+};
+use crate::auth::middleware::{AuthError, AuthStatus};
+use crate::auth::models::User;
+
+#[derive(Template)]
+#[template(path = "./partial_templates/user_dropdown.html")]
+pub struct UserDropdownTemplate {
+    user: Option<User>,
+}
+
+pub async fn get_user_dropdown(Extension(auth_status): Extension<AuthStatus>) -> impl IntoResponse {
+    let user = match auth_status {
+        AuthStatus::Authorized(authorized_user) => Some(authorized_user.user),
+        AuthStatus::Unauthorized(_) => None,
+    };
+
+    let template = UserDropdownTemplate { user };
+
+    (StatusCode::OK, Html(template.render().unwrap()))
+}
+
+// #######################################################################################################################################################
+// sign-up.html
+// #######################################################################################################################################################
+
+#[derive(Template)]
+#[template(path = "./auth_templates/sign-up.html")]
+pub struct SignUpTemplate {}
+
+pub async fn get_signup_page() -> impl IntoResponse {
+    let template = SignUpTemplate {};
+
+    (StatusCode::OK, Html(template.render().unwrap()))
+}
+
+#[derive(Debug, Deserialize)]
+pub struct SignUpForm {
+    first_name: String,
+    last_name: String,
+    email: String,
+    password: String,
+    confirm_password: String,
+}
+
+/// All the errors must return the OK status code for HTMX. Also, they must have an outer element with an id of primary-content
+pub async fn post_signup_form(
+    State(data): State<Arc<AppState>>,
+    Form(sign_up): Form<SignUpForm>,
+) -> impl IntoResponse {
+    // Validate form data
+    if sign_up.password != sign_up.confirm_password {
+        return (
+            StatusCode::OK,
+            Html("<h1 id=\"primary-content\">Error: Passwords do not match</h1>"),
+        )
+            .into_response();
+    }
+
+    let user_registered = register_user_handler(
+        data,
+        sign_up.first_name,
+        sign_up.last_name,
+        sign_up.email,
+        sign_up.password,
+    )
+    .await;
+
+    match user_registered {
+        Ok(()) => Redirect::to("/login").into_response(),
+        Err(e) => match e {
+            AuthError::DuplicateEmail => (StatusCode::OK, Html("<h1 id=\"primary-content\">Error: Duplicate Email</h1>")).into_response(),
+            AuthError::InternalServerError(ee) => (StatusCode::OK, Html(format!("<h1 id=\"primary-content\">Error: {ee:?}</h1>"))).into_response(),
+            _ => (StatusCode::INTERNAL_SERVER_ERROR, Html("<h1 id=\"primary-content\">Unexpected error occurred, this should be impossible.</h1>")).into_response() // This should never happen
+        }
+    }
+}
+
+// #######################################################################################################################################################
+// login.html
+// #######################################################################################################################################################
+
+#[derive(Template)]
+#[template(path = "./auth_templates/login.html")]
+pub struct LoginTemplate {
+    is_demo_mode: bool,
+    google_oauth_enabled: bool,
+}
+
+pub async fn get_login_page(State(data): State<Arc<AppState>>) -> impl IntoResponse {
+    let template: LoginTemplate = LoginTemplate {
+        is_demo_mode: data.env.is_demo_mode,
+        google_oauth_enabled: data.google_oauth_config.is_some(),
+    };
+
+    (StatusCode::OK, Html(template.render().unwrap()))
+}
+
+#[derive(Debug, Deserialize)]
+pub struct LoginForm {
+    email: String,
+    password: String,
+}
+
+/// Login form doesn't use HTMX to force reload of the navbar (to get the user in the top right)
+/// thus, the html can return error status codes and the id of the outer element does not matter (unlike signup)
+pub async fn post_login_form(
+    cookie_jar: CookieJar,
+    State(data): State<Arc<AppState>>,
+    Form(login): Form<LoginForm>,
+) -> impl IntoResponse {
+    match login_user_handler(data, cookie_jar, login.email, login.password).await {
+        Ok(response) => response.into_response(),
+        Err(e) => match e {
+            AuthError::InvalidEmailOrPassword => {
+                (StatusCode::OK, Html("<h1>Invalid Email or Password</h1>")).into_response()
+            }
+            AuthError::InternalServerError(ee) => {
+                (StatusCode::OK, Html(format!("Error: {ee:?}"))).into_response()
+            }
+            _ => (
+                StatusCode::OK,
+                Html("<h1>Error: Unexpected error occurred</h1>"),
+            )
+                .into_response(),
+        },
+    }
+}
+
+// #######################################################################################################################################################
+// Google OAuth Endpoints
+// #######################################################################################################################################################
+
+/// Initiate the Google OAuth flow (no view needed, just a redirect)
+pub async fn get_google_oauth_init_flow(
+    State(data): State<Arc<AppState>>,
+    cookie_jar: CookieJar,
+) -> impl IntoResponse {
+    match google_oauth_init_flow_handler(data, cookie_jar).await {
+        Ok(response) => response.into_response(),
+        Err(e) => match e {
+            AuthError::OAuthError(ee) => {
+                (StatusCode::OK, Html(format!("OAuth Error: {ee:?}"))).into_response()
+            }
+            AuthError::InternalServerError(ee) => {
+                (StatusCode::OK, Html(format!("Error: {ee:?}"))).into_response()
+            }
+            _ => (
+                StatusCode::OK,
+                Html("<h1>Error: Unexpected error occurred</h1>"),
+            )
+                .into_response(),
+        },
+    }
+}
+
+/// Handle the Google OAuth callback (no view needed, just a redirect)
+pub async fn get_google_oauth_callback(
+    cookie_jar: CookieJar,
+    State(data): State<Arc<AppState>>,
+    Query(callback_params): Query<GoogleOAuthCallbackParams>,
+) -> impl IntoResponse {
+    match google_oauth_callback_handler(data, cookie_jar, callback_params).await {
+        Ok(response) => response.into_response(),
+        Err(e) => match e {
+            AuthError::OAuthError(ee) => (StatusCode::OK, Html(format!("OAuth Error: {ee:?}"))).into_response(),
+            AuthError::InternalServerError(ee) => (StatusCode::OK, Html(format!("Error: {ee:?}"))).into_response(),
+            AuthError::AccountNotFound => (StatusCode::OK, Html("<h1>You do not yet have an account. Create an account on our sign-up page using your Google account's email address and in the future you will be able to sign in with Google.</h1>".to_string())).into_response(),
+            _ => (StatusCode::OK, Html("<h1>Error: Unexpected error occurred</h1>")).into_response()
+        }
+    }
+}
+
+// #######################################################################################################################################################
+// Logout Endpoint
+// #######################################################################################################################################################
+
+/// Logout the user and return them to the home page
+pub async fn get_logout_page(
+    cookie_jar: CookieJar,
+    State(data): State<Arc<AppState>>,
+    Extension(auth_status): Extension<AuthStatus>,
+) -> impl IntoResponse {
+    // To get to this page requires auth so we can expect an authorized user variant of auth status instaed of autherror
+    let authorized_user = match auth_status {
+        AuthStatus::Authorized(user) => user,
+        AuthStatus::Unauthorized(_) => {
+            panic!("If this happens, check your auth middleware application.")
+        }
+    };
+
+    match logout_handler(cookie_jar, authorized_user, data).await {
+        Ok(response) => response.into_response(),
+        Err(e) => match e {
+            AuthError::NotLoggedIn => Redirect::to("/").into_response(),
+            AuthError::InternalServerError(ee) => {
+                (StatusCode::OK, Html(format!("Error: {ee:?}"))).into_response()
+            }
+            _ => (
+                StatusCode::OK,
+                Html("<h1>Error: Unexpected error occurred</h1>"),
+            )
+                .into_response(),
+        },
+    }
+}

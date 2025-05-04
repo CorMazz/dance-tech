@@ -9,26 +9,23 @@
 #![allow(clippy::module_name_repetitions)]
 #![allow(clippy::multiple_crate_versions)]
 
+mod app;
 mod auth;
-mod config;
-mod router;
-mod utils;
-mod views;
 
+use app::config::SMTPConfig;
 use auth::config::{GoogleOAuthConfig, SecretsConfig};
-use config::SMTPConfig;
 use lettre::transport::smtp::PoolConfig;
 use lettre::{AsyncSmtpTransport, Tokio1Executor, transport::smtp::authentication::Credentials};
 use oauth2::reqwest;
 use std::{sync::Arc, time::Duration};
 
+use app::router::create_router;
 use axum::http::{
     HeaderValue, Method,
     header::{ACCEPT, AUTHORIZATION, CONTENT_TYPE},
 };
 use dotenv::dotenv;
 use redis::Client;
-use router::create_router;
 use sqlx::{Pool, Postgres, postgres::PgPoolOptions};
 use tower_http::cors::CorsLayer;
 

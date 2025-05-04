@@ -1,4 +1,4 @@
-use crate::utils::get_env_var;
+use crate::app::utils::get_env_var;
 use oauth2::{AuthUrl, ClientId, ClientSecret, RedirectUrl, TokenUrl};
 
 #[allow(dead_code)]
