@@ -12,6 +12,7 @@ use axum_extra::extract::CookieJar;
 use reqwest::StatusCode;
 use serde::Deserialize;
 
+use crate::app::utils::render;
 use crate::AppState;
 use crate::auth::handlers::{
     google_oauth_callback_handler, google_oauth_init_flow_handler, login_user_handler,
@@ -98,19 +99,23 @@ pub async fn post_signup_form(
 // #######################################################################################################################################################
 
 #[derive(Template)]
-#[template(path = "./auth_templates/login.html")]
+#[template(path = "./auth_templates/login.html", blocks = ["content"])]
 pub struct LoginTemplate {
     is_demo_mode: bool,
     google_oauth_enabled: bool,
 }
 
-pub async fn get_login_page(State(data): State<Arc<AppState>>) -> impl IntoResponse {
+pub async fn get_login_page(State(data): State<Arc<AppState>>, headers: axum::http::HeaderMap) -> impl IntoResponse {
     let template: LoginTemplate = LoginTemplate {
         is_demo_mode: data.app_config.is_demo_mode,
         google_oauth_enabled: data.google_oauth_config.is_some(),
     };
 
-    (StatusCode::OK, Html(template.render().unwrap()))
+    if headers.contains_key("HX-Request") {
+        (StatusCode::OK, Html(render(template.as_content())))
+    } else {
+        (StatusCode::OK, Html(render(template)))
+    }
 }
 
 #[derive(Debug, Deserialize)]
