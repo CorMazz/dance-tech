@@ -6,13 +6,14 @@ RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
    && apt-get -y install clang lld \
    && apt-get autoremove -y && apt-get clean -y
 
-RUN cargo install sqlx-cli
-RUN cargo install cargo-watch
-
+USER vscode
+ENV RUSTFLAGS="-C link-arg=-fuse-ld=lld"
 ARG RUST_VERSION=1.86
-
-# Install the specified Rust toolchain if it's not already present
-RUN rustup toolchain install ${RUST_VERSION} --no-self-update
 
 # Set the specified Rust toolchain as the default
 RUN rustup default ${RUST_VERSION}
+RUN rustup component add clippy rust-src rustfmt
+
+RUN cargo install sqlx-cli
+RUN cargo install cargo-watch
+
