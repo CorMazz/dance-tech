@@ -23,7 +23,8 @@ use uuid::Uuid;
 use crate::{
     AppState,
     auth::{
-        middleware::{AuthError, AuthorizedUser},
+        errors::AuthError,
+        middleware::AuthorizedUser,
         models::{TokenClaims, TokenDetails, User},
     },
 };

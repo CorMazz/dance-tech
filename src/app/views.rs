@@ -3,7 +3,9 @@ use axum::{
     http::StatusCode,
     response::{Html, IntoResponse},
 };
-use crate::app::utils::render; 
+use crate::app::utils::render;
+
+use super::utils::is_htmx_request; 
 
 // #######################################################################################################################################################
 // home.html
@@ -19,10 +21,9 @@ pub struct HomeTemplate {}
 pub async fn get_home_page(headers: axum::http::HeaderMap) -> impl IntoResponse {
     let template: HomeTemplate = HomeTemplate {};
 
-    if headers.contains_key("HX-Request") {
+    if is_htmx_request(&headers) {
         (StatusCode::OK, Html(render(template.as_content())))
     } else {
-        // Render the full template
         (StatusCode::OK, Html(render(template)))
     }
 }

@@ -13,7 +13,11 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     AppState,
-    auth::{handlers, models::User},
+    auth::{
+        errors::AuthError,
+        handlers,
+        models::User
+    },
 };
 use redis::AsyncCommands;
 
@@ -22,44 +26,6 @@ pub struct AuthorizedUser {
     pub user: User,
     pub access_token_uuid: uuid::Uuid,
 }
-
-#[derive(Debug, Clone)]
-pub enum AuthError {
-    DuplicateEmail,
-    InvalidEmailOrPassword,
-    NotLoggedIn,
-    InternalServerError(Option<String>),
-    InvalidToken,
-    ExpiredSession,
-    InvalidUser,
-    CSRFTokenMismatch,
-    #[allow(clippy::enum_variant_names)]
-    OAuthError(Option<String>),
-    AccountNotFound,
-}
-
-// impl AuthError {
-//     pub fn status_code(&self) -> StatusCode {
-//         match self {
-//             AuthError::NotLoggedIn => StatusCode::UNAUTHORIZED,
-//             AuthError::InternalServerError(_) => StatusCode::INTERNAL_SERVER_ERROR,
-//             AuthError::InvalidToken => StatusCode::UNAUTHORIZED,
-//             AuthError::ExpiredSession => StatusCode::UNAUTHORIZED,
-//             AuthError::InvalidUser => StatusCode::NOT_FOUND,
-//         }
-//     }
-
-//     pub fn message(&self) -> &str {
-//         match self {
-//             AuthError::NotLoggedIn => "Not logged in",
-//             AuthError::InternalServerError(Some(ref details)) => details,
-//             AuthError::InternalServerError(None) => "Something unexpected went wrong.",
-//             AuthError::InvalidToken => "Invalid token",
-//             AuthError::ExpiredSession => "Expired session",
-//             AuthError::InvalidUser => "User no longer exists",
-//         }
-//     }
-// }
 
 #[allow(dead_code)]
 #[derive(Debug, Clone)]

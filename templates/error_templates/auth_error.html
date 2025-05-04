@@ -1,6 +1,6 @@
-{% extends "../extensible_templates/nav_on_top.html" %}
+{% extends "../extensible_templates/main_nav.html" %}
 
-{% block title %}Home{% endblock %}
+{% block title %}Error{% endblock %}
 
 {% block content %}
 <div class="min-h-screen flex items-center justify-center bg-gray-50">
@@ -17,6 +17,14 @@
 
         <p class="text-center text-gray-600 mt-2">We couldn't process your request. Please try again later, or contact support if the issue persists.</p>
 
+        <!-- Divider -->
+        <div class="my-4 border-t border-gray-200"></div>
+
+        <!-- Specific Error Details -->
+        <p class="text-sm text-center text-gray-500 italic">
+            {{ error_message }}
+        </p>
+        
         <div class="mt-6 text-center">
             <a href="/" class="inline-block bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">Go Back Home</a>
         </div>

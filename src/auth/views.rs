@@ -12,13 +12,16 @@ use axum_extra::extract::CookieJar;
 use reqwest::StatusCode;
 use serde::Deserialize;
 
-use crate::app::utils::render;
+use crate::app::utils::{is_htmx_request, render};
 use crate::AppState;
 use crate::auth::handlers::{
     google_oauth_callback_handler, google_oauth_init_flow_handler, login_user_handler,
     logout_handler, register_user_handler, GoogleOAuthCallbackParams,
 };
-use crate::auth::middleware::{AuthError, AuthStatus};
+use crate::auth::{
+    errors::AuthError,
+    middleware::AuthStatus,
+};
 use crate::auth::models::User;
 
 #[derive(Template)]
@@ -63,6 +66,7 @@ pub struct SignUpForm {
 
 /// All the errors must return the OK status code for HTMX. Also, they must have an outer element with an id of primary-content
 pub async fn post_signup_form(
+    headers: axum::http::HeaderMap,
     State(data): State<Arc<AppState>>,
     Form(sign_up): Form<SignUpForm>,
 ) -> impl IntoResponse {
@@ -86,11 +90,7 @@ pub async fn post_signup_form(
 
     match user_registered {
         Ok(()) => Redirect::to("/login").into_response(),
-        Err(e) => match e {
-            AuthError::DuplicateEmail => (StatusCode::OK, Html("<h1 id=\"primary-content\">Error: Duplicate Email</h1>")).into_response(),
-            AuthError::InternalServerError(ee) => (StatusCode::OK, Html(format!("<h1 id=\"primary-content\">Error: {ee:?}</h1>"))).into_response(),
-            _ => (StatusCode::INTERNAL_SERVER_ERROR, Html("<h1 id=\"primary-content\">Unexpected error occurred, this should be impossible.</h1>")).into_response() // This should never happen
-        }
+        Err(e) => e.into_response(&headers)
     }
 }
 
@@ -111,7 +111,7 @@ pub async fn get_login_page(State(data): State<Arc<AppState>>, headers: axum::ht
         google_oauth_enabled: data.google_oauth_config.is_some(),
     };
 
-    if headers.contains_key("HX-Request") {
+    if is_htmx_request(&headers) {
         (StatusCode::OK, Html(render(template.as_content())))
     } else {
         (StatusCode::OK, Html(render(template)))
@@ -128,24 +128,13 @@ pub struct LoginForm {
 /// thus, the html can return error status codes and the id of the outer element does not matter (unlike signup)
 pub async fn post_login_form(
     cookie_jar: CookieJar,
+    headers: axum::http::HeaderMap,
     State(data): State<Arc<AppState>>,
     Form(login): Form<LoginForm>,
 ) -> impl IntoResponse {
     match login_user_handler(data, cookie_jar, login.email, login.password).await {
         Ok(response) => response.into_response(),
-        Err(e) => match e {
-            AuthError::InvalidEmailOrPassword => {
-                (StatusCode::OK, Html("<h1>Invalid Email or Password</h1>")).into_response()
-            }
-            AuthError::InternalServerError(ee) => {
-                (StatusCode::OK, Html(format!("Error: {ee:?}"))).into_response()
-            }
-            _ => (
-                StatusCode::OK,
-                Html("<h1>Error: Unexpected error occurred</h1>"),
-            )
-                .into_response(),
-        },
+        Err(e) => e.into_response(&headers)
     }
 }
 
@@ -157,39 +146,24 @@ pub async fn post_login_form(
 pub async fn get_google_oauth_init_flow(
     State(data): State<Arc<AppState>>,
     cookie_jar: CookieJar,
+    headers: axum::http::HeaderMap,
 ) -> impl IntoResponse {
     match google_oauth_init_flow_handler(data, cookie_jar).await {
         Ok(response) => response.into_response(),
-        Err(e) => match e {
-            AuthError::OAuthError(ee) => {
-                (StatusCode::OK, Html(format!("OAuth Error: {ee:?}"))).into_response()
-            }
-            AuthError::InternalServerError(ee) => {
-                (StatusCode::OK, Html(format!("Error: {ee:?}"))).into_response()
-            }
-            _ => (
-                StatusCode::OK,
-                Html("<h1>Error: Unexpected error occurred</h1>"),
-            )
-                .into_response(),
-        },
+        Err(e) => e.into_response(&headers)
     }
 }
 
 /// Handle the Google OAuth callback (no view needed, just a redirect)
 pub async fn get_google_oauth_callback(
     cookie_jar: CookieJar,
+    headers: axum::http::HeaderMap,
     State(data): State<Arc<AppState>>,
     Query(callback_params): Query<GoogleOAuthCallbackParams>,
 ) -> impl IntoResponse {
     match google_oauth_callback_handler(data, cookie_jar, callback_params).await {
         Ok(response) => response.into_response(),
-        Err(e) => match e {
-            AuthError::OAuthError(ee) => (StatusCode::OK, Html(format!("OAuth Error: {ee:?}"))).into_response(),
-            AuthError::InternalServerError(ee) => (StatusCode::OK, Html(format!("Error: {ee:?}"))).into_response(),
-            AuthError::AccountNotFound => (StatusCode::OK, Html("<h1>You do not yet have an account. Create an account on our sign-up page using your Google account's email address and in the future you will be able to sign in with Google.</h1>".to_string())).into_response(),
-            _ => (StatusCode::OK, Html("<h1>Error: Unexpected error occurred</h1>")).into_response()
-        }
+        Err(e) => e.into_response(&headers)
     }
 }
 
@@ -200,6 +174,7 @@ pub async fn get_google_oauth_callback(
 /// Logout the user and return them to the home page
 pub async fn get_logout_page(
     cookie_jar: CookieJar,
+    headers: axum::http::HeaderMap,
     State(data): State<Arc<AppState>>,
     Extension(auth_status): Extension<AuthStatus>,
 ) -> impl IntoResponse {
@@ -215,14 +190,7 @@ pub async fn get_logout_page(
         Ok(response) => response.into_response(),
         Err(e) => match e {
             AuthError::NotLoggedIn => Redirect::to("/").into_response(),
-            AuthError::InternalServerError(ee) => {
-                (StatusCode::OK, Html(format!("Error: {ee:?}"))).into_response()
-            }
-            _ => (
-                StatusCode::OK,
-                Html("<h1>Error: Unexpected error occurred</h1>"),
-            )
-                .into_response(),
+            _ => e.into_response(&headers),
         },
     }
 }
