@@ -7,6 +7,9 @@ services:
       - ../.env_prod
     volumes:
       - ../..:/workspaces:cached
+      - ${HOME}/.config/nvim:/root/.config/nvim:rw  # If using neovim, uncomment these three lines
+      - ${HOME}/.local/share/nvim:/root/.local/share/nvim:rw
+      - ${HOME}/.cache/nvim:/root/.cache/nvim:rw
     command: sleep infinity
     depends_on:
       - postgres

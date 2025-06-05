@@ -2,7 +2,7 @@
 
 ## About
 
-This is a 4 pronged dance technology infrastructure setup, originally created for the Greenville Westies, but designed with flexiblity in mind.
+This is a 4-pronged dance technology infrastructure setup, originally created for the Greenville Westies, but designed with flexiblity in mind.
 
 ### Architecture
 
@@ -51,6 +51,14 @@ for the dev container, and the other docker files out here define how to create 
 #### Development Environment
 
 The dev environment for this project is a dev container. The dev container pins the `rust` version. To update that, configure the `.devcontainer/Dockerfile`.
+
+##### VSCode Development
+
+To use `vscode` to develop, uncomment the line that says 'uncomment me for vscode' in the `.devcontainer/Dockerfile` and comment out the `neovim` section. Similarly, comment out the `neovim` volume mappings in the `.devcontainer/docker-compose.yml` file. Then using the command menu, open the root of this repository as a dev container. You are now setup.
+
+##### Neovim Development
+
+The repository is currently set to use `neovim` for development. To start the dev container ecosystem, run the command `sudo -E docker compose up --build` from the root of this repository. Then, to develop within that container, run `sudo docker ps`, and get the name of the `app` container. Then run the command `sudo docker exec -it devcontainer-app-1 bash`. You are now within the container and should be able to use `neovim`. Note that there are volume mappings to get your current `neovim` settings from your home directory (this is why we run `sudo **-E** docker compose up`). You will need to manually run the commands to migrate the database: `sqlx database create && sqlx migrate run` the first time you start the dev container ecosystem. This can be done once `exec'ed` into the dev container.
 
 #### Environment Variables
 
