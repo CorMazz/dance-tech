@@ -11,6 +11,8 @@ services:
       - ${HOME}/.local/share/nvim:/root/.local/share/nvim:rw
       - ${HOME}/.cache/nvim:/root/.cache/nvim:rw
     command: sleep infinity
+    ports:
+      - "8000:8000"
     depends_on:
       - postgres
       - redis
