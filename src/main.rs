@@ -11,9 +11,10 @@
 
 mod app;
 mod auth;
-
+mod check_in;
 use app::config::{AppConfig, SMTPConfig};
 use auth::config::{AuthConfig, GoogleOAuthConfig};
+use check_in::config::CheckInConfig;
 use lettre::transport::smtp::PoolConfig;
 use lettre::{AsyncSmtpTransport, Tokio1Executor, transport::smtp::authentication::Credentials};
 use oauth2::reqwest;
@@ -35,6 +36,7 @@ pub struct AppState {
     db: Pool<Postgres>,
     app_config: AppConfig,
     auth_config: AuthConfig,
+    check_in_config: CheckInConfig,
     redis_client: Client,
     smtp_config: Option<SMTPConfig>,
     smtp_mailer: Option<AsyncSmtpTransport<Tokio1Executor>>,
@@ -73,6 +75,10 @@ async fn main() {
         });
 
     let google_oauth_config = GoogleOAuthConfig::init();
+
+    let check_in_config = CheckInConfig::init();
+
+    println!("{:?}", check_in_config);
 
     let pool = match PgPoolOptions::new()
         .max_connections(10)
@@ -117,6 +123,7 @@ async fn main() {
         db: pool.clone(),
         app_config: app_config.clone(),
         auth_config: auth_config.clone(),
+        check_in_config: check_in_config.clone(),
         smtp_config,
         smtp_mailer,
         google_oauth_config,

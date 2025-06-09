@@ -23,3 +23,12 @@ pub fn render<T: Template>(template: T) -> Html<String> {
 pub fn is_htmx_request(headers: &axum::http::HeaderMap) -> bool {
     headers.contains_key("HX-Request")
 }
+
+/// The generic template to render all errors for the application.
+///
+/// The errors themselves implement IntoResponse to render into this template.
+#[derive(Template)]
+#[template(path = "./primary_templates/error.html", blocks = ["content"])]
+pub struct ErrorTemplate {
+    pub error_message: String,
+}

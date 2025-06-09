@@ -1,0 +1,20 @@
+- name: "Social Dance"
+  id: "social-dance"
+  description: "Join us for a fun night of social dancing with the community."
+  price: 500
+
+- name: "Beginner Lesson"
+  id: "beginner-lesson"
+  description: "Start your West Coast Swing journey with our beginner class."
+  price: 500
+
+- name: "Beginner+ Lesson"
+  id: "beginner-plus-lesson"
+  description: "A stepping stone between beginner and advanced for refining your skills."
+  price: 500
+
+- name: "Advanced Lesson"
+  id: "advanced-lesson"
+  description: "Push your dance skills with our advanced-level material."
+  price: 1000
+

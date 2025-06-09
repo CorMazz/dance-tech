@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use axum::{Router, middleware, routing::get};
+use axum::{Router, middleware, routing::{get, post}};
 
 use crate::{
     AppState,
@@ -10,6 +10,9 @@ use crate::{
         get_google_oauth_callback, get_google_oauth_init_flow, get_login_page, get_logout_page,
         get_signup_page, get_user_dropdown, post_login_form, post_signup_form,
     },
+    check_in::views::{
+        get_check_in_page, post_create_check_out_session
+    }
 };
 
 use tower_http::services::ServeDir;
@@ -25,9 +28,11 @@ pub fn create_router(app_state: Arc<AppState>) -> Router {
         .route("/", get(get_home_page))
         .route("/sign-up", get(get_signup_page).post(post_signup_form))
         .route("/login", get(get_login_page).post(post_login_form))
+        .route("/check-in", get(get_check_in_page))
+        .route("/create-checkout-session/{product}", post(post_create_check_out_session))
         .route("/private/user-dropdown", get(get_user_dropdown));
 
-    // Anything in here does not require authentication
+    // Anything in here does not even check authentication
     let no_auth = Router::new()
         .route("/auth/google", get(get_google_oauth_init_flow))
         .route("/auth/google/callback", get(get_google_oauth_callback));

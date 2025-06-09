@@ -1,4 +1,4 @@
-//! Error types for authentication operations.
+//! Error types for check-in operations.
 
 use axum::response::IntoResponse;
 use thiserror::Error;
@@ -7,42 +7,15 @@ use crate::app::utils::{is_htmx_request, render, ErrorTemplate};
 
 
 #[derive(Debug, Clone, Error)]
-pub enum AuthError {
-    #[error("This email address is already in use.")]
-    DuplicateEmail,
-
-    #[error("Invalid email or password.")]
-    InvalidEmailOrPassword,
-
-    #[error("You must be logged in to access this resource.")]
-    NotLoggedIn,
-
+pub enum CheckInError {
     #[error("An internal server error occurred: {0:?}")]
     InternalServerError(Option<String>),
 
-    #[error("The provided token is invalid.")]
-    InvalidToken,
-
-    #[error("Your session has expired.")]
-    ExpiredSession,
-
-    #[error("Invalid user.")]
-    InvalidUser,
-
-    #[error("CSRF token mismatch.")]
-    CSRFTokenMismatch,
-
-    #[allow(clippy::enum_variant_names)]
-    #[error("OAuth error: {0:?}")]
-    OAuthError(Option<String>),
-
-    #[error(
-        "Account not found. Please create an account on our service first, then if desired you can sign in with your Google account."
-    )]
-    AccountNotFound,
+    #[error("Invalid product requested: {0:?}")]
+    InvalidProduct(String)
 }
 
-impl AuthError {
+impl CheckInError {
     /// Render the error into the `ErrorTemplate`.
     ///
     /// If the request is an HTMX request, it will render just the content block.
@@ -57,10 +30,6 @@ impl AuthError {
                     details.as_deref().unwrap_or("")
                 )
             }
-            Self::OAuthError(details) => format!(
-                "There was an OAuth error. {}",
-                details.as_deref().unwrap_or("No additional information.")
-            ),
             _ => self.to_string(),
         };
 

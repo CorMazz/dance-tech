@@ -124,7 +124,7 @@ pub struct LoginForm {
     password: String,
 }
 
-/// Login form doesn't use HTMX to force reload of the navbar (to get the user in the top right)
+/// Login form doesn't use HTMX, forcing reload of the navbar (to get the user in the top right)
 /// thus, the html can return error status codes and the id of the outer element does not matter (unlike signup)
 pub async fn post_login_form(
     cookie_jar: CookieJar,

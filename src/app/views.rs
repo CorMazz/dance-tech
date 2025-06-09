@@ -1,11 +1,10 @@
 use crate::app::utils::render;
+use crate::app::utils::is_htmx_request;
 use askama::Template;
 use axum::{
     http::StatusCode,
     response::{Html, IntoResponse},
 };
-
-use super::utils::is_htmx_request;
 
 // #######################################################################################################################################################
 // home.html
@@ -27,3 +26,4 @@ pub async fn get_home_page(headers: axum::http::HeaderMap) -> impl IntoResponse 
         (StatusCode::OK, Html(render(template)))
     }
 }
+

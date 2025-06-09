@@ -17,14 +17,19 @@ RUN rustup component add clippy rust-src rustfmt rust-analyzer
 RUN cargo install sqlx-cli
 RUN cargo install cargo-watch
 
-# If using neovim keep the following uncommented
+###############################################################################################################
+# Keep me to use Neovim
+###############################################################################################################
 
+# Installing Neovim
 RUN curl -LO https://github.com/neovim/neovim/releases/latest/download/nvim-linux-x86_64.tar.gz
 RUN sudo rm -rf /opt/nvim
 RUN sudo tar -C /opt -xzf nvim-linux-x86_64.tar.gz
 RUN rm nvim-linux-x86_64.tar.gz
 RUN echo 'export PATH="$PATH:/opt/nvim-linux-x86_64/bin"' >> root/.bashrc
 RUN echo 'alias nv="nvim"' >> root/.bashrc
+
+# Install nvm to then install Node and npm
 
 # Use bash for the shell
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
@@ -38,3 +43,10 @@ RUN echo '. "${BASH_ENV}"' >> root/.bashrc
 RUN curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.2/install.sh | PROFILE="${BASH_ENV}" bash
 RUN echo node > .nvmrc
 RUN nvm install node --lts
+
+# Install ripgrep
+RUN curl -LO https://github.com/BurntSushi/ripgrep/releases/download/14.1.1/ripgrep-14.1.1-x86_64-unknown-linux-musl.tar.gz
+RUN sudo tar -C /opt -xzf ripgrep-14.1.1-x86_64-unknown-linux-musl.tar.gz 
+RUN rm ripgrep-14.1.1-x86_64-unknown-linux-musl.tar.gz
+RUN echo 'export PATH=$PATH:/opt/ripgrep-14.1.1-x86_64-unknown-linux-musl' >> root/.bashrc
+
