@@ -8,6 +8,17 @@ pub struct Product {
     pub id: String,
     /// A description to be displayed to the user. Make it pretty.
     pub description: String,
-    /// Price, in cents
-    pub price: u64     
+    /// Price to be displayed, ie "$5"
+    pub price: String,
+    /// Price ID from Stripe
+    pub price_id: String
+}
+
+#[derive(Deserialize, Debug)]
+/// The response from the Stripe Checkout Session API.
+///
+/// Used to let us direct users to Stripe to enact payment.
+pub struct CheckoutSessionResponse {
+    /// The Stripe url we need to redirect the user to.
+    pub url: String
 }

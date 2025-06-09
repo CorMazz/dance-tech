@@ -1,3 +1,6 @@
+# The base url that the site will be hosted on. Used for redirects from Stripe and Google OAuth 
+SITE_URL=""
+
 SIGNUP_LICENSING_KEY=coryisthebest
 
 # Set to empty strings after the equal sign if not enabling email functionality
@@ -10,7 +13,6 @@ SMTP_USER_EMAIL=
 GOOGLE_OAUTH_CLIENT_ID=""
 GOOGLE_OAUTH_CLIENT_SECRET=""
 GOOGLE_OAUTH_AUTH_URI="https://accounts.google.com/o/oauth2/auth"
-GOOGLE_OAUTH_REDIRECT_URI=""
 GOOGLE_OAUTH_TOKEN_URI="https://oauth2.googleapis.com/token"
 
 # This is required right now.

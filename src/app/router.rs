@@ -4,7 +4,7 @@ use axum::{Router, middleware, routing::{get, post}};
 
 use crate::{
     AppState,
-    app::views::get_home_page,
+    app::views::{get_home_page, error_404_page},
     auth::middleware::{check_auth_middleware, require_auth_middleware},
     auth::views::{
         get_google_oauth_callback, get_google_oauth_init_flow, get_login_page, get_logout_page,
@@ -16,6 +16,8 @@ use crate::{
 };
 
 use tower_http::services::ServeDir;
+
+use crate::app::constants::GOOGLE_OAUTH_CALLBACK_PATH;
 
 pub fn create_router(app_state: Arc<AppState>) -> Router {
 
@@ -35,7 +37,7 @@ pub fn create_router(app_state: Arc<AppState>) -> Router {
     // Anything in here does not even check authentication
     let no_auth = Router::new()
         .route("/auth/google", get(get_google_oauth_init_flow))
-        .route("/auth/google/callback", get(get_google_oauth_callback));
+        .route(GOOGLE_OAUTH_CALLBACK_PATH, get(get_google_oauth_callback));
 
     // Do not edit this unless necessary. Add routes to the router subsections above this
     Router::new()
@@ -54,6 +56,7 @@ pub fn create_router(app_state: Arc<AppState>) -> Router {
         
         // Anything above this line checks if the user is logged in and adds an AuthStatus extension to the request
         .merge(no_auth)
+        .fallback(error_404_page)
         .with_state(app_state)
         .nest_service("/static", ServeDir::new("static/"))
 }

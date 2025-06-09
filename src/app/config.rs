@@ -1,5 +1,7 @@
 use crate::app::utils::get_env_var;
 use serde::{Deserialize, Serialize};
+use tracing::info;
+use url::Url;
 
 #[derive(Debug, Clone)]
 pub struct AppConfig {
@@ -7,6 +9,7 @@ pub struct AppConfig {
     pub server_port: i64,
     pub database_url: String,
     pub redis_url: String,
+    pub site_url: Url
 }
 
 impl AppConfig {
@@ -17,12 +20,18 @@ impl AppConfig {
             .expect("Server port (ENV_VAR=SERVER_PORT) should be an integer.");
         let database_url = get_env_var("DATABASE_URL");
         let redis_url = get_env_var("REDIS_URL");
+        let raw_site_url = get_env_var("SITE_URL");
+        let site_url = Url::parse(&raw_site_url)
+            .unwrap_or_else(|err| {
+                panic!("Failed to parse SITE_URL '{raw_site_url}': {err}")
+            });
 
         Self {
             is_demo_mode,
             server_port,
             database_url,
             redis_url,
+            site_url
         }
     }
 }
@@ -49,29 +58,29 @@ impl SMTPConfig {
             user_email.as_str(),
         ) {
             ("", "", "", "") => {
-                println!(
+                info!(
                     "\nEmail functionality disabled since all SMTP environment variables were left blank."
                 );
                 None
             }
             ("", _, _, _) => {
-                println!("\nEmail functionality disabled: missing SMTP_SERVER_HOST.");
+                info!("\nEmail functionality disabled: missing SMTP_SERVER_HOST.");
                 None
             }
             (_, "", _, _) => {
-                println!("\nEmail functionality disabled: missing SMTP_USER_LOGIN.");
+                info!("\nEmail functionality disabled: missing SMTP_USER_LOGIN.");
                 None
             }
             (_, _, "", _) => {
-                println!("\nEmail functionality disabled: missing SMTP_USER_PASSWORD.");
+                info!("\nEmail functionality disabled: missing SMTP_USER_PASSWORD.");
                 None
             }
             (_, _, _, "") => {
-                println!("\nEmail functionality disabled: missing SMTP_USER_EMAIL.");
+                info!("\nEmail functionality disabled: missing SMTP_USER_EMAIL.");
                 None
             }
             (host, user, password, email) => {
-                println!(
+                info!(
                     "\nEmail functionality is enabled with the following settings:\n\tServer: {host}\n\tUsername: {user}\n\tEmail: {email}\n"
                 );
 

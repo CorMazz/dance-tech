@@ -17,6 +17,7 @@ use oauth2::{
 };
 use serde::Deserialize;
 use sqlx::{Pool, Postgres};
+use tracing::error;
 use std::sync::Arc;
 use uuid::Uuid;
 
@@ -191,8 +192,8 @@ pub async fn google_oauth_callback_handler(
     }
 
     let config = data.google_oauth_config.as_ref().ok_or_else(|| {
-        eprintln!("Google OAuth config is missing.");
-        AuthError::OAuthError(Some("OAuth config not found.".to_string()))
+        error!("Google OAuth config is missing.");
+        AuthError::OAuthError(Some("OAuth config not found. That means Google OAuth isn't intended to be accessed. Did you manually type in this endpoint?".to_string()))
     })?;
 
     let oauth_client = BasicClient::new(config.client_id.clone())

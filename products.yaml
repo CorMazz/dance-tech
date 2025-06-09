@@ -1,20 +1,22 @@
+# This file will eventually be made obsolete as we will dynamically retrieve products from Stripe's API
+
 - name: "Social Dance"
-  id: "social-dance"
+  id: "prod_SRkFO2xHNexIoT"
   description: "Join us for a fun night of social dancing with the community."
-  price: 500
+  price_id: "price_1RWqlNQ2wtFMkx0YHyrIPuFM"
+  price: "$5"
+# - name: "Beginner Lesson"
+#   id: "beginner-lesson"
+#   description: "Start your West Coast Swing journey with our beginner class."
+#   price: 500
+#
+# - name: "Beginner+ Lesson"
+#   id: "beginner-plus-lesson"
+#   description: "A stepping stone between beginner and advanced for refining your skills."
+#   price: 500
 
-- name: "Beginner Lesson"
-  id: "beginner-lesson"
-  description: "Start your West Coast Swing journey with our beginner class."
-  price: 500
-
-- name: "Beginner+ Lesson"
-  id: "beginner-plus-lesson"
-  description: "A stepping stone between beginner and advanced for refining your skills."
-  price: 500
-
-- name: "Advanced Lesson"
-  id: "advanced-lesson"
+- name: "Advanced Lesson + Social"
+  id: "prod_SRkHmJL8FGGjTF"
   description: "Push your dance skills with our advanced-level material."
-  price: 1000
-
+  price_id: "price_1RWqnPQ2wtFMkx0YXDSw4GiG"
+  price: "$10"

@@ -9,6 +9,8 @@
 #![allow(clippy::module_name_repetitions)]
 #![allow(clippy::multiple_crate_versions)]
 
+use tracing::{error, info};
+use tracing_subscriber::util::SubscriberInitExt;
 mod app;
 mod auth;
 mod check_in;
@@ -18,6 +20,9 @@ use check_in::config::CheckInConfig;
 use lettre::transport::smtp::PoolConfig;
 use lettre::{AsyncSmtpTransport, Tokio1Executor, transport::smtp::authentication::Credentials};
 use oauth2::reqwest;
+use tower_http::trace::TraceLayer;
+use tracing_subscriber::layer::SubscriberExt;
+use tracing_subscriber::{fmt, EnvFilter};
 use std::{sync::Arc, time::Duration};
 
 use app::router::create_router;
@@ -38,9 +43,13 @@ pub struct AppState {
     auth_config: AuthConfig,
     check_in_config: CheckInConfig,
     redis_client: Client,
+    /// Configuration for the SMTP mailing. None if email functionality is not required.
     smtp_config: Option<SMTPConfig>,
+    /// The actual SMTP mailer. None if email functionality is not required.
     smtp_mailer: Option<AsyncSmtpTransport<Tokio1Executor>>,
+    /// Configuration for sign-in with Google OAuth. None if Google sign-in is not required.
     google_oauth_config: Option<GoogleOAuthConfig>,
+    /// An HTTP client used to make requests to the Stripe API and Google OAuth endpoints.
     http_client: reqwest::Client,
 }
 
@@ -48,6 +57,11 @@ pub struct AppState {
 async fn main() {
     dotenv().ok();
 
+    tracing_subscriber::registry()
+        .with(EnvFilter::from_default_env())
+        .with(fmt::layer().pretty())
+        .init();
+    
     let app_config = AppConfig::init();
     let auth_config = AuthConfig::init();
 
@@ -68,7 +82,7 @@ async fn main() {
                         .build(),
                 ),
                 Err(e) => {
-                    eprintln!("Error: Unable to connect to email server: {e}");
+                    error!("Error: Unable to connect to email server: {e}");
                     None
                 }
             }
@@ -78,30 +92,28 @@ async fn main() {
 
     let check_in_config = CheckInConfig::init();
 
-    println!("{:?}", check_in_config);
-
     let pool = match PgPoolOptions::new()
         .max_connections(10)
         .connect(&app_config.database_url)
         .await
     {
         Ok(pool) => {
-            println!("✅ Connection to the database is successful!");
+            info!("✅ Connection to the database is successful!");
             pool
         }
         Err(e) => {
-            println!("🔥 Failed to connect to the database: {e:?}");
+            error!("🔥 Failed to connect to the database: {e:?}");
             std::process::exit(1);
         }
     };
 
     let redis_client = match Client::open(app_config.redis_url.clone()) {
         Ok(client) => {
-            println!("✅ Connection to the redis server is successful!");
+            info!("✅ Connection to the redis server is successful!");
             client
         }
         Err(e) => {
-            println!("🔥 Error connecting to Redis: {e}");
+            error!("🔥 Error connecting to Redis: {e}");
             std::process::exit(1);
         }
     };
@@ -130,9 +142,11 @@ async fn main() {
         http_client,
         redis_client: redis_client.clone(),
     }))
-    .layer(cors);
+    .layer(cors)
+    .layer(TraceLayer::new_for_http());
 
-    println!(
+
+    info!(
         "🚀 Server started successfully on port {}",
         app_config.server_port
     );
