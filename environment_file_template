@@ -1,3 +1,8 @@
+DEMO_MODE=false
+
+# One of error, warn, info, debug, trace. Changes the log level output to stdout
+RUST_LOG=
+
 # The base url that the site will be hosted on. Used for redirects from Stripe and Google OAuth 
 SITE_URL=""
 

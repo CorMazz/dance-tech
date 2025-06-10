@@ -126,3 +126,5 @@ Ensure you are launching the server from the root of this repository. File paths
 ## Time Spent
 5/1/2025: 3 hrs
 5/3/2025: 8 hrs
+6/8/2025: 4 hrs
+6/9/2025: 7 hrs
