@@ -13,8 +13,7 @@ use crate::{
 
 use tower_http::services::ServeDir;
 
-use crate::app::constants::{GOOGLE_OAUTH_CALLBACK_PATH, STRIPE_SUCCESS_CALLBACK_PATH};
-
+use crate::app::constants::{GOOGLE_OAUTH_CALLBACK_PATH, STRIPE_SUCCESS_CALLBACK_PATH, CHECK_IN_PATH};
 
 pub fn create_router(app_state: Arc<AppState>) -> Router {
 
@@ -27,7 +26,7 @@ pub fn create_router(app_state: Arc<AppState>) -> Router {
         .route("/", get(get_home_page))
         .route("/sign-up", get(get_signup_page).post(post_signup_form))
         .route("/login", get(get_login_page).post(post_login_form))
-        .route("/check-in", get(get_check_in_page))
+        .route(CHECK_IN_PATH, get(get_check_in_page))
         .route("/create-checkout-session/{product}", post(post_create_check_out_session))
         .route(STRIPE_SUCCESS_CALLBACK_PATH, get(get_successful_checkout_session)) 
         .route("/private/user-dropdown", get(get_user_dropdown));

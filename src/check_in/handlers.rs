@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use axum::response::Redirect;
 use tracing::{debug, error};
 
-use crate::{app::constants::{STRIPE_CANCEL_CALLBACK_PATH, STRIPE_SUCCESS_CALLBACK_PATH}, check_in::{errors::CheckInError, models::{CheckoutSessionResponse, StripeCheckoutSession}}, AppState};
+use crate::{app::constants::{CHECK_IN_PATH, STRIPE_SUCCESS_CALLBACK_PATH}, check_in::{errors::CheckInError, models::{CheckoutSessionResponse, StripeCheckoutSession}}, AppState};
 
 /// Use Stripe's checkout API to direct the user to a payment page.
 #[tracing::instrument(skip(data))]
@@ -24,7 +24,7 @@ pub async fn create_stripe_checkout_session_handler(
     success_url.set_query(Some("session_id={CHECKOUT_SESSION_ID}")); 
 
     let mut cancel_url = data.app_config.site_url.clone();
-    cancel_url.set_path(STRIPE_CANCEL_CALLBACK_PATH);
+    cancel_url.set_path(CHECK_IN_PATH);
 
     let mut params = HashMap::new();
     params.insert("success_url".to_string(), success_url.to_string());
