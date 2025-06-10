@@ -3,8 +3,7 @@ use std::collections::HashMap;
 use axum::response::Redirect;
 use tracing::{debug, error};
 
-use crate::{app::constants::{STRIPE_CANCEL_CALLBACK_PATH, STRIPE_SUCCESS_CALLBACK_PATH}, check_in::{errors::CheckInError, models::CheckoutSessionResponse}, AppState};
-
+use crate::{app::constants::{STRIPE_CANCEL_CALLBACK_PATH, STRIPE_SUCCESS_CALLBACK_PATH}, check_in::{errors::CheckInError, models::{CheckoutSessionResponse, StripeCheckoutSession}}, AppState};
 
 /// Use Stripe's checkout API to direct the user to a payment page.
 #[tracing::instrument(skip(data))]
@@ -21,7 +20,8 @@ pub async fn create_stripe_checkout_session_handler(
         })?;
 
     let mut success_url = data.app_config.site_url.clone();
-    success_url.set_path(&(STRIPE_SUCCESS_CALLBACK_PATH.to_owned() + "?session_id={CHECKOUT_SESSION_ID}"));
+    success_url.set_path(STRIPE_SUCCESS_CALLBACK_PATH);
+    success_url.set_query(Some("session_id={CHECKOUT_SESSION_ID}")); 
 
     let mut cancel_url = data.app_config.site_url.clone();
     cancel_url.set_path(STRIPE_CANCEL_CALLBACK_PATH);
@@ -62,7 +62,7 @@ pub async fn create_stripe_checkout_session_handler(
                 CheckInError::InternalServerError(Some(message.to_string()))
             })?;
 
-        debug!(%status, parsed_response = ?session, full_response = %body, "Stripe API Response (Success)");
+        debug!(%status, parsed_response = ?session, full_response = %body, "Stripe Create Session API Response (Success)");
         Ok(Redirect::to(&session.url))
     } else {
         error!(%status, %body, "Stripe API returned an error");
@@ -70,3 +70,41 @@ pub async fn create_stripe_checkout_session_handler(
     }
 }
 
+
+#[tracing::instrument(skip(data))]
+pub async fn get_successful_checkout_session_handler(
+    data: &AppState,
+    session_id: &str,
+) -> Result<bool, CheckInError> {
+    let url = format!("https://api.stripe.com/v1/checkout/sessions/{session_id}");
+
+    let client = reqwest::Client::new();
+    let res = client
+        .get(&url)
+        .basic_auth(&data.check_in_config.secret_key, Some(""))
+        .send()
+        .await
+        .map_err(|err| {
+            error!(%err, "Error querying Stripe for session info");
+            CheckInError::InternalServerError(Some("Failed to contact Stripe.".into()))
+        })?;
+
+    let status = res.status();
+    let body = res.text().await.map_err(|err| {
+        error!(%err, "Failed to read Stripe response body");
+        CheckInError::InternalServerError(Some("Stripe response body could not be read".into()))
+    })?;
+
+    if !status.is_success() {
+        error!(%status, %body, "Stripe returned an error for session status lookup");
+        return Err(CheckInError::StripeApiError);
+    } 
+
+    let session: StripeCheckoutSession = serde_json::from_str(&body).map_err(|err| {
+        error!(%err, %body, "Failed to parse Stripe session response");
+        CheckInError::InternalServerError(Some("Invalid Stripe response format.".into()))
+    })?;
+     debug!(%status, parsed_response = ?session, full_response = %body, "Stripe Verify Session API Response (Success)");
+
+    Ok(session.payment_status == "paid")
+}

@@ -6,6 +6,6 @@
 //! TODO: Put all path fragments into this file within a module, and make the templates accept the
 //! paths
 pub const GOOGLE_OAUTH_CALLBACK_PATH: &str = "/auth/google/callback";
-pub const STRIPE_SUCCESS_CALLBACK_PATH: &str = "/success";
-pub const STRIPE_CANCEL_CALLBACK_PATH: &str = "/cancel";
+pub const STRIPE_SUCCESS_CALLBACK_PATH: &str = "/stripe/success";
+pub const STRIPE_CANCEL_CALLBACK_PATH: &str = "/stripe/cancel";
 

@@ -3,21 +3,18 @@ use std::sync::Arc;
 use axum::{Router, middleware, routing::{get, post}};
 
 use crate::{
-    AppState,
-    app::views::{get_home_page, error_404_page},
-    auth::middleware::{check_auth_middleware, require_auth_middleware},
-    auth::views::{
+    app::views::{error_404_page, get_home_page}, auth::{middleware::{check_auth_middleware, require_auth_middleware}, views::{
         get_google_oauth_callback, get_google_oauth_init_flow, get_login_page, get_logout_page,
         get_signup_page, get_user_dropdown, post_login_form, post_signup_form,
-    },
-    check_in::views::{
-        get_check_in_page, post_create_check_out_session
-    }
+    }}, check_in::views::{
+        get_check_in_page, get_successful_checkout_session, post_create_check_out_session
+    }, AppState
 };
 
 use tower_http::services::ServeDir;
 
-use crate::app::constants::GOOGLE_OAUTH_CALLBACK_PATH;
+use crate::app::constants::{GOOGLE_OAUTH_CALLBACK_PATH, STRIPE_SUCCESS_CALLBACK_PATH};
+
 
 pub fn create_router(app_state: Arc<AppState>) -> Router {
 
@@ -32,6 +29,7 @@ pub fn create_router(app_state: Arc<AppState>) -> Router {
         .route("/login", get(get_login_page).post(post_login_form))
         .route("/check-in", get(get_check_in_page))
         .route("/create-checkout-session/{product}", post(post_create_check_out_session))
+        .route(STRIPE_SUCCESS_CALLBACK_PATH, get(get_successful_checkout_session)) 
         .route("/private/user-dropdown", get(get_user_dropdown));
 
     // Anything in here does not even check authentication
