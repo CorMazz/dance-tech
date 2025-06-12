@@ -1,20 +1,24 @@
+use crate::app::constants::CHECK_IN_PATH;
 use crate::AppState;
 use crate::app::utils::is_htmx_request;
 use crate::app::utils::render;
 use crate::check_in::handlers::create_stripe_checkout_session;
-use crate::check_in::handlers::get_stripe_products;
 use crate::check_in::handlers::verify_successful_checkout_session;
 use crate::check_in::models::Product;
 use askama::Template;
 use axum::extract::Path;
 use axum::extract::Query;
 use axum::extract::State;
+use axum::response::Redirect;
 use axum::{
     http::StatusCode,
     response::{Html, IntoResponse},
 };
 use serde::Deserialize;
+use tracing::error;
 use std::sync::Arc;
+
+use crate::check_in::handlers::get_products_from_actor;
 
 // #######################################################################################################################################################
 // check_in.html
@@ -36,14 +40,16 @@ pub async fn get_check_in_page(
     State(data): State<Arc<AppState>>,
     headers: axum::http::HeaderMap,
 ) -> impl IntoResponse {
-    let products = data.check_in_config.products.values().cloned().collect();
-
+    let products = match get_products_from_actor(&data).await {
+        Ok(products) => products,
+        Err(err) => return err.into_response(&headers)
+    };
     let template = CheckInTemplate { products };
 
     if is_htmx_request(&headers) {
-        (StatusCode::OK, Html(render(template.as_content())))
+        (StatusCode::OK, Html(render(template.as_content()))).into_response()
     } else {
-        (StatusCode::OK, Html(render(template)))
+        (StatusCode::OK, Html(render(template))).into_response()
     }
 }
 
@@ -57,11 +63,11 @@ pub async fn get_check_in_page(
 /// pay for stuff.
 #[tracing::instrument(skip(data, headers))]
 pub async fn post_create_check_out_session(
-    Path(requested_product): Path<String>,
+    Path((requested_product, price_id)): Path<(String, String)>,
     State(data): State<Arc<AppState>>,
     headers: axum::http::HeaderMap,
 ) -> impl IntoResponse {
-    match create_stripe_checkout_session(&data, &requested_product).await {
+    match create_stripe_checkout_session(&data, &requested_product, &price_id).await {
         Ok(redirect) => redirect.into_response(),
         Err(err) => err.into_response(&headers),
     }
@@ -116,13 +122,13 @@ pub async fn get_successful_checkout_session(
 /// Query Stripe for available Products
 ///
 /// Used to update the check-in page with the most recent offerings.
-#[tracing::instrument(skip(data, headers))]
+#[tracing::instrument(skip(data))]
 pub async fn post_update_available_products(
     State(data): State<Arc<AppState>>,
-    headers: axum::http::HeaderMap,
 ) -> impl IntoResponse {
-    match get_stripe_products(&data).await {
-        Ok(products) => Html(format!("{products:#?}")).into_response(),
-        Err(err) => err.into_response(&headers),
+    if let Err(err) = data.check_in_config.trigger_update_tx.send(()).await {
+        error!(%err, "Unable to trigger an update of the products.");
     }
+
+    Redirect::to(CHECK_IN_PATH)
 }

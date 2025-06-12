@@ -38,7 +38,7 @@ pub fn create_router(app_state: Arc<AppState>) -> Router {
         .route("/login", get(get_login_page).post(post_login_form))
         .route(CHECK_IN_PATH, get(get_check_in_page))
         .route(
-            "/create-checkout-session/{product}",
+            "/create-checkout-session/{product}/{price_id}",
             post(post_create_check_out_session),
         )
         .route(

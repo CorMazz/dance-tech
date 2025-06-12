@@ -9,6 +9,7 @@
 #![allow(clippy::module_name_repetitions)]
 #![allow(clippy::multiple_crate_versions)]
 
+use check_in::actors::product_manager_actor_runtime;
 use tracing::{error, info};
 use tracing_subscriber::util::SubscriberInitExt;
 mod app;
@@ -24,7 +25,7 @@ use std::{sync::Arc, time::Duration};
 use tower_http::trace::TraceLayer;
 use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::{EnvFilter, fmt};
-
+use tokio::sync::{mpsc, oneshot};
 use app::router::create_router;
 use axum::http::{
     HeaderValue, Method,
@@ -62,8 +63,22 @@ async fn main() {
         .with(fmt::layer().pretty())
         .init();
 
+
     let app_config = AppConfig::init();
     let auth_config = AuthConfig::init();
+
+    // 32 because I think the docs said it stores that many by default in memory
+    let (product_request_tx, product_request_rx) = mpsc::channel(32);
+    let (trigger_update_tx, trigger_update_rx) = mpsc::channel(32);
+    let check_in_config = CheckInConfig::init(product_request_tx, trigger_update_tx);
+
+    // For Google OAuth flow and Stripe API requests
+    let http_client = reqwest::ClientBuilder::new()
+        // Following redirects opens the client up to SSRF vulnerabilities.
+        .redirect(reqwest::redirect::Policy::none())
+        .build()
+        .expect("Client should build");
+
 
     let smtp_config = SMTPConfig::init();
     let smtp_mailer: Option<AsyncSmtpTransport<Tokio1Executor>> =
@@ -90,7 +105,6 @@ async fn main() {
 
     let google_oauth_config = GoogleOAuthConfig::init();
 
-    let check_in_config = CheckInConfig::init();
 
     let pool = match PgPoolOptions::new()
         .max_connections(10)
@@ -118,12 +132,6 @@ async fn main() {
         }
     };
 
-    // For Google OAuth flow
-    let http_client = reqwest::ClientBuilder::new()
-        // Following redirects opens the client up to SSRF vulnerabilities.
-        .redirect(reqwest::redirect::Policy::none())
-        .build()
-        .expect("Client should build");
 
     let cors = CorsLayer::new()
         .allow_origin("http://localhost:3000".parse::<HeaderValue>().unwrap())
@@ -131,7 +139,7 @@ async fn main() {
         .allow_credentials(true)
         .allow_headers([AUTHORIZATION, ACCEPT, CONTENT_TYPE]);
 
-    let app = create_router(Arc::new(AppState {
+    let app_state = Arc::new(AppState {
         db: pool.clone(),
         app_config: app_config.clone(),
         auth_config: auth_config.clone(),
@@ -141,9 +149,20 @@ async fn main() {
         google_oauth_config,
         http_client,
         redis_client: redis_client.clone(),
-    }))
-    .layer(cors)
-    .layer(TraceLayer::new_for_http());
+    });
+
+    let actor_app_state = app_state.clone();
+    tokio::spawn(async move {
+        product_manager_actor_runtime(
+            product_request_rx,
+            trigger_update_rx,
+            actor_app_state
+        ).await
+    });
+
+    let app = create_router(app_state)
+        .layer(cors)
+        .layer(TraceLayer::new_for_http());
 
     info!(
         "🚀 Server started successfully on port {}",
