@@ -45,7 +45,8 @@ pub fn create_router(app_state: Arc<AppState>) -> Router {
             STRIPE_SUCCESS_CALLBACK_PATH,
             get(get_successful_checkout_session),
         )
-        .route("/update-products", get(post_update_available_products))
+        .route("/update-products", get(post_update_available_products)) // TODO: change this to a
+        // post request and make it auth required
         .route("/private/user-dropdown", get(get_user_dropdown));
 
     // Anything in here does not even check authentication
