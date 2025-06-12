@@ -20,10 +20,10 @@ use check_in::config::CheckInConfig;
 use lettre::transport::smtp::PoolConfig;
 use lettre::{AsyncSmtpTransport, Tokio1Executor, transport::smtp::authentication::Credentials};
 use oauth2::reqwest;
+use std::{sync::Arc, time::Duration};
 use tower_http::trace::TraceLayer;
 use tracing_subscriber::layer::SubscriberExt;
-use tracing_subscriber::{fmt, EnvFilter};
-use std::{sync::Arc, time::Duration};
+use tracing_subscriber::{EnvFilter, fmt};
 
 use app::router::create_router;
 use axum::http::{
@@ -61,7 +61,7 @@ async fn main() {
         .with(EnvFilter::from_default_env())
         .with(fmt::layer().pretty())
         .init();
-    
+
     let app_config = AppConfig::init();
     let auth_config = AuthConfig::init();
 
@@ -144,7 +144,6 @@ async fn main() {
     }))
     .layer(cors)
     .layer(TraceLayer::new_for_http());
-
 
     info!(
         "🚀 Server started successfully on port {}",

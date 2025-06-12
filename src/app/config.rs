@@ -9,7 +9,7 @@ pub struct AppConfig {
     pub server_port: i64,
     pub database_url: String,
     pub redis_url: String,
-    pub site_url: Url
+    pub site_url: Url,
 }
 
 impl AppConfig {
@@ -22,16 +22,14 @@ impl AppConfig {
         let redis_url = get_env_var("REDIS_URL");
         let raw_site_url = get_env_var("SITE_URL");
         let site_url = Url::parse(&raw_site_url)
-            .unwrap_or_else(|err| {
-                panic!("Failed to parse SITE_URL '{raw_site_url}': {err}")
-            });
+            .unwrap_or_else(|err| panic!("Failed to parse SITE_URL '{raw_site_url}': {err}"));
 
         Self {
             is_demo_mode,
             server_port,
             database_url,
             redis_url,
-            site_url
+            site_url,
         }
     }
 }

@@ -4,8 +4,7 @@ use axum::response::IntoResponse;
 use thiserror::Error;
 use tracing::error;
 
-use crate::app::utils::{is_htmx_request, render, ErrorTemplate};
-
+use crate::app::utils::{ErrorTemplate, is_htmx_request, render};
 
 #[derive(Debug, Clone, Error)]
 pub enum CheckInError {
@@ -17,7 +16,7 @@ pub enum CheckInError {
     StripeApiError,
 
     #[error("Invalid product requested: {0:?}")]
-    InvalidProduct(String)
+    InvalidProduct(String),
 }
 
 impl CheckInError {
@@ -36,7 +35,7 @@ impl CheckInError {
             //         details.as_deref().unwrap_or("")
             //     )
             // }
-            _ => self.to_string()
+            _ => self.to_string(),
         };
         let template = ErrorTemplate {
             error_message: message,

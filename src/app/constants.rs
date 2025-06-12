@@ -8,4 +8,3 @@
 pub const GOOGLE_OAUTH_CALLBACK_PATH: &str = "/auth/google/callback";
 pub const STRIPE_SUCCESS_CALLBACK_PATH: &str = "/stripe/success";
 pub const CHECK_IN_PATH: &str = "/check-in";
-

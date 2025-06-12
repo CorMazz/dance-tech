@@ -3,8 +3,7 @@
 use axum::response::IntoResponse;
 use thiserror::Error;
 
-use crate::app::utils::{is_htmx_request, render, ErrorTemplate};
-
+use crate::app::utils::{ErrorTemplate, is_htmx_request, render};
 
 #[derive(Debug, Clone, Error)]
 pub enum AuthError {

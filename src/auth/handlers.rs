@@ -17,8 +17,8 @@ use oauth2::{
 };
 use serde::Deserialize;
 use sqlx::{Pool, Postgres};
-use tracing::error;
 use std::sync::Arc;
+use tracing::error;
 use uuid::Uuid;
 
 use crate::{

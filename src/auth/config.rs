@@ -62,11 +62,8 @@ impl GoogleOAuthConfig {
         let token_uri = get_env_var("GOOGLE_OAUTH_TOKEN_URI");
         let site_url = &get_env_var("SITE_URL");
         let mut redirect_uri = Url::parse(site_url)
-            .unwrap_or_else(|err| {
-                panic!("Failed to parse SITE_URL '{site_url}': {err}")
-            });
+            .unwrap_or_else(|err| panic!("Failed to parse SITE_URL '{site_url}': {err}"));
         redirect_uri.set_path(GOOGLE_OAUTH_CALLBACK_PATH);
-
 
         match (
             client_id.as_str(),
@@ -85,9 +82,7 @@ impl GoogleOAuthConfig {
                 None
             }
             (_, "", _, _) => {
-                info!(
-                    "\nGoogle OAuth functionality disabled: missing GOOGLE_OAUTH_CLIENT_SECRET."
-                );
+                info!("\nGoogle OAuth functionality disabled: missing GOOGLE_OAUTH_CLIENT_SECRET.");
                 None
             }
             (_, _, "", _) => {

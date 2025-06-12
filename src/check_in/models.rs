@@ -8,14 +8,14 @@ use serde::{Deserialize, Serialize};
 pub struct Product {
     /// The name to be displayed to the user. Make it pretty
     pub name: String,
-    /// An internal id, used in creating the url. 
+    /// An internal id, used in creating the url.
     pub id: String,
     /// A description to be displayed to the user. Make it pretty.
     pub description: String,
     /// Price to be displayed, ie "$5"
     pub price: String,
     /// Price ID from Stripe
-    pub price_id: String
+    pub price_id: String,
 }
 
 /// The response from the Stripe Checkout Session API.
@@ -130,14 +130,14 @@ pub struct Product {
 #[derive(Deserialize, Debug)]
 pub struct CheckoutSessionResponse {
     /// The Stripe url we need to redirect the user to.
-    pub url: String
+    pub url: String,
 }
 
 /// The response from the Stripe API to verify a Checkout Session
 ///
 /// Used to let us ensure users have paid.
 ///
-/// A successful response looks like this 
+/// A successful response looks like this
 /// ```
 /// {
 /// "id": "cs_test_a1xDgt75iRy0gfNypidMbbgeDm2C5FBZUmKNHMsMRgPU2ntor9i7bsKmJA",
@@ -267,8 +267,7 @@ pub struct StripeProduct {
     pub default_price: Option<String>,
 }
 
-
-/// A struct to deserialize Stripe's search API response when looking for what 
+/// A struct to deserialize Stripe's search API response when looking for what
 /// products are available.
 ///
 /// The full response looks like this:
@@ -283,7 +282,7 @@ pub struct StripeProduct {
 ///       "attributes": [],
 ///       "created": 1749671512,
 ///       "default_price": "price_1RYugeQ2wtFMkx0YZv6Jz06E",
-///       "description": "The beginner+ lesson is for dancers who have come to the beginner class for at least 4 weeks and have 
+///       "description": "The beginner+ lesson is for dancers who have come to the beginner class for at least 4 weeks and have
 /// grasped the concepts within.",
 ///       "images": [],
 ///       "livemode": false,
@@ -332,7 +331,7 @@ pub struct StripeProduct {
 ///   "next_page": null,
 ///   "url": "/v1/products/search"
 /// }
-/// 
+///
 /// ```
 #[derive(Debug, Deserialize)]
 pub struct StripeProductSearchResponse {
@@ -343,7 +342,6 @@ pub struct StripeProductSearchResponse {
     /// A tag to add to the query to indicate what page to request
     pub next_page: Option<String>,
 }
-
 
 /// A price object returned by the Stripe API
 ///
@@ -363,7 +361,7 @@ pub struct StripeProductSearchResponse {
 ///   "nickname": null,
 ///   "product": "prod_STsRL6dA7jkiP0",
 ///   "recurring": null,
-///   "tax_behavior": "unspecified", 
+///   "tax_behavior": "unspecified",
 ///   "tiers_mode": null,
 ///   "transform_quantity": null,
 ///   "type": "one_time",
@@ -480,12 +478,3 @@ pub struct StripePriceList {
     pub data: Vec<StripePrice>,
     pub has_more: bool,
 }
-
-
-
-
-
-
-
-
-

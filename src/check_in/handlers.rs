@@ -1,13 +1,19 @@
-use std::collections::HashMap;
-
-use axum::response::Redirect;
-use tracing::{debug, error, warn};
-
-use crate::{app::constants::{CHECK_IN_PATH, STRIPE_SUCCESS_CALLBACK_PATH}, check_in::{errors::CheckInError, models::{CheckoutSessionResponse, StripeCheckoutSession, StripePriceList, StripeProductSearchResponse}}, AppState};
-
 use crate::check_in::models::Product;
-
-use super::models::{StripePrice, StripeProduct};
+use crate::check_in::models::{StripePrice, StripeProduct};
+use crate::{
+    AppState,
+    app::constants::{CHECK_IN_PATH, STRIPE_SUCCESS_CALLBACK_PATH},
+    check_in::{
+        errors::CheckInError,
+        models::{
+            CheckoutSessionResponse, StripeCheckoutSession, StripePriceList,
+            StripeProductSearchResponse,
+        },
+    },
+};
+use axum::response::Redirect;
+use std::collections::HashMap;
+use tracing::{debug, error, warn};
 
 /// Use Stripe's checkout API to direct the user to a payment page.
 #[tracing::instrument(skip(data))]
@@ -15,7 +21,9 @@ pub async fn create_stripe_checkout_session(
     data: &AppState,
     requested_product: &str,
 ) -> Result<Redirect, CheckInError> {
-    let product = data.check_in_config.products
+    let product = data
+        .check_in_config
+        .products
         .get(requested_product)
         .ok_or_else(|| {
             let err = CheckInError::InvalidProduct(requested_product.to_string());
@@ -25,7 +33,7 @@ pub async fn create_stripe_checkout_session(
 
     let mut success_url = data.app_config.site_url.clone();
     success_url.set_path(STRIPE_SUCCESS_CALLBACK_PATH);
-    success_url.set_query(Some("session_id={CHECKOUT_SESSION_ID}")); 
+    success_url.set_query(Some("session_id={CHECKOUT_SESSION_ID}"));
 
     let mut cancel_url = data.app_config.site_url.clone();
     cancel_url.set_path(CHECK_IN_PATH);
@@ -36,7 +44,7 @@ pub async fn create_stripe_checkout_session(
     params.insert("mode".to_string(), "payment".to_string());
     params.insert("line_items[0][price]".to_string(), product.price_id.clone());
     params.insert("line_items[0][quantity]".to_string(), "1".to_string());
-    
+
     let client = &data.http_client;
     let res = client
         .post("https://api.stripe.com/v1/checkout/sessions")
@@ -50,21 +58,18 @@ pub async fn create_stripe_checkout_session(
         })?;
 
     let status = res.status();
-    let body = res.text()
-        .await
-        .map_err(|err| {
-            let message = "An error occurred when decoding the error response body from Stripe";
-            error!(%err, message);
-            CheckInError::InternalServerError(Some(message.to_string()))
-        })?;
+    let body = res.text().await.map_err(|err| {
+        let message = "An error occurred when decoding the error response body from Stripe";
+        error!(%err, message);
+        CheckInError::InternalServerError(Some(message.to_string()))
+    })?;
 
     if status.is_success() {
-        let session: CheckoutSessionResponse = serde_json::from_str(&body)
-            .map_err(|err| {
-                let message = "Failed to parse Stripe Checkout Session response JSON"; 
-                error!(%err, %body, message); 
-                CheckInError::InternalServerError(Some(message.to_string()))
-            })?;
+        let session: CheckoutSessionResponse = serde_json::from_str(&body).map_err(|err| {
+            let message = "Failed to parse Stripe Checkout Session response JSON";
+            error!(%err, %body, message);
+            CheckInError::InternalServerError(Some(message.to_string()))
+        })?;
 
         debug!(%status, parsed_response = ?session, full_response = %body, "Stripe Create Session API Response (Success)");
         Ok(Redirect::to(&session.url))
@@ -97,29 +102,26 @@ pub async fn verify_successful_checkout_session(
     let body = res.text().await.map_err(|err| {
         error!(%err, "Failed to read Stripe response body");
         CheckInError::InternalServerError(Some("Stripe response body could not be read".into()))
-        })?;
+    })?;
 
     if !status.is_success() {
         error!(%status, %body, "Stripe returned an error for session status lookup");
         return Err(CheckInError::StripeApiError);
-    } 
+    }
 
     let session: StripeCheckoutSession = serde_json::from_str(&body).map_err(|err| {
         error!(%err, %body, "Failed to parse Stripe session response");
         CheckInError::InternalServerError(Some("Invalid Stripe response format.".into()))
-        })?;
-     debug!(%status, parsed_response = ?session, full_response = %body, "Stripe Verify Session API Response (Success)");
+    })?;
+    debug!(%status, parsed_response = ?session, full_response = %body, "Stripe Verify Session API Response (Success)");
 
     Ok(session.payment_status == "paid")
 }
 
-
 /// Use the Stripe search API to get all products that are active and have a metadata key of
 /// `"show-on-dancetech":"true"`. See the Stripe Dashboard for setting metadata.
 #[tracing::instrument(skip(data))]
-pub async fn get_stripe_products(
-    data: &AppState,
-) -> Result<Vec<Product>, CheckInError> {
+pub async fn get_stripe_products(data: &AppState) -> Result<Vec<Product>, CheckInError> {
     let client = &data.http_client;
     let secret_key = &data.check_in_config.secret_key;
 
@@ -130,10 +132,8 @@ pub async fn get_stripe_products(
     let all_products = product_result?;
     let all_prices = price_result?;
 
-    let price_map: HashMap<String, &StripePrice> = all_prices
-        .iter()
-        .map(|p| (p.id.clone(), p))
-        .collect();
+    let price_map: HashMap<String, &StripePrice> =
+        all_prices.iter().map(|p| (p.id.clone(), p)).collect();
 
     let final_products: Vec<Product> = all_products
         .into_iter()
@@ -169,7 +169,10 @@ pub async fn get_stripe_products(
 /// active and have a `show-on-dancetech: true` metadata tag. This lets us update the products
 /// available from the Stripe dashboard rather than from the dance-tech server configuration.
 #[tracing::instrument(skip(client, secret_key))]
-pub async fn fetch_all_products(client: &reqwest::Client, secret_key: &str) -> Result<Vec<StripeProduct>, CheckInError> {
+pub async fn fetch_all_products(
+    client: &reqwest::Client,
+    secret_key: &str,
+) -> Result<Vec<StripeProduct>, CheckInError> {
     let mut all_products = vec![];
     let mut page: Option<String> = None;
 
@@ -180,13 +183,17 @@ pub async fn fetch_all_products(client: &reqwest::Client, secret_key: &str) -> R
 
         if let Some(ref token) = page {
             req = req.query(&[
-                ("query", "active:'true' AND metadata['show-on-dancetech']:'true'"),
+                (
+                    "query",
+                    "active:'true' AND metadata['show-on-dancetech']:'true'",
+                ),
                 ("page", token),
             ]);
         } else {
-            req = req.query(&[
-                ("query", "active:'true' AND metadata['show-on-dancetech']:'true'")
-            ]);
+            req = req.query(&[(
+                "query",
+                "active:'true' AND metadata['show-on-dancetech']:'true'",
+            )]);
         }
 
         let res = req.send().await.map_err(|err| {
@@ -232,7 +239,10 @@ pub async fn fetch_all_products(client: &reqwest::Client, secret_key: &str) -> R
 /// active. This is because the product API only gives us `price_ids` and we want to be able to
 /// display an actual dollar amount on the check-in page.
 #[tracing::instrument(skip(client, secret_key))]
-pub async fn fetch_all_prices(client: &reqwest::Client, secret_key: &str) -> Result<Vec<StripePrice>, CheckInError> {
+pub async fn fetch_all_prices(
+    client: &reqwest::Client,
+    secret_key: &str,
+) -> Result<Vec<StripePrice>, CheckInError> {
     let mut all_prices = vec![];
     let mut price_page: Option<String> = None;
 
@@ -241,10 +251,7 @@ pub async fn fetch_all_prices(client: &reqwest::Client, secret_key: &str) -> Res
             .get("https://api.stripe.com/v1/prices")
             .basic_auth(secret_key.to_string(), Some(""));
 
-        let mut query = vec![
-            ("active", "true"),
-            ("currency", "usd"),
-        ];
+        let mut query = vec![("active", "true"), ("currency", "usd")];
         if let Some(ref token) = price_page {
             query.push(("starting_after", token));
         }
@@ -258,7 +265,9 @@ pub async fn fetch_all_prices(client: &reqwest::Client, secret_key: &str) -> Res
         let status = res.status();
         let body = res.text().await.map_err(|err| {
             error!(%err, "Failed to read Stripe response body (prices)");
-            CheckInError::InternalServerError(Some("Stripe price response body could not be read".into()))
+            CheckInError::InternalServerError(Some(
+                "Stripe price response body could not be read".into(),
+            ))
         })?;
 
         if !status.is_success() {
@@ -268,7 +277,9 @@ pub async fn fetch_all_prices(client: &reqwest::Client, secret_key: &str) -> Res
 
         let parsed: StripePriceList = serde_json::from_str(&body).map_err(|err| {
             error!(%err, %body, "Failed to parse Stripe price list response");
-            CheckInError::InternalServerError(Some("Stripe price response could not be parsed".into()))
+            CheckInError::InternalServerError(Some(
+                "Stripe price response could not be parsed".into(),
+            ))
         })?;
 
         debug!(%status, parsed_response = ?parsed.data, full_response = %body, "Received prices from Stripe");

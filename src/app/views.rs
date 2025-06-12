@@ -1,5 +1,5 @@
-use crate::app::utils::render;
 use crate::app::utils::is_htmx_request;
+use crate::app::utils::render;
 use askama::Template;
 use axum::{
     http::StatusCode,
@@ -33,9 +33,10 @@ pub async fn get_home_page(headers: axum::http::HeaderMap) -> impl IntoResponse 
 // Error 404 Response
 // #######################################################################################################################################################
 
-
 /// Serve the error 404 not found page
 pub async fn error_404_page() -> impl IntoResponse {
-    let template: ErrorTemplate = ErrorTemplate { error_message: "404 Requested Path Not Found".to_string()};
+    let template: ErrorTemplate = ErrorTemplate {
+        error_message: "404 Requested Path Not Found".to_string(),
+    };
     (StatusCode::NOT_FOUND, Html(render(template)))
 }

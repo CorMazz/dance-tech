@@ -1,8 +1,10 @@
-
-use std::sync::Arc;
-use crate::app::utils::render;
-use crate::app::utils::is_htmx_request;
 use crate::AppState;
+use crate::app::utils::is_htmx_request;
+use crate::app::utils::render;
+use crate::check_in::handlers::create_stripe_checkout_session;
+use crate::check_in::handlers::get_stripe_products;
+use crate::check_in::handlers::verify_successful_checkout_session;
+use crate::check_in::models::Product;
 use askama::Template;
 use axum::extract::Path;
 use axum::extract::Query;
@@ -12,10 +14,7 @@ use axum::{
     response::{Html, IntoResponse},
 };
 use serde::Deserialize;
-use crate::check_in::models::Product;
-use crate::check_in::handlers::create_stripe_checkout_session;
-use crate::check_in::handlers::verify_successful_checkout_session;
-use crate::check_in::handlers::get_stripe_products;
+use std::sync::Arc;
 
 // #######################################################################################################################################################
 // check_in.html
@@ -24,24 +23,20 @@ use crate::check_in::handlers::get_stripe_products;
 #[derive(Template)]
 #[template(path = "./check_in_templates/check_in.html", blocks = ["content"])]
 pub struct CheckInTemplate {
-    products: Vec<Product>
+    products: Vec<Product>,
 }
 
 /// Serve the check in page template.
-/// 
+///
 /// Show different check-in options (beginner lesson, social dance only, etc) depending on if the
 /// user is signed in and if they have access to a certain level of instruction.
 ///
 /// If the request is an HTMX request, it will return just the content block.
 pub async fn get_check_in_page(
     State(data): State<Arc<AppState>>,
-    headers: axum::http::HeaderMap
+    headers: axum::http::HeaderMap,
 ) -> impl IntoResponse {
-    
-    let products = data.check_in_config.products
-        .values()
-        .cloned()
-        .collect();
+    let products = data.check_in_config.products.values().cloned().collect();
 
     let template = CheckInTemplate { products };
 
@@ -52,12 +47,11 @@ pub async fn get_check_in_page(
     }
 }
 
-
 // #######################################################################################################################################################
 // Create Checkout Session
 // #######################################################################################################################################################
 
-/// Create a Stripe checkout session 
+/// Create a Stripe checkout session
 ///
 /// We are using the Stripe checkout API. Basically, we send the user over to Stripe's webpage to
 /// pay for stuff.
@@ -65,9 +59,9 @@ pub async fn get_check_in_page(
 pub async fn post_create_check_out_session(
     Path(requested_product): Path<String>,
     State(data): State<Arc<AppState>>,
-    headers: axum::http::HeaderMap
+    headers: axum::http::HeaderMap,
 ) -> impl IntoResponse {
-    match create_stripe_checkout_session(&data,&requested_product).await {
+    match create_stripe_checkout_session(&data, &requested_product).await {
         Ok(redirect) => redirect.into_response(),
         Err(err) => err.into_response(&headers),
     }
@@ -80,19 +74,19 @@ pub async fn post_create_check_out_session(
 /// This will never be an HTMX request because it is redirected from Stripe,
 /// thus we do not need the content block.
 #[derive(Template)]
-#[template(path = "./check_in_templates/success.html")] 
+#[template(path = "./check_in_templates/success.html")]
 pub struct SuccessfulPaymentTemplate {
     payment_successful: bool,
-    current_time: String
+    current_time: String,
 }
 
 /// Query parameters for a successful Stripe Checkout Session response
 ///
-/// Stripe will add the `session_id` as a query parameter to the `success_url` on their 
+/// Stripe will add the `session_id` as a query parameter to the `success_url` on their
 /// `CreateCheckoutSession` API.
 #[derive(Deserialize, Debug)]
 pub struct SuccessfulCheckoutSessionQueryParam {
-    pub session_id: String
+    pub session_id: String,
 }
 
 /// Stripe redirects to this link upon a successful checkout
@@ -105,7 +99,10 @@ pub async fn get_successful_checkout_session(
     match verify_successful_checkout_session(&data, &params.session_id).await {
         Ok(payment_successful) => {
             let current_time = chrono::Utc::now().format("%b %e, %Y").to_string();
-            let template = SuccessfulPaymentTemplate { payment_successful, current_time};
+            let template = SuccessfulPaymentTemplate {
+                payment_successful,
+                current_time,
+            };
             Html(render(template)).into_response()
         }
         Err(err) => err.into_response(&headers),
@@ -116,9 +113,8 @@ pub async fn get_successful_checkout_session(
 // Query Stripe for Products
 // #######################################################################################################################################################
 
-
 /// Query Stripe for available Products
-/// 
+///
 /// Used to update the check-in page with the most recent offerings.
 #[tracing::instrument(skip(data, headers))]
 pub async fn post_update_available_products(
@@ -127,8 +123,6 @@ pub async fn post_update_available_products(
 ) -> impl IntoResponse {
     match get_stripe_products(&data).await {
         Ok(products) => Html(format!("{products:#?}")).into_response(),
-        Err(err) => err.into_response(&headers)
+        Err(err) => err.into_response(&headers),
     }
 }
-
-
