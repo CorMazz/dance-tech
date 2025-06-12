@@ -28,17 +28,8 @@ impl CheckInError {
         self,
         headers: &axum::http::HeaderMap,
     ) -> axum::http::Response<axum::body::Body> {
-        let message = match &self {
-            // Self::InternalServerError(details) => {
-            //     format!(
-            //         "An internal error occurred. {}",
-            //         details.as_deref().unwrap_or("")
-            //     )
-            // }
-            _ => self.to_string(),
-        };
         let template = ErrorTemplate {
-            error_message: message,
+            error_message: self.to_string(),
         };
 
         if is_htmx_request(headers) {

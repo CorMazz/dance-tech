@@ -55,6 +55,7 @@ pub struct GoogleOAuthConfig {
     pub redirect_uri: RedirectUrl,
 }
 impl GoogleOAuthConfig {
+    #[allow(clippy::cognitive_complexity)]
     pub fn init() -> Option<Self> {
         let client_id = get_env_var("GOOGLE_OAUTH_CLIENT_ID");
         let client_secret = get_env_var("GOOGLE_OAUTH_CLIENT_SECRET");

@@ -43,6 +43,7 @@ pub struct SMTPConfig {
 }
 
 impl SMTPConfig {
+    #[allow(clippy::cognitive_complexity)]
     pub fn init() -> Option<Self> {
         let server_host = get_env_var("SMTP_SERVER_HOST");
         let user_login = get_env_var("SMTP_USER_LOGIN");

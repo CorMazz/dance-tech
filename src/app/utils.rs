@@ -26,7 +26,7 @@ pub fn is_htmx_request(headers: &axum::http::HeaderMap) -> bool {
 
 /// The generic template to render all errors for the application.
 ///
-/// The errors themselves implement IntoResponse to render into this template.
+/// The errors themselves implement `IntoResponse` to render into this template.
 #[derive(Template)]
 #[template(path = "./primary_templates/error.html", blocks = ["content"])]
 pub struct ErrorTemplate {
