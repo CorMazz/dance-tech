@@ -7,7 +7,7 @@ use crate::{
         get_google_oauth_callback, get_google_oauth_init_flow, get_login_page, get_logout_page,
         get_signup_page, get_user_dropdown, post_login_form, post_signup_form,
     }}, check_in::views::{
-        get_check_in_page, get_successful_checkout_session, post_create_check_out_session
+        get_check_in_page, get_successful_checkout_session, post_create_check_out_session, post_update_available_products
     }, AppState
 };
 
@@ -29,6 +29,7 @@ pub fn create_router(app_state: Arc<AppState>) -> Router {
         .route(CHECK_IN_PATH, get(get_check_in_page))
         .route("/create-checkout-session/{product}", post(post_create_check_out_session))
         .route(STRIPE_SUCCESS_CALLBACK_PATH, get(get_successful_checkout_session)) 
+        .route("/update-products", get(post_update_available_products))
         .route("/private/user-dropdown", get(get_user_dropdown));
 
     // Anything in here does not even check authentication

@@ -13,8 +13,9 @@ use axum::{
 };
 use serde::Deserialize;
 use crate::check_in::models::Product;
-use crate::check_in::handlers::create_stripe_checkout_session_handler;
-use crate::check_in::handlers::get_successful_checkout_session_handler;
+use crate::check_in::handlers::create_stripe_checkout_session;
+use crate::check_in::handlers::verify_successful_checkout_session;
+use crate::check_in::handlers::get_stripe_products;
 
 // #######################################################################################################################################################
 // check_in.html
@@ -66,7 +67,7 @@ pub async fn post_create_check_out_session(
     State(data): State<Arc<AppState>>,
     headers: axum::http::HeaderMap
 ) -> impl IntoResponse {
-    match create_stripe_checkout_session_handler(&data,&requested_product).await {
+    match create_stripe_checkout_session(&data,&requested_product).await {
         Ok(redirect) => redirect.into_response(),
         Err(err) => err.into_response(&headers),
     }
@@ -94,14 +95,14 @@ pub struct SuccessfulCheckoutSessionQueryParam {
     pub session_id: String
 }
 
-#[tracing::instrument(skip(data, headers))]
 /// Stripe redirects to this link upon a successful checkout
+#[tracing::instrument(skip(data, headers))]
 pub async fn get_successful_checkout_session(
     State(data): State<Arc<AppState>>,
     headers: axum::http::HeaderMap,
     Query(params): Query<SuccessfulCheckoutSessionQueryParam>,
 ) -> impl IntoResponse {
-    match get_successful_checkout_session_handler(&data, &params.session_id).await {
+    match verify_successful_checkout_session(&data, &params.session_id).await {
         Ok(payment_successful) => {
             let current_time = chrono::Utc::now().format("%b %e, %Y").to_string();
             let template = SuccessfulPaymentTemplate { payment_successful, current_time};
@@ -110,4 +111,24 @@ pub async fn get_successful_checkout_session(
         Err(err) => err.into_response(&headers),
     }
 }
+
+// #######################################################################################################################################################
+// Query Stripe for Products
+// #######################################################################################################################################################
+
+
+/// Query Stripe for available Products
+/// 
+/// Used to update the check-in page with the most recent offerings.
+#[tracing::instrument(skip(data, headers))]
+pub async fn post_update_available_products(
+    State(data): State<Arc<AppState>>,
+    headers: axum::http::HeaderMap,
+) -> impl IntoResponse {
+    match get_stripe_products(&data).await {
+        Ok(products) => Html(format!("{products:#?}")).into_response(),
+        Err(err) => err.into_response(&headers)
+    }
+}
+
 
