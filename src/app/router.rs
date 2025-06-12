@@ -1,10 +1,8 @@
 use std::sync::Arc;
-
 use axum::{
     Router, middleware,
     routing::{get, post},
 };
-
 use crate::{
     AppState,
     app::views::{error_404_page, get_home_page},
@@ -20,39 +18,76 @@ use crate::{
         post_update_available_products,
     },
 };
-
 use tower_http::services::ServeDir;
 
-use crate::app::constants::{
-    CHECK_IN_PATH, GOOGLE_OAUTH_CALLBACK_PATH, STRIPE_SUCCESS_CALLBACK_PATH,
+/// A struct containing all routes for the app, to minimize code duplication.
+pub struct Routes {
+    pub root: &'static str,
+
+    // Auth routes
+    pub sign_up: &'static str,
+    pub login: &'static str,
+    pub logout: &'static str,
+    pub google_oauth_init: &'static str,
+    pub google_oauth_callback: &'static str,
+    
+    // Check-in Routes
+    pub check_in: &'static str,
+    pub create_checkout_session: &'static str,
+    pub stripe_success_callback: &'static str,
+    pub update_products: &'static str,
+
+    // Misc Routes
+    pub user_dropdown: &'static str,
+}
+
+/// This constant will be shared across the application
+pub const ROUTES: Routes = Routes {
+    root: "/",
+
+    // Auth Routes
+    sign_up: "/sign-up",
+    login: "/login",
+    logout: "/logout",
+    google_oauth_init: "/auth/google",
+    google_oauth_callback:  "/auth/google/callback",
+    
+    // Check-in Routes
+    check_in: "/check-in",
+    create_checkout_session: "/create-checkout-session",
+    stripe_success_callback: "/stripe/success",
+    update_products: "/update-products",
+
+    // Misc Routes
+    user_dropdown: "/private/user-dropdown",
 };
 
 pub fn create_router(app_state: Arc<AppState>) -> Router {
     // Anything in here will redirect to the login page if the user is not logged in
-    let auth_required = Router::new().route("/logout", get(get_logout_page));
+    let auth_required = Router::new().route(ROUTES.logout, get(get_logout_page));
 
     // Anything in here will check if the user is signed in and add that info to the request
     let check_auth = Router::new()
-        .route("/", get(get_home_page))
-        .route("/sign-up", get(get_signup_page).post(post_signup_form))
-        .route("/login", get(get_login_page).post(post_login_form))
-        .route(CHECK_IN_PATH, get(get_check_in_page))
+        .route(ROUTES.root, get(get_home_page))
+        .route(ROUTES.sign_up, get(get_signup_page).post(post_signup_form))
+        .route(ROUTES.login, get(get_login_page).post(post_login_form))
+        .route(ROUTES.check_in, get(get_check_in_page))
         .route(
-            "/create-checkout-session/{product}/{price_id}",
+            ROUTES.create_checkout_session,
             post(post_create_check_out_session),
         )
         .route(
-            STRIPE_SUCCESS_CALLBACK_PATH,
+            ROUTES.stripe_success_callback,
             get(get_successful_checkout_session),
         )
-        .route("/update-products", get(post_update_available_products)) // TODO: change this to a
+        .route(ROUTES.update_products, get(post_update_available_products)) // TODO: change this to a
         // post request and make it auth required
-        .route("/private/user-dropdown", get(get_user_dropdown));
+        .route(ROUTES.user_dropdown, get(get_user_dropdown));
 
     // Anything in here does not even check authentication
     let no_auth = Router::new()
-        .route("/auth/google", get(get_google_oauth_init_flow))
-        .route(GOOGLE_OAUTH_CALLBACK_PATH, get(get_google_oauth_callback));
+        .route(ROUTES.google_oauth_init, get(get_google_oauth_init_flow))
+        .route(ROUTES.google_oauth_callback, get(get_google_oauth_callback));
 
     // Do not edit this unless necessary. Add routes to the router subsections above this
     Router::new()

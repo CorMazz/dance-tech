@@ -11,9 +11,12 @@
             <div class="p-6">
                 <h2 class="text-2xl font-semibold text-gray-800 mb-2">{{ product.name }}</h2>
                 <p class="text-gray-600 mb-4">{{ product.description }}</p>
-                <form action="/create-checkout-session/{{ product.id }}/{{ product.price_id }}" method="POST">
+                <form action={{ rts.create_checkout_session }} method="POST">
+                    <input type="hidden" name="product_id" value="{{ product.id }}">
+                    <input type="hidden" name="price_id" value="{{ product.price_id }}">
+
                     <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition">
-                        Checkout - {{ product.price }} 
+                        Checkout - {{ product.price }}
                     </button>
                 </form>
             </div>

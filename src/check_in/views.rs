@@ -1,4 +1,5 @@
-use crate::app::constants::CHECK_IN_PATH;
+use crate::app::router::Routes;
+use crate::app::router::ROUTES;
 use crate::AppState;
 use crate::app::utils::is_htmx_request;
 use crate::app::utils::render;
@@ -6,10 +7,10 @@ use crate::check_in::handlers::create_stripe_checkout_session;
 use crate::check_in::handlers::verify_successful_checkout_session;
 use crate::check_in::models::Product;
 use askama::Template;
-use axum::extract::Path;
 use axum::extract::Query;
 use axum::extract::State;
 use axum::response::Redirect;
+use axum::Form;
 use axum::{
     http::StatusCode,
     response::{Html, IntoResponse},
@@ -27,6 +28,7 @@ use crate::check_in::handlers::get_products_from_actor;
 #[derive(Template)]
 #[template(path = "./check_in_templates/check_in.html", blocks = ["content"])]
 pub struct CheckInTemplate {
+    rts: Routes,
     products: Vec<Product>,
 }
 
@@ -44,7 +46,7 @@ pub async fn get_check_in_page(
         Ok(products) => products,
         Err(err) => return err.into_response(&headers)
     };
-    let template = CheckInTemplate { products };
+    let template = CheckInTemplate { products, rts: ROUTES };
 
     if is_htmx_request(&headers) {
         (StatusCode::OK, Html(render(template.as_content()))).into_response()
@@ -57,17 +59,24 @@ pub async fn get_check_in_page(
 // Create Checkout Session
 // #######################################################################################################################################################
 
+/// Get the product_id and price_id from the button click on the check-in page
+#[derive(Deserialize, Debug)]
+pub struct CheckoutSessionForm {
+    pub product_id: String,
+    pub price_id: String,
+}
+
 /// Create a Stripe checkout session
 ///
 /// We are using the Stripe checkout API. Basically, we send the user over to Stripe's webpage to
 /// pay for stuff.
 #[tracing::instrument(skip(data, headers))]
 pub async fn post_create_check_out_session(
-    Path((requested_product, price_id)): Path<(String, String)>,
     State(data): State<Arc<AppState>>,
     headers: axum::http::HeaderMap,
+    Form(session_info): Form<CheckoutSessionForm>,
 ) -> impl IntoResponse {
-    match create_stripe_checkout_session(&data, &requested_product, &price_id).await {
+    match create_stripe_checkout_session(&data, &session_info.product_id, &session_info.price_id).await {
         Ok(redirect) => redirect.into_response(),
         Err(err) => err.into_response(&headers),
     }
@@ -82,6 +91,7 @@ pub async fn post_create_check_out_session(
 #[derive(Template)]
 #[template(path = "./check_in_templates/success.html")]
 pub struct SuccessfulPaymentTemplate {
+    rts: Routes,
     payment_successful: bool,
     current_time: String,
 }
@@ -108,6 +118,7 @@ pub async fn get_successful_checkout_session(
             let template = SuccessfulPaymentTemplate {
                 payment_successful,
                 current_time,
+                rts: ROUTES,
             };
             Html(render(template)).into_response()
         }
@@ -130,5 +141,5 @@ pub async fn post_update_available_products(
         error!(%err, "Unable to trigger an update of the products.");
     }
 
-    Redirect::to(CHECK_IN_PATH)
+    Redirect::to(ROUTES.check_in)
 }

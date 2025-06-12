@@ -6,7 +6,9 @@ use axum::{
     response::{Html, IntoResponse},
 };
 
-use super::utils::ErrorTemplate;
+use crate::app::router::Routes;
+use crate::app::utils::ErrorTemplate;
+use crate::app::router::ROUTES;
 
 // #######################################################################################################################################################
 // home.html
@@ -14,13 +16,15 @@ use super::utils::ErrorTemplate;
 
 #[derive(Template)]
 #[template(path = "./primary_templates/home.html", blocks = ["content"])]
-pub struct HomeTemplate {}
+pub struct HomeTemplate {
+    rts: Routes
+}
 
 /// Serve the home page template.
 ///
 /// If the request is an HTMX request, it will return just the content block.
 pub async fn get_home_page(headers: axum::http::HeaderMap) -> impl IntoResponse {
-    let template: HomeTemplate = HomeTemplate {};
+    let template: HomeTemplate = HomeTemplate { rts: ROUTES };
 
     if is_htmx_request(&headers) {
         (StatusCode::OK, Html(render(template.as_content())))
@@ -36,6 +40,7 @@ pub async fn get_home_page(headers: axum::http::HeaderMap) -> impl IntoResponse 
 /// Serve the error 404 not found page
 pub async fn error_404_page() -> impl IntoResponse {
     let template: ErrorTemplate = ErrorTemplate {
+        rts: ROUTES,
         error_message: "404 Requested Path Not Found".to_string(),
     };
     (StatusCode::NOT_FOUND, Html(render(template)))

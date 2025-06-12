@@ -2,6 +2,7 @@
 
 use askama::Template;
 use axum::response::Html;
+use crate::app::router::Routes;
 
 /// Get an environment variable or panic if not set.
 pub fn get_env_var(var_name: &str) -> String {
@@ -30,5 +31,6 @@ pub fn is_htmx_request(headers: &axum::http::HeaderMap) -> bool {
 #[derive(Template)]
 #[template(path = "./primary_templates/error.html", blocks = ["content"])]
 pub struct ErrorTemplate {
+    pub rts: Routes,
     pub error_message: String,
 }

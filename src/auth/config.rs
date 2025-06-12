@@ -1,4 +1,4 @@
-use crate::app::{constants::GOOGLE_OAUTH_CALLBACK_PATH, utils::get_env_var};
+use crate::app::{router::ROUTES, utils::get_env_var};
 use oauth2::{AuthUrl, ClientId, ClientSecret, RedirectUrl, TokenUrl};
 use tracing::info;
 use url::Url;
@@ -64,7 +64,7 @@ impl GoogleOAuthConfig {
         let site_url = &get_env_var("SITE_URL");
         let mut redirect_uri = Url::parse(site_url)
             .unwrap_or_else(|err| panic!("Failed to parse SITE_URL '{site_url}': {err}"));
-        redirect_uri.set_path(GOOGLE_OAUTH_CALLBACK_PATH);
+        redirect_uri.set_path(ROUTES.google_oauth_callback);
 
         match (
             client_id.as_str(),

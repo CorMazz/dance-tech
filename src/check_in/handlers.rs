@@ -1,19 +1,17 @@
+use crate::app::router::ROUTES;
 use crate::check_in::models::Product;
-use crate::check_in::models::{StripePrice, StripeProduct};
 use crate::{
     AppState,
-    app::constants::{CHECK_IN_PATH, STRIPE_SUCCESS_CALLBACK_PATH},
     check_in::{
         errors::CheckInError,
         models::{
-            CheckoutSessionResponse, StripeCheckoutSession, StripePriceList,
-            StripeProductSearchResponse,
+            CheckoutSessionResponse, StripeCheckoutSession, 
         },
     },
 };
 use axum::response::Redirect;
 use std::collections::HashMap;
-use tracing::{debug, error, warn};
+use tracing::{debug, error};
 
 /// Use Stripe's checkout API to direct the user to a payment page.
 #[tracing::instrument(skip(data))]
@@ -22,13 +20,12 @@ pub async fn create_stripe_checkout_session(
     requested_product: &str,
     price_id: &str,
 ) -> Result<Redirect, CheckInError> {
-
     let mut success_url = data.app_config.site_url.clone();
-    success_url.set_path(STRIPE_SUCCESS_CALLBACK_PATH);
+    success_url.set_path(ROUTES.stripe_success_callback);
     success_url.set_query(Some("session_id={CHECKOUT_SESSION_ID}"));
 
     let mut cancel_url = data.app_config.site_url.clone();
-    cancel_url.set_path(CHECK_IN_PATH);
+    cancel_url.set_path(ROUTES.check_in);
 
     let mut params = HashMap::new();
     params.insert("success_url".to_string(), success_url.to_string());

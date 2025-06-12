@@ -25,7 +25,7 @@ use std::{sync::Arc, time::Duration};
 use tower_http::trace::TraceLayer;
 use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::{EnvFilter, fmt};
-use tokio::sync::{mpsc, oneshot};
+use tokio::sync::mpsc;
 use app::router::create_router;
 use axum::http::{
     HeaderValue, Method,

@@ -12,6 +12,7 @@ use axum_extra::extract::CookieJar;
 use reqwest::StatusCode;
 use serde::Deserialize;
 
+use crate::app::router::{Routes, ROUTES};
 use crate::AppState;
 use crate::app::utils::{is_htmx_request, render};
 use crate::auth::handlers::{
@@ -24,6 +25,7 @@ use crate::auth::{errors::AuthError, middleware::AuthStatus};
 #[derive(Template)]
 #[template(path = "./partial_templates/user_dropdown.html")]
 pub struct UserDropdownTemplate {
+    rts: Routes,
     user: Option<User>,
 }
 
@@ -33,7 +35,7 @@ pub async fn get_user_dropdown(Extension(auth_status): Extension<AuthStatus>) ->
         AuthStatus::Unauthorized(_) => None,
     };
 
-    let template = UserDropdownTemplate { user };
+    let template = UserDropdownTemplate { user, rts: ROUTES };
 
     (StatusCode::OK, Html(template.render().unwrap()))
 }
@@ -44,10 +46,12 @@ pub async fn get_user_dropdown(Extension(auth_status): Extension<AuthStatus>) ->
 
 #[derive(Template)]
 #[template(path = "./auth_templates/sign-up.html")]
-pub struct SignUpTemplate {}
+pub struct SignUpTemplate {
+    rts: Routes
+}
 
 pub async fn get_signup_page() -> impl IntoResponse {
-    let template = SignUpTemplate {};
+    let template = SignUpTemplate { rts: ROUTES };
 
     (StatusCode::OK, Html(template.render().unwrap()))
 }
@@ -98,6 +102,7 @@ pub async fn post_signup_form(
 #[derive(Template)]
 #[template(path = "./auth_templates/login.html", blocks = ["content"])]
 pub struct LoginTemplate {
+    rts: Routes,
     is_demo_mode: bool,
     google_oauth_enabled: bool,
 }
@@ -107,6 +112,7 @@ pub async fn get_login_page(
     headers: axum::http::HeaderMap,
 ) -> impl IntoResponse {
     let template: LoginTemplate = LoginTemplate {
+        rts: ROUTES,
         is_demo_mode: data.app_config.is_demo_mode,
         google_oauth_enabled: data.google_oauth_config.is_some(),
     };

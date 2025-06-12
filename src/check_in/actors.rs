@@ -5,7 +5,6 @@
 
 use std::collections::HashMap;
 use std::sync::Arc;
-
 use tracing::debug;
 use tracing::error;
 use tracing::info;
@@ -16,7 +15,6 @@ use crate::check_in::models::StripeProductSearchResponse;
 use crate::AppState;
 use tokio::{sync::{mpsc, oneshot}, time::{interval, Duration, MissedTickBehavior}};
 use crate::check_in::models::Product;
-
 use crate::check_in::errors::CheckInError;
 use crate::check_in::models::StripePrice;
 use crate::check_in::models::StripeProduct;

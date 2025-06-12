@@ -3,8 +3,7 @@
 use axum::response::IntoResponse;
 use thiserror::Error;
 use tracing::error;
-
-use crate::app::utils::{ErrorTemplate, is_htmx_request, render};
+use crate::app::{router::ROUTES, utils::{is_htmx_request, render, ErrorTemplate}};
 
 #[derive(Debug, Clone, Error)]
 pub enum CheckInError {
@@ -14,9 +13,6 @@ pub enum CheckInError {
     #[error("An error occurred when communicating with the Stripe API")]
     /// We purposefully do not include more information to avoid leaking secrets to users.
     StripeApiError,
-
-    #[error("Invalid product requested: {0:?}")]
-    InvalidProduct(String),
 }
 
 impl CheckInError {
@@ -30,6 +26,7 @@ impl CheckInError {
     ) -> axum::http::Response<axum::body::Body> {
         let template = ErrorTemplate {
             error_message: self.to_string(),
+            rts: ROUTES,
         };
 
         if is_htmx_request(headers) {

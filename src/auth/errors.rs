@@ -2,7 +2,7 @@
 
 use axum::response::IntoResponse;
 use thiserror::Error;
-
+use crate::app::router::ROUTES;
 use crate::app::utils::{ErrorTemplate, is_htmx_request, render};
 
 #[derive(Debug, Clone, Error)]
@@ -65,6 +65,7 @@ impl AuthError {
 
         let template = ErrorTemplate {
             error_message: message,
+            rts: ROUTES
         };
 
         if is_htmx_request(headers) {
