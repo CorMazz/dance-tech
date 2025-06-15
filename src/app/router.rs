@@ -13,7 +13,7 @@ use crate::{
     }, check_in::views::{
         get_check_in_page, get_successful_checkout_session, post_create_check_out_session,
         post_update_available_products,
-    }, exam::views::get_test_page, AppState
+    }, exam::views::{get_proctor_dashboard_page, get_test_page}, AppState
 };
 use tower_http::services::ServeDir;
 
@@ -39,16 +39,18 @@ pub struct Routes {
     /// The exam route has a variable in it, so it needs to be dynamically generated. See the
     /// associated method `self.exam()`
     pub administer_exam_root: &'static str,
+    pub proctor_dashboard: &'static str,
 
     // Misc Routes
     pub user_dropdown: &'static str,
+    pub admin_dashboard: &'static str,
 }
 
 impl Routes {
     /// Dynamically generate the route to view an exam, since there may be any number of exams to
     /// view.
-    pub fn administer_exam(&self, exam_id: &str) -> String {
-        format!("{}/{exam_id}", self.administer_exam_root)
+    pub fn administer_exam(&self, exam_id: &(impl ToString + ?Sized)) -> String {
+        format!("{}/{}", self.administer_exam_root, exam_id.to_string())
     }
 }
 
@@ -72,15 +74,19 @@ pub const ROUTES: Routes = Routes {
     // Exam Routes
     exam_home: "/exam",
     administer_exam_root: "/administer-exam",
+    proctor_dashboard: "/exam-proctor",
 
     // Misc Routes
     user_dropdown: "/private/user-dropdown",
+    admin_dashboard: "/admin-dashboard",
 };
 
 pub fn create_router(app_state: Arc<AppState>) -> Router {
     // Anything in here will redirect to the login page if the user is not logged in
     let auth_required = Router::new()
         .route(ROUTES.logout, get(get_logout_page))
+        .route(ROUTES.update_products, post(post_update_available_products)) 
+        .route(ROUTES.proctor_dashboard, get(get_proctor_dashboard_page))
         .route(&ROUTES.administer_exam("{test_index}"), get(get_test_page));
 
     // Anything in here will check if the user is signed in and add that info to the request
@@ -97,8 +103,6 @@ pub fn create_router(app_state: Arc<AppState>) -> Router {
             ROUTES.stripe_success_callback,
             get(get_successful_checkout_session),
         )
-        .route(ROUTES.update_products, get(post_update_available_products)) // TODO: change this to a
-        // post request and make it auth required
         .route(ROUTES.user_dropdown, get(get_user_dropdown));
 
     // Anything in here does not even check authentication

@@ -123,7 +123,27 @@ mv htmx.min.js static/js/
 
 Ensure you are launching the server from the root of this repository. File paths are relative to the directory that the server is launched from.
 
+## To Do:
+
+- Add user exam dashboard with:
+    - Explanation of exams
+    - Exam queue
+    - Let users see their past results
+- Add admin dashboard that:
+    - Lets admins add/remove roles from users
+- Add proctor exam dashboard that:
+    - Lets proctors search through user exams
+    - Export exam data
+- Finish adding exam functionality such as:
+    - Add `/live-grading` endpoint for exams
+    - Store exams in database (entire exam as JSONB for simplicity)
+    - Retrieve exams from database
+- Refactor `exam.html` to use macros instead of `include`
+- Make primary colorscheme look less dumb
+- Modify check-in page to only show check-in options based on user roles
+
 ## Time Spent
+
 5/1/2025: 3 hrs
 5/3/2025: 8 hrs
 6/8/2025: 4 hrs
@@ -131,3 +151,4 @@ Ensure you are launching the server from the root of this repository. File paths
 6/10/2025: 2 hrs
 6/11/2025: 8 hrs
 6/14/2025: 3 hrs
+6/15/2025: 4 hrs

@@ -21,12 +21,15 @@ use crate::auth::handlers::{
 };
 use crate::auth::models::User;
 use crate::auth::{errors::AuthError, middleware::AuthStatus};
+use crate::auth::models::Roles;
 
 #[derive(Template)]
 #[template(path = "./app_templates/user_dropdown.html")]
 pub struct UserDropdownTemplate {
     rts: Routes,
     user: Option<User>,
+    is_proctor: bool,
+    is_admin: bool,
 }
 
 pub async fn get_user_dropdown(Extension(auth_status): Extension<AuthStatus>) -> impl IntoResponse {
@@ -35,7 +38,10 @@ pub async fn get_user_dropdown(Extension(auth_status): Extension<AuthStatus>) ->
         AuthStatus::Unauthorized(_) => None,
     };
 
-    let template = UserDropdownTemplate { user, rts: ROUTES };
+    let is_proctor = user.as_ref().is_some_and(|u| u.has_role(Roles::Proctor));
+    let is_admin = user.as_ref().is_some_and(|u| u.has_role(Roles::Admin));
+
+    let template = UserDropdownTemplate { rts: ROUTES, user, is_proctor, is_admin };
 
     (StatusCode::OK, Html(template.render().unwrap()))
 }
@@ -188,7 +194,8 @@ pub async fn get_logout_page(
     let authorized_user = match auth_status {
         AuthStatus::Authorized(user) => user,
         AuthStatus::Unauthorized(_) => {
-            panic!("If this happens, check your auth middleware application.")
+            panic!("If this happens, check your auth middleware application.") // TODO: Make this
+            // not panic
         }
     };
 

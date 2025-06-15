@@ -1,5 +1,7 @@
 use crate::app::router::Routes;
 use crate::app::router::ROUTES;
+use crate::auth::middleware::AuthStatus;
+use crate::auth::models::Roles;
 use crate::AppState;
 use crate::app::utils::is_htmx_request;
 use crate::app::utils::render;
@@ -10,6 +12,7 @@ use askama::Template;
 use axum::extract::Query;
 use axum::extract::State;
 use axum::response::Redirect;
+use axum::Extension;
 use axum::Form;
 use axum::{
     http::StatusCode,
@@ -136,7 +139,17 @@ pub async fn get_successful_checkout_session(
 #[tracing::instrument(skip(data))]
 pub async fn post_update_available_products(
     State(data): State<Arc<AppState>>,
+    Extension(auth_status): Extension<AuthStatus>,
 ) -> impl IntoResponse {
+    match auth_status {
+        AuthStatus::Authorized(user) => {
+            if !user.user.has_role(Roles::Admin) {
+                return Redirect::to(ROUTES.login)
+            }
+        },
+        AuthStatus::Unauthorized(_) => return Redirect::to(ROUTES.login),
+    }
+
     if let Err(err) = data.check_in_config.trigger_update_tx.send(()).await {
         error!(%err, "Unable to trigger an update of the products.");
     }

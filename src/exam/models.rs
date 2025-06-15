@@ -178,7 +178,7 @@ pub struct Competency {
     pub achieved_score_labels: Option<Vec<AchievedScoreLabel>>
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Debug)]
 pub struct PrefilledTestData {
     pub first_name: Option<String>,
     pub last_name: Option<String>,

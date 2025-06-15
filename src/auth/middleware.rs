@@ -1,4 +1,5 @@
 use sqlx::types::Json;
+use tracing::{debug, instrument};
 use crate::auth::models::Roles;
 use std::sync::Arc;
 use axum::{
@@ -30,6 +31,7 @@ pub enum AuthStatus {
 }
 
 /// This function checks if the user is authorized. This is not to be used directly as middleware.
+#[instrument(skip(data, cookie_jar, request_headers))]
 pub async fn check_auth_utility(
     cookie_jar: CookieJar,
     data: Arc<AppState>,
@@ -97,13 +99,16 @@ pub async fn check_auth_utility(
 
     let user = user.ok_or(AuthError::InvalidUser)?;
 
+    debug!(%user.id, %user.email, %user.first_name, %user.last_name, ?user.roles);
+
     Ok(AuthorizedUser {
         user,
         access_token_uuid,
     })
 }
 
-/// Inserts the auth status into the request
+/// Inserts the auth status into the request but does not require auth
+#[instrument(skip(cookie_jar, data, req, next))]
 pub async fn check_auth_middleware(
     cookie_jar: CookieJar,
     State(data): State<Arc<AppState>>,
@@ -124,6 +129,7 @@ pub async fn check_auth_middleware(
 }
 
 /// Check if the user is authorized and redirect to the login page if not
+#[instrument(skip(cookie_jar, data, req, next))]
 pub async fn require_auth_middleware(
     cookie_jar: CookieJar,
     State(data): State<Arc<AppState>>,
