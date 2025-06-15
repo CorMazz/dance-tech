@@ -8,19 +8,20 @@ CREATE EXTENSION IF NOT EXISTS pg_trgm;
 -- Set similarity threshold (optional, adjust as needed)
 SET pg_trgm.similarity_threshold = 0.3;
 
-CREATE TABLE
+create table
     "users" (
-        id UUID PRIMARY KEY DEFAULT (uuid_generate_v4()),
-        first_name VARCHAR(100) NOT NULL,
-        last_name VARCHAR(100) NOT NULL,
-        email VARCHAR(255) NOT NULL UNIQUE,
-        password VARCHAR(100) NOT NULL,
-        created_at TIMESTAMP
-        WITH
-            TIME ZONE DEFAULT NOW(),
-            updated_at TIMESTAMP
-        WITH
-            TIME ZONE DEFAULT NOW()
+        id uuid primary key default (uuid_generate_v4()),
+        first_name varchar(100) not null,
+        last_name varchar(100) not null,
+        email varchar(255) not null unique,
+        password varchar(100) not null,
+        roles JSONB not null default '[]',
+        created_at timestamp
+        with
+            time zone default now(),
+            updated_at timestamp
+        with
+            time zone default now()
     );
 
 CREATE INDEX users_email_idx ON users (email);

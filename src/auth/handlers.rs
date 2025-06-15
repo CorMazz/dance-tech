@@ -1,3 +1,5 @@
+use sqlx::types::Json;
+use crate::auth::models::Roles;
 use argon2::{
     Argon2, PasswordHash, PasswordHasher, PasswordVerifier,
     password_hash::{SaltString, rand_core::OsRng},
@@ -37,6 +39,8 @@ use redis::{AsyncCommands, RedisError};
 // #######################################################################################################################################################
 
 /// Registers a user to the database
+///
+/// By default, a user has no roles
 pub async fn register_user_handler(
     data: Arc<AppState>,
     first_name: String,
@@ -56,13 +60,13 @@ pub async fn register_user_handler(
         })
         .map(|hash| hash.to_string())?;
 
-    sqlx::query_as!(
-        User,
-        "INSERT INTO users (first_name,last_name,email,password) VALUES ($1, $2, $3, $4)",
+    sqlx::query!(
+        "INSERT INTO users (first_name,last_name,email,password)
+        VALUES ($1, $2, $3, $4)",
         first_name,
         last_name,
         email.to_ascii_lowercase(),
-        hashed_password
+        hashed_password,
     )
     .execute(&data.db)
     .await
@@ -370,7 +374,19 @@ async fn save_token_data_to_redis(
 pub async fn get_user(email: &str, db: &Pool<Postgres>) -> Result<Option<User>, AuthError> {
     sqlx::query_as!(
         User,
-        "SELECT * FROM users WHERE email = $1",
+        r#"
+        SELECT 
+            id, 
+            email, 
+            first_name,
+            last_name,
+            roles as "roles: Json<Vec<Roles>>",
+            password, 
+            created_at,
+            updated_at
+        FROM users
+        WHERE email = $1
+        "#,
         email.to_ascii_lowercase()
     )
     .fetch_optional(db)

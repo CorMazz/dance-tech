@@ -1,5 +1,6 @@
+use sqlx::types::Json;
+use crate::auth::models::Roles;
 use std::sync::Arc;
-
 use axum::{
     body::Body,
     extract::State,
@@ -7,10 +8,8 @@ use axum::{
     middleware::Next,
     response::{IntoResponse, Redirect},
 };
-
 use axum_extra::extract::cookie::CookieJar;
 use serde::{Deserialize, Serialize};
-
 use crate::{
     AppState,
     auth::{errors::AuthError, handlers, models::User},
@@ -75,7 +74,23 @@ pub async fn check_auth_utility(
     let user_id_uuid =
         uuid::Uuid::parse_str(&redis_token_user_id).map_err(|_| AuthError::ExpiredSession)?;
 
-    let user = sqlx::query_as!(User, "SELECT * FROM users WHERE id = $1", user_id_uuid)
+    let user = sqlx::query_as!(
+        User,
+        r#"
+        SELECT 
+            id, 
+            email, 
+            first_name,
+            last_name,
+            roles as "roles: Json<Vec<Roles>>",
+            password, 
+            created_at,
+            updated_at
+        FROM users
+        WHERE id = $1
+        "#,
+        user_id_uuid
+    )
         .fetch_optional(&data.db)
         .await
         .map_err(|e| AuthError::InternalServerError(Some(format!("Error fetching user from database (this shouldn't happen, try again or contact the server administrator): {e}"))))?;
