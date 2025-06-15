@@ -1,0 +1,197 @@
+metadata:
+  test_name: "Standard Leader Test"
+  config_settings:
+    live_grading: true
+    show_point_values: true
+  minimum_percent: 0.60
+  max_score: 98
+
+tables:
+  - sections:
+    - name: "Pattern Scoring"
+      scoring_categories:
+        - name: "Footwork"
+          values: ["Perfect", "Variation?", "Right Concept", "Nope"]
+        - name: "Timing"
+          values: ["On", "Off"]
+      competencies:
+        - name: "Starter Step"
+          scores: 
+            - [3, 2, 1, 0]
+            - [1, 0]
+          failing_score_labels: 
+            - scoring_category_name: "Footwork"
+              values: ["Nope"]
+        - name: "Left Side Pass from Closed"
+          scores: 
+            - [3, 2, 1, 0]
+            - [1, 0]
+          failing_score_labels: 
+            - scoring_category_name: "Footwork"
+              values: ["Nope"]
+        - name: "Sugar Tuck"
+          scores: 
+            - [3, 2, 1, 0]
+            - [1, 0]
+          failing_score_labels: 
+            - scoring_category_name: "Footwork"
+              values: ["Nope"]
+        - name: "Cutoff Whip"
+          scores: 
+            - [3, 2, 1, 0]
+            - [1, 0]
+          failing_score_labels: 
+            - scoring_category_name: "Footwork"
+              values: ["Nope"]
+        - name: "Left Side Pass"
+          scores: 
+            - [3, 2, 1, 0]
+            - [1, 0]
+          failing_score_labels: 
+            - scoring_category_name: "Footwork"
+              values: ["Nope"]
+        - name: "Whip"
+          scores: 
+            - [3, 2, 1, 0]
+            - [1, 0]
+          failing_score_labels: 
+            - scoring_category_name: "Footwork"
+              values: ["Nope"]
+        - name: "Sugar Push"
+          scores: 
+            - [3, 2, 1, 0]
+            - [1, 0]
+          failing_score_labels: 
+            - scoring_category_name: "Footwork"
+              values: ["Nope"]
+        - name: "Spinning Side Pass"
+          scores: 
+            - [3, 2, 1, 0]
+            - [1, 0]
+          failing_score_labels: 
+            - scoring_category_name: "Footwork"
+              values: ["Nope"]
+        - name: "Right Side Pass"
+          scores: 
+            - [3, 2, 1, 0]
+            - [1, 0]
+          failing_score_labels: 
+            - scoring_category_name: "Footwork"
+              values: ["Nope"]
+        - name: "Basket Whip"
+          scores: 
+            - [3, 2, 1, 0]
+            - [1, 0]
+          failing_score_labels: 
+            - scoring_category_name: "Footwork"
+              values: ["Nope"]
+        - name: "Free Spin"
+          scores: 
+            - [3, 2, 1, 0]
+            - [1, 0]
+          failing_score_labels: 
+            - scoring_category_name: "Footwork"
+              values: ["Nope"]
+
+  - sections:
+    - name: "Technique Scoring"
+      scoring_categories:
+        - name: ""
+          values: ["Consistent >90%", "Present 75%", "Occasional 50%", "Lacking 25%", "Missing <10%"]
+      competencies: 
+        - name: "Body Lead"
+          subtext: "(Week 1)"
+          scores: 
+            - [8, 6, 0, 0, 0]
+          failing_score_labels: 
+            - scoring_category_name: ""
+              values: ["Missing <10%", "Lacking 25%", "Occasional 50%"]
+          antithesis: "Arm Lead"
+        - name: "Post"
+          subtext: "(Week 1)"
+          scores: 
+            - [6, 4, 0, 0, 0]
+          failing_score_labels: 
+            - scoring_category_name: ""
+              values: ["Missing <10%", "Lacking 25%", "Occasional 50%"]
+          antithesis: "Floating Anchor"
+        - name: "Strong Frame"
+          subtext: "(Week 2)"
+          scores: 
+            - [6, 4, 2, 0, 0]
+          failing_score_labels: 
+            - scoring_category_name: ""
+              values: ["Missing <10%", "Lacking 25%", "Occasional 50%"]
+          antithesis: "Weak Frame"
+        - name: "Closed Connection"
+          subtext: "(Week 3/4)"
+          scores: 
+            - [4, 3, 2, 0, 0]
+          failing_score_labels: 
+            - scoring_category_name: ""
+              values: ["Missing <10%", "Lacking 25%", "Occasional 50%"]
+          antithesis: "Free Hand Only"
+        - name: "Connection Transition"
+          subtext: "(Week 2 - Dimmer Switch)"
+          scores: 
+            - [4, 3, 2, 0, 0]
+          failing_score_labels: 
+            - scoring_category_name: ""
+              values: ["Missing <10%", "Lacking 25%", "Occasional 50%"]
+          antithesis: "Brick Wall (Toggle Switch)"
+        - name: "On Time"
+          scores: 
+            - [8, 6, 0, 0 ,0]
+          failing_score_labels: 
+            - scoring_category_name: ""
+              values: ["Missing <10%", "Lacking 25%", "Occasional 50%"]
+          antithesis: "Off Time"
+        - name: "Move Off Slot"
+          scores: 
+            - [4, 3, 0, 0, 0]
+          failing_score_labels: 
+            - scoring_category_name: ""
+              values: ["Missing <10%", "Lacking 25%", "Occasional 50%"]
+          antithesis: "In the Way"
+        - name: "Safe"
+          scores: 
+            - [8, 0, 0, 0, 0]
+          failing_score_labels: 
+            - scoring_category_name: ""
+              values: ["Missing <10%", "Lacking 25%", "Occasional 50%"]
+          antithesis: "Unsafe"
+
+    - name: ""
+      scoring_categories:
+        - name: ""
+          values: ["Perpendicular", "Over-Angled", "Angled", "Under-Angled", "Flat"]
+      competencies:
+        - name: "Body Angle"
+          subtext: "(Week 2)"
+          scores: 
+            - [0, 2, 3, 2, 0]
+          failing_score_labels: 
+            - scoring_category_name: ""
+              values: ["Flat", "Perpendicular"]
+
+    - name: ""
+      scoring_categories:
+        - name: ""
+          values: ["Overkill-Prep", "Over-Prepped", "Prepped", "Under-Prepped", "No-Prep"]
+      competencies:
+        - name: "Prep"
+          subtext: "(Week 3)"
+          scores: 
+            - [0, 2, 3, 0, 0]
+          failing_score_labels:
+            - scoring_category_name: ""
+              values: ["No-Prep", "Overkill-Prep"]
+
+bonus_items: 
+  - name: "No Thumbs"
+    score: 1
+  - name: "Clear Turn Signal"
+    score: 1
+  - name: "Swung Triple"
+    score: 4
+

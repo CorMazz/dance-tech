@@ -15,7 +15,7 @@ use crate::app::router::ROUTES;
 // #######################################################################################################################################################
 
 #[derive(Template)]
-#[template(path = "./primary_templates/home.html", blocks = ["content"])]
+#[template(path = "./app_templates/home.html", blocks = ["content"])]
 pub struct HomeTemplate {
     rts: Routes
 }

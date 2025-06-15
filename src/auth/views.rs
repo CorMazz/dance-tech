@@ -23,7 +23,7 @@ use crate::auth::models::User;
 use crate::auth::{errors::AuthError, middleware::AuthStatus};
 
 #[derive(Template)]
-#[template(path = "./partial_templates/user_dropdown.html")]
+#[template(path = "./app_templates/user_dropdown.html")]
 pub struct UserDropdownTemplate {
     rts: Routes,
     user: Option<User>,

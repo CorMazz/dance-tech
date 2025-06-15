@@ -4,19 +4,16 @@ use axum::{
     routing::{get, post},
 };
 use crate::{
-    AppState,
-    app::views::{error_404_page, get_home_page},
-    auth::{
+    app::views::{error_404_page, get_home_page}, auth::{
         middleware::{check_auth_middleware, require_auth_middleware},
         views::{
             get_google_oauth_callback, get_google_oauth_init_flow, get_login_page, get_logout_page,
             get_signup_page, get_user_dropdown, post_login_form, post_signup_form,
         },
-    },
-    check_in::views::{
+    }, check_in::views::{
         get_check_in_page, get_successful_checkout_session, post_create_check_out_session,
         post_update_available_products,
-    },
+    }, exam::views::get_test_page, AppState
 };
 use tower_http::services::ServeDir;
 
@@ -37,8 +34,21 @@ pub struct Routes {
     pub stripe_success_callback: &'static str,
     pub update_products: &'static str,
 
+    // Exam Routes
+    /// The exam route has a variable in it, so it needs to be dynamically generated. See the
+    /// associated method self.exam()
+    pub exam_stem: &'static str,
+
     // Misc Routes
     pub user_dropdown: &'static str,
+}
+
+impl Routes {
+    /// Dynamically generate the route to view an exam, since there may be any number of exams to
+    /// view.
+    pub fn exam(&self, exam_id: &str) -> String {
+        format!("{}/{exam_id}", self.exam_stem)
+    }
 }
 
 /// This constant will be shared across the application
@@ -58,13 +68,18 @@ pub const ROUTES: Routes = Routes {
     stripe_success_callback: "/stripe/success",
     update_products: "/update-products",
 
+    // Exam Routes
+    exam_stem: "/exam",
+
     // Misc Routes
     user_dropdown: "/private/user-dropdown",
 };
 
 pub fn create_router(app_state: Arc<AppState>) -> Router {
     // Anything in here will redirect to the login page if the user is not logged in
-    let auth_required = Router::new().route(ROUTES.logout, get(get_logout_page));
+    let auth_required = Router::new()
+        .route(ROUTES.logout, get(get_logout_page))
+        .route(&ROUTES.exam("{test_index}"), get(get_test_page));
 
     // Anything in here will check if the user is signed in and add that info to the request
     let check_auth = Router::new()

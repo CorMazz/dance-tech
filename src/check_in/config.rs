@@ -6,9 +6,9 @@ use tokio::sync::{mpsc, oneshot};
 pub struct CheckInConfig {
     /// The Stripe API secret key
     pub secret_key: String,
-    /// A message channel to request the list of available products from the ProductManager actor
+    /// A message channel to request the list of available products from the `ProductManager` actor
     pub product_request_tx: mpsc::Sender<oneshot::Sender<Vec<Product>>>,
-    /// A message channel to trigger the ProductManager actor to query Stripe for updates to the
+    /// A message channel to trigger the `ProductManager` actor to query Stripe for updates to the
     /// list of products
     pub trigger_update_tx: mpsc::Sender<()>,
 }

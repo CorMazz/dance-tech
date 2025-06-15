@@ -122,7 +122,7 @@ pub async fn require_auth_middleware(
             next.run(req).await
         }
         Err(e) => match e {
-            AuthError::NotLoggedIn => Redirect::to("/login").into_response(),
+            AuthError::NotLoggedIn | AuthError::ExpiredSession => Redirect::to("/login").into_response(),
             _ => e.into_response(req.headers()),
         },
     }

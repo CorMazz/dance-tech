@@ -29,7 +29,7 @@ pub fn is_htmx_request(headers: &axum::http::HeaderMap) -> bool {
 ///
 /// The errors themselves implement `IntoResponse` to render into this template.
 #[derive(Template)]
-#[template(path = "./primary_templates/error.html", blocks = ["content"])]
+#[template(path = "./app_templates/error.html", blocks = ["content"])]
 pub struct ErrorTemplate {
     pub rts: Routes,
     pub error_message: String,

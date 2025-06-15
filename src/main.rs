@@ -10,11 +10,13 @@
 #![allow(clippy::multiple_crate_versions)]
 
 use check_in::actors::product_manager_actor_runtime;
+use exam::config::ExamConfig;
 use tracing::{error, info};
 use tracing_subscriber::util::SubscriberInitExt;
 mod app;
 mod auth;
 mod check_in;
+mod exam;
 use app::config::{AppConfig, SMTPConfig};
 use auth::config::{AuthConfig, GoogleOAuthConfig};
 use check_in::config::CheckInConfig;
@@ -43,6 +45,7 @@ pub struct AppState {
     app_config: AppConfig,
     auth_config: AuthConfig,
     check_in_config: CheckInConfig,
+    exam_config: ExamConfig,
     redis_client: Client,
     /// Configuration for the SMTP mailing. None if email functionality is not required.
     smtp_config: Option<SMTPConfig>,
@@ -66,6 +69,7 @@ async fn main() {
 
     let app_config = AppConfig::init();
     let auth_config = AuthConfig::init();
+    let exam_config = ExamConfig::init();
 
     // 32 because I think the docs said it stores that many by default in memory
     let (product_request_tx, product_request_rx) = mpsc::channel(32);
@@ -140,15 +144,16 @@ async fn main() {
         .allow_headers([AUTHORIZATION, ACCEPT, CONTENT_TYPE]);
 
     let app_state = Arc::new(AppState {
-        db: pool.clone(),
+        db: pool,
         app_config: app_config.clone(),
-        auth_config: auth_config.clone(),
-        check_in_config: check_in_config.clone(),
+        auth_config,
+        check_in_config,
+        exam_config,
         smtp_config,
         smtp_mailer,
         google_oauth_config,
         http_client,
-        redis_client: redis_client.clone(),
+        redis_client,
     });
 
     let actor_app_state = app_state.clone();

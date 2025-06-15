@@ -22,7 +22,7 @@ pub enum AuthError {
     #[error("The provided token is invalid.")]
     InvalidToken,
 
-    #[error("Your session has expired.")]
+    #[error("Your session has expired. Please login again.")]
     ExpiredSession,
 
     #[error("Invalid user.")]
