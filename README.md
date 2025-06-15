@@ -82,7 +82,7 @@ Tailwind must be rebuilt everytime you make changes to the html classes. That ca
 
 If you want to automagically recompile your Rust executable and rebuild your css everytime you save a file, you can run this command.
 
-`cargo watch -s './tailwind/tailwindcss -i ./static/css/input.css -o ./static/css/output.css -c ./tailwind/tailwind.config.js && cargo sqlx prepare && cargo run' --ignore *css* --ignore .sqlx --ignore main.rs --why`
+`cargo watch -s './tailwind/tailwindcss -i ./static/css/input.css -o ./static/css/output.css -c ./tailwind/tailwind.config.js && cargo sqlx prepare && cargo run' --ignore output.css --ignore flowbite.min.css --ignore .sqlx --ignore main.rs --ignore README.md --why`
 
 For some reason the `cargo sqlx prepare` command changes the permissions on the `main.rs` file, which was causing cargo watch to fire repeatedly. That is why we added `--ignore main.rs`. 
 The `cargo sqlx prepare` command allows sqlx to compile even when the database is offline. 
@@ -130,3 +130,4 @@ Ensure you are launching the server from the root of this repository. File paths
 6/9/2025: 7 hrs
 6/10/2025: 2 hrs
 6/11/2025: 8 hrs
+6/14/2025: 3 hrs

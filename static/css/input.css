@@ -1,1 +1,48 @@
 @import "tailwindcss";
+
+@theme {
+  /* Primary colors */
+  --color-primary-100: #84CEA0;
+  --color-primary-200: #54B277;
+  --color-primary-300: #339959;
+  --color-primary-400: #1C8342;
+  --color-primary-500: #09682C;
+
+  /* Secondary colors */
+  --color-secondary-100: #7CABBD;
+  --color-secondary-200: #4C849A;
+  --color-secondary-300: #306D84;
+  --color-secondary-400: #1C5A71;
+  --color-secondary-500: #0B445A;
+
+  /* Accent colors */
+  --color-accent-100: #CAF099;
+  --color-accent-200: #ACDF69;
+  --color-accent-300: #89C041;
+  --color-accent-400: #6DA523;
+  --color-accent-500: #4F830B;
+}
+
+
+@layer components {
+
+  /* Container Classes */
+  .my-card {
+    @apply shadow-md rounded-lg border border-accent-300 mb-6 p-4 bg-gray-50 hover:bg-gray-100 hover:shadow-xl transition duration-300;
+  }
+
+  .my-button {
+    @apply bg-secondary-300 text-white px-4 py-2 rounded hover:bg-secondary-400 transition;
+  }
+
+  /* Text Classes */
+
+  .my-title {
+    @apply text-2xl lg:text-4xl font-semibold text-gray-800 mb-4 
+  }
+
+  .my-paragraph {
+    @apply text-gray-600 lg:text-xl
+  }
+
+}

@@ -35,9 +35,10 @@ pub struct Routes {
     pub update_products: &'static str,
 
     // Exam Routes
+    pub exam_home: &'static str,
     /// The exam route has a variable in it, so it needs to be dynamically generated. See the
-    /// associated method self.exam()
-    pub exam_stem: &'static str,
+    /// associated method `self.exam()`
+    pub administer_exam_root: &'static str,
 
     // Misc Routes
     pub user_dropdown: &'static str,
@@ -46,12 +47,12 @@ pub struct Routes {
 impl Routes {
     /// Dynamically generate the route to view an exam, since there may be any number of exams to
     /// view.
-    pub fn exam(&self, exam_id: &str) -> String {
-        format!("{}/{exam_id}", self.exam_stem)
+    pub fn administer_exam(&self, exam_id: &str) -> String {
+        format!("{}/{exam_id}", self.administer_exam_root)
     }
 }
 
-/// This constant will be shared across the application
+/// This constant will be shared across the application and is the absolute truth for all routes
 pub const ROUTES: Routes = Routes {
     root: "/",
 
@@ -69,7 +70,8 @@ pub const ROUTES: Routes = Routes {
     update_products: "/update-products",
 
     // Exam Routes
-    exam_stem: "/exam",
+    exam_home: "/exam",
+    administer_exam_root: "/administer-exam",
 
     // Misc Routes
     user_dropdown: "/private/user-dropdown",
@@ -79,7 +81,7 @@ pub fn create_router(app_state: Arc<AppState>) -> Router {
     // Anything in here will redirect to the login page if the user is not logged in
     let auth_required = Router::new()
         .route(ROUTES.logout, get(get_logout_page))
-        .route(&ROUTES.exam("{test_index}"), get(get_test_page));
+        .route(&ROUTES.administer_exam("{test_index}"), get(get_test_page));
 
     // Anything in here will check if the user is signed in and add that info to the request
     let check_auth = Router::new()
