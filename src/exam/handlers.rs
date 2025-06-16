@@ -1,127 +1,84 @@
-use std::collections::HashMap;
+use std::collections::BTreeMap;
 
-use tracing::instrument;
+use polars::frame::DataFrame;
+use crate::exam::models::ScoringCategory;
 
-use super::{errors::ExamError, models::{Proctor, Test}};
+use super::models::{RadioButton, RadioOption, TestRow, TestTable};
 
-/// Parses the test form data, which should have a format of a hashmap more or less like this
-/// 
-/// Takes in a test_template which it will then mutate, adding the results so that it is graded.
-#[instrument(skip(test_template))]
-pub fn parse_test_form_data(test: HashMap<String, String>, mut test_template: Test, proctor: Option<Proctor>) -> Result<Test, ExamError> {
+/// Take a `DataFrame` and convert it into a nested `TestTable` structure
+///
+/// A `DataFrame` represents the test questions in wide format, as a human would visualize them and
+/// as they will be rendered by the HTML. The HTML itself needs to be generated from the
+/// `DataFrame`, and these `TestTable` objects help with that.
+pub fn convert_df_to_test_table(df: &DataFrame, table_idx: &usize) -> TestTable {
+    let index_col = df.column("index").expect("Missing 'index' column");
+    let index = index_col.str().expect("'index' column must be parseable to string");
+    
+    const DL: &str = "-.-"; // Delimiter
 
-    let mut user_info = HashMap::new();
+    // Group columns by category (e.g., footwork, timing)
+    let mut category_map: BTreeMap<String, Vec<String>> = BTreeMap::new();
 
-    // Sort the keys so that the graded test gets reconstructed in the same order as the test definition
-    let mut sorted_keys: Vec<&String> = test.keys().collect();
-    sorted_keys.sort(); 
-
-    for key in sorted_keys {
-        let value = &test[key];
-
-        // Build the hash map with all of the graded items
-        if key.starts_with("table_index") {
-            let key_parts: Vec<&str> = key.split("---").collect();
-            let value_parts: Vec<&str> = value.split("---").collect();
-
-            match (key_parts.len(), value_parts.len()) {
-                (8, 4) => {
-                    match (
-                        key_parts[1].parse::<usize>(), 
-                        key_parts[3].parse::<usize>(), 
-                        key_parts[5].parse::<usize>(), 
-                        key_parts[7].parse::<usize>(), 
-                        value_parts[1].parse::<usize>(), 
-                        value_parts[3].parse::<i32>()
-                    ) {
-                        (Ok(table_index), Ok(section_index), Ok(item_index), Ok(scoring_category_index), Ok(scoring_category_label_index), Ok(points)) => {
-
-                            let scoring_category_name = test_template.tables[table_index]
-                                .sections[section_index]
-                                .scoring_categories[scoring_category_index].name.clone();
-
-                            let label = test_template.tables[table_index]
-                                .sections[section_index]
-                                .scoring_categories[scoring_category_index]
-                                .values[scoring_category_label_index]
-                                .clone();
-
-                            if let Some(item) = test_template.tables[table_index]
-                            .sections[section_index]
-                            .competencies
-                            .get_mut(item_index)
-                        {
-                            item.achieved_scores.get_or_insert_with(Vec::new).push(points);
-                                               
-                            item.achieved_score_labels
-                                .get_or_insert_with(Vec::new)
-                                .push(AchievedScoreLabel {
-                                     scoring_category_name,
-                                     value: label, 
-                                    });
-                        }
-                        },
-
-                        (Err(e), _, _, _, _, _) => return Err(ExamError::ParseError(format!("Failed to parse table index key '{}': {:?}", key, e))),
-                        (_, Err(e), _, _, _, _) => return Err(ExamError::ParseError(format!("Failed to parse section index from key '{}': {:?}", key, e))),
-                        (_, _, Err(e), _, _, _) => return Err(ExamError::ParseError(format!("Failed to parse item index from key'{}': {:?}", key, e))),
-                        (_, _, _, Err(e), _, _) => return Err(ExamError::ParseError(format!("Failed to parse scoring category index from key '{}': {:?}", key, e))),
-                        (_, _, _, _, Err(e), _) => return Err(ExamError::ParseError(format!("Failed to parse scoring category label index from value '{}': {:?}", value, e))),
-                        (_, _, _, _, _, Err(e)) => return Err(ExamError::ParseError(format!("Failed to parse score from value '{}': {:?}", value, e))),
-                    }
-                }
-                _ => return Err(ExamError::ParseError(format!("The key '{}' and value '{}' should be formatted as follows 'table_index---0---section_index---0---item_index---0---scoring_category_index---1': 'scoring_category_value_index---0---points---1'", key, value))),
-            }
-        } else if key.starts_with("bonus_index") {
-            if let Some(bonus_items) = &mut test_template.bonus_items {
-                let key_parts: Vec<&str> = key.split("---").collect();
-                match key_parts.len() {
-                    2 => {
-                        match (key_parts[1].parse::<usize>(), value.parse::<i64>()) {
-                            (Ok(bonus_index), Ok(_)) => {
-                                let _ = bonus_items[bonus_index].achieved.insert(true);
-                            },
-                            (Err(e), _) => return Err(ExamError::ParseError(format!("Failed to parse bonus index from key '{}': {:?}", key, e))),
-                            (_, Err(e)) => return Err(ExamError::ParseError(format!("Failed to parse points from value '{}': {:?}", value, e))),
-                        }
-                    }
-                    _ => return Err(ExamError::ParseError(format!("The key '{}' should be formatted as 'bonus_index---<index>', but got '{}'", key, key))),
-                }
-            }
+    for col_name in df.get_column_names().iter().skip(1) {
+        if let Some((category, label)) = col_name.split_once(DL) {
+            category_map
+                .entry(category.to_string())
+                .or_default()
+                .push(label.to_string());
         } else {
-            user_info.insert(key.clone(), value.clone());
+            panic!("Column {col_name} is missing `{DL}` delimiter");
         }
-    } 
-
-    // Construct the GradedTestee instance from the user_info hashmap
-    let testee: Testee = match (
-        user_info.get("first_name").cloned(),
-        user_info.get("last_name").cloned(),
-        user_info.get("email").cloned()
-    ) {
-        (Some(first_name), Some(last_name), Some(email)) => Testee {
-            id: None,
-            first_name,
-            last_name,
-            email,
-        },
-        _ => {
-           return Err(ExamError::InternalServerError("Missing user information. Please ensure 'first_name', 'last_name', and 'email' are provided.".to_string()));
-        }
-    };
-
-    // Assign the testee
-    test_template.metadata.testee = Some(testee);
-
-    // Grade the test
-    if let Err(e) = test_template.grade() {
-        return Err(ExamError::InternalServerError(e)); // Return the error
     }
 
-    // Assign the proctor
-    test_template.metadata.proctor = proctor;
+    let mut scoring_categories = Vec::new();
+    let mut rows = Vec::new();
 
-    Ok(test_template)
+    for row_idx in 0..df.height() {
+        let mut buttons = Vec::new();
 
+        for (category, labels) in &category_map {
+            let mut options = Vec::new();
+
+            for (label_idx, label) in labels.iter().enumerate() {
+                let full_col = format!("{category}{DL}{label}");
+                let col = df.column(&full_col).unwrap();
+                let val = col.get(row_idx).unwrap().to_string();
+
+                let id = format!(
+                    "{category}{DL}row-{row_idx}{DL}label-{label_idx}"
+                );
+
+                options.push(RadioOption {
+                    id,
+                    value: val,
+                    checked: label_idx == labels.len() - 1, // Last option checked by default
+                });
+            }
+
+            buttons.push(RadioButton {
+                name: format!("{table_idx}{DL}{category}{DL}row-{row_idx}"),
+                options,
+            });
+
+            // Only push these once (they're global across the table)
+            if row_idx == 0 {
+                scoring_categories.push( ScoringCategory {
+                    name: category.to_string(),
+                    values: labels.clone(),
+                });
+            }
+        }
+
+        rows.push(TestRow { 
+            buttons,
+            left_label: index.get(row_idx).unwrap().to_string(),
+            left_label_subtext: String::new(),
+            right_label: String::new(),
+        });
+    }
+
+    TestTable {
+        scoring_categories,
+        rows,
+    }
 }
-
