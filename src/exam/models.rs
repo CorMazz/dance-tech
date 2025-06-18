@@ -1,7 +1,19 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 use serde::{Deserialize, Serialize};
+use tracing::{error, instrument};
 use uuid::Uuid;
+
+use super::errors::ExamError;
+
+pub struct GradedTest {
+    pub id: Uuid,
+    pub test: Test,
+    pub achieved_points: usize,
+    pub is_passing: bool,
+    pub proctor_id: Uuid,
+    pub testee_id: Uuid,
+}
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(deny_unknown_fields)]
@@ -10,6 +22,102 @@ pub struct Test {
     /// Contains multiple different tables within it. Each table has a new set of headers
     pub containers: Vec<TestContainer>,
     pub bonus_items: Option<Vec<BonusItem>>,
+}
+
+impl Test {
+    #[instrument(skip(self))]
+    /// Use the results of the form to mutate the `RadioOption.checked` field to `true` for the
+    /// items contained within this test.
+    pub fn grade(mut self, form: Vec<(RadioName, RadioValue)>) -> Result<GradedTest, ExamError> {
+        let mut score = 0; 
+
+        // Registry of all expected radio buttons by RadioName to ensure that the form hits all
+        // buttons 
+        let mut registry: HashSet<RadioName> = HashSet::new();
+
+        // --- Reset all radio options to unchecked and build registry ---
+        for (container_idx, container) in self.containers.iter_mut().enumerate() {
+            for (table_idx, table) in container.tables.iter_mut().enumerate() {
+                for (row_idx, row) in table.rows.iter_mut().enumerate() {
+                    for (category_idx, button) in row.buttons.iter_mut().enumerate() {
+                        for option in &mut button.options {
+                            option.checked = false;
+
+                            registry.insert(
+                                RadioName {
+                                    container_index: container_idx,
+                                    table_index: table_idx,
+                                    category_index: category_idx,
+                                    row_index: row_idx,
+                                },
+                            );
+                        }
+                    }
+                }
+            }
+        }
+
+        for (radio_name, radio_value) in form {
+            score += radio_value.point_value;
+
+            let error_func = |component: &str| {
+                error!("Index out of range for the {component}. `RadioName`: {radio_name:#?}\n`RadioValue`: {radio_value:#?}");
+                ExamError::ParseError
+            };
+
+            let container = self.containers
+                .get_mut(radio_name.container_index)
+                .ok_or_else(|| error_func("container"))?;
+
+            let table = container
+                .tables
+                .get_mut(radio_name.table_index)
+                .ok_or_else(|| error_func("table"))?;
+
+            let row = table
+                .rows
+                .get_mut(radio_name.row_index)
+                .ok_or_else(|| error_func("row"))?;
+
+            let button = row
+                .buttons
+                .get_mut(radio_name.category_index)
+                .ok_or_else(|| error_func("button"))?;
+
+            let selected_option = button
+                .options
+                .get_mut(radio_value.label_index)
+                .ok_or_else(|| error_func("option"))?;
+
+            selected_option.checked = true;
+            
+            // Theoretically if we made it down here, this component has to exist on the test...
+            if !registry.remove(&radio_name) {
+                error!("Attempted to access a component that does not exist on the test:  `RadioName`: {radio_name:#?}\n`RadioValue`: {radio_value:#?}");
+                return Err(ExamError::ParseError)
+            }
+        }
+
+        if !registry.is_empty() {
+            error!("Not all required form inputs were provided. There are ungraded questions remaining.\nUngraded Questions: {registry:#?}");
+            return Err(ExamError::ParseError);
+        }
+        let passing_percent = self.metadata.minimum_percent;
+        let max_score = self.metadata.max_score;
+
+        #[allow(clippy::cast_precision_loss)]
+        let percent = (score as f32 / max_score as f32) * 100.0;
+        let is_passing = percent >= passing_percent;
+
+        Ok(GradedTest {
+            id: Uuid::new_v4(),
+            test: self,
+            achieved_points: score,
+            is_passing,
+            proctor_id: Uuid::new_v4(),
+            testee_id: Uuid::new_v4(),
+        })
+    }
 }
 
 /// A bonus item adds bonus points on the test.
@@ -56,10 +164,6 @@ pub struct TestContainer {
 pub struct CsvTestTable {
     pub rows: Vec<Vec<String>>
 }
-
-// impl Into<HtmlTestTable> for CsvTestTable {
-//
-// }
 
 /// A table can also be thought of as a `DataFrame` style structure with a column multi-index to
 /// allow for multiple scoring categories within a single table (if that were possible in Polars).
@@ -112,9 +216,11 @@ pub struct RadioButton {
 /// The `name` field on a radio button is included in the post request when a form is submitted.
 /// We can deserialize the keys in the form request into this `RadioName` type. This allows us to 
 /// correspond the form results to the original test they came from so that we can grade the test.
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, Eq, Hash, PartialEq)]
 #[allow(clippy::struct_field_names)]
 pub struct RadioName {
+    /// The index of the container on the form that the `RadioButton` belongs to.
+    pub container_index: usize,
     /// The index of the table on the form that the `RadioButton` belongs to.
     pub table_index: usize,
     /// The index of the scoring category on the form that the `RadioButton` belongs to.
@@ -132,8 +238,6 @@ pub struct RadioOption {
     /// This is the value that gets sent with the key, which is a serialized string containing the
     /// point value and the index of that score within the `CsvTestTable`
     pub value: RadioValue,
-    /// The point value of a specified answer on a question. Displayed within the buttons.
-    pub point_value: String,
     /// Determine if this is the one that starts checked
     pub checked: bool
 }
@@ -147,7 +251,7 @@ pub struct RadioValue {
     /// The index of the column of the table on the form that this `RadioOption` belongs to.
     pub label_index: usize,
     /// The point value of a specified answer on a question. Displayed within the buttons.
-    pub point_value: String,
+    pub point_value: usize,
 }
 
 #[derive(Deserialize, Debug)]

@@ -90,7 +90,9 @@ pub async fn post_test_form(
         })
         .collect();
 
-    debug!("Parsed form: {:#?}", parsed);
+    debug!("Parsed form: {parsed:#?}");
+    let graded = data.exam_config.tests.get(test_index).expect("Invalid Test ID").clone().grade(parsed);
+    debug!("Successfully graded test.");
     (StatusCode::OK, Html("Bet"))
     // let proctor = match auth_status {
     //     AuthStatus::Authorized(user) => Proctor { id: user.user.id, first_name: user.user.first_name, last_name: user.user.last_name},

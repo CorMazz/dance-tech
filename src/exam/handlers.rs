@@ -9,7 +9,7 @@ use super::models::{CsvTestTable, RadioButton, RadioOption, TestRow, HtmlTestTab
 /// A `DataFrame` represents the test questions in wide format, as a human would visualize them and
 /// as they will be rendered by the HTML. The HTML itself needs to be generated from the
 /// `DataFrame`, and these `TestTable` objects help with that.
-pub fn convert_df_to_test_table(df: &CsvTestTable, table_idx: usize) -> HtmlTestTable {
+pub fn convert_df_to_test_table(df: &CsvTestTable, container_idx: usize, table_idx: usize) -> HtmlTestTable {
     const DL: &str = "--~--";
 
     let headers = &df.rows[0];
@@ -53,15 +53,15 @@ pub fn convert_df_to_test_table(df: &CsvTestTable, table_idx: usize) -> HtmlTest
                     id: id.to_string(),
                     value: RadioValue {
                         label_index: label_idx,
-                        point_value: point_val.to_string(),
+                        point_value: point_val.parse::<usize>().expect("Unable to parse point_value to `usize"),
                     },
-                    point_value: point_val.to_string(),
                     checked: label_idx == labels.len() - 1,
                 });
             }
 
             buttons.push(RadioButton {
                 name: RadioName {
+                    container_index: container_idx,
                     table_index: table_idx,
                     category_index: category_idx,
                     row_index: row_idx,

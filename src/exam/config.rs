@@ -123,16 +123,16 @@ Prep,5,4,3,2,1
         let containers = vec![
             super::models::TestContainer {
                 name: "Pattern Scoring".to_string(),
-                tables: vec![super::handlers::convert_df_to_test_table(&df_1, 1)],
+                tables: vec![super::handlers::convert_df_to_test_table(&df_1, 0, 0)],
                 dfs: vec![df_1]    
             },
 
             super::models::TestContainer {
                 name: "Technique Scoring".to_string(),
                 tables: vec![
-                    super::handlers::convert_df_to_test_table(&df_2, 2),
-                    super::handlers::convert_df_to_test_table(&df_3, 3),
-                    super::handlers::convert_df_to_test_table(&df_4, 4)
+                    super::handlers::convert_df_to_test_table(&df_2, 1, 0),
+                    super::handlers::convert_df_to_test_table(&df_3, 1, 1),
+                    super::handlers::convert_df_to_test_table(&df_4, 1, 2)
                 ],
                 dfs: vec![df_2, df_3, df_4]    
             }

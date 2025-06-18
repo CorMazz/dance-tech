@@ -10,8 +10,8 @@ pub enum ExamError {
     #[error("An internal server error occurred: {0:?}")]
     InternalServerError(Option<String>),
 
-    #[error("There was an error parsing the test results: {0:?}")]
-    ParseError(Option<String>),
+    #[error("There was an error parsing the test results. Please contact the site administrator.")]
+    ParseError,
 }
 
 impl ExamError {
