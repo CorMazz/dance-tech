@@ -54,7 +54,7 @@ pub struct TestContainer {
     pub name: String,
     pub tables: Vec<TestTable>,
     /// The original `DataFrames` that are loaded in from the configuration files and converted into
-    /// the `TestTable`
+    /// the `TestTable` objects
     pub dfs: Vec<DataFrame>,
 }
 

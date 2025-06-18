@@ -13,7 +13,7 @@ use crate::{
     }, check_in::views::{
         get_check_in_page, get_successful_checkout_session, post_create_check_out_session,
         post_update_available_products,
-    }, exam::views::{get_proctor_dashboard_page, get_test_page}, AppState
+    }, exam::views::{get_proctor_dashboard_page, get_test_page, post_test_form}, AppState
 };
 use tower_http::services::ServeDir;
 
@@ -87,7 +87,7 @@ pub fn create_router(app_state: Arc<AppState>) -> Router {
         .route(ROUTES.logout, get(get_logout_page))
         .route(ROUTES.update_products, post(post_update_available_products)) 
         .route(ROUTES.proctor_dashboard, get(get_proctor_dashboard_page))
-        .route(&ROUTES.administer_exam("{test_index}"), get(get_test_page));
+        .route(&ROUTES.administer_exam("{test_index}"), get(get_test_page).post(post_test_form));
 
     // Anything in here will check if the user is signed in and add that info to the request
     let check_auth = Router::new()

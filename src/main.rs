@@ -66,7 +66,6 @@ async fn main() {
         .with(fmt::layer().pretty())
         .init();
 
-
     let app_config = AppConfig::init();
     let auth_config = AuthConfig::init();
     let exam_config = ExamConfig::init();
