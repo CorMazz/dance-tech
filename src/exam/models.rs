@@ -1,12 +1,7 @@
-use polars::frame::DataFrame;
+use std::collections::HashMap;
+
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
-
-// #######################################################################################################################################################
-// #######################################################################################################################################################
-// Declare Structs/Enums Used to Define the Test
-// #######################################################################################################################################################
-// #######################################################################################################################################################
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(deny_unknown_fields)]
@@ -45,23 +40,31 @@ pub struct TestConfig {
     pub show_point_values: bool,
 }
 
-
 /// A table is a collection of sections (groups) of questions/competencies on a test.
 /// There may be multiple sections (different sets of grade categories) on a table
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct TestContainer {
     /// The name to be displayed at the top of this container. Ie. 'Pattern Scoring'
     pub name: String,
-    pub tables: Vec<TestTable>,
+    pub tables: Vec<HtmlTestTable>,
     /// The original `DataFrames` that are loaded in from the configuration files and converted into
     /// the `TestTable` objects
-    pub dfs: Vec<DataFrame>,
+    pub dfs: Vec<CsvTestTable>,
 }
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct CsvTestTable {
+    pub rows: Vec<Vec<String>>
+}
+
+// impl Into<HtmlTestTable> for CsvTestTable {
+//
+// }
 
 /// A table can also be thought of as a `DataFrame` style structure with a column multi-index to
 /// allow for multiple scoring categories within a single table (if that were possible in Polars).
 #[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct TestTable {
+pub struct HtmlTestTable {
     pub scoring_categories: Vec<ScoringCategory>,
     pub rows: Vec<TestRow>
 }
@@ -69,7 +72,7 @@ pub struct TestTable {
 /// The text labels for the different scores
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct ScoringCategory {
-    /// The name of the concept being scored. IE: 'Footwork'
+    /// The name of the concept being scored. IE: 'Footwork'. Can be `""`.
     pub name: String,
     /// The words used to describe what a score means. IE: 'Perfect', 'Right Concept', 'Not So Much'
     pub values: Vec<String>
@@ -100,10 +103,24 @@ pub struct TestRow {
 pub struct RadioButton {
     /// This is what gets sent when the form is submitted as the key (assuming the form is parsed
     /// as a flat `HashMap`).
-    pub name: String,
+    pub name: RadioName,
     /// The number of options should correspond with the number of score labels for the corresponding
     /// `TestTable`.
     pub options: Vec<RadioOption>
+}
+
+/// The `name` field on a radio button is included in the post request when a form is submitted.
+/// We can deserialize the keys in the form request into this `RadioName` type. This allows us to 
+/// correspond the form results to the original test they came from so that we can grade the test.
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[allow(clippy::struct_field_names)]
+pub struct RadioName {
+    /// The index of the table on the form that the `RadioButton` belongs to.
+    pub table_index: usize,
+    /// The index of the scoring category on the form that the `RadioButton` belongs to.
+    pub category_index: usize,
+    /// The index of the row of the table on the form that the `RadioButton` belongs to.
+    pub row_index: usize,
 }
 
 /// A single button within a `RadioItem`
@@ -112,10 +129,25 @@ pub struct RadioOption {
     /// Must be unique for each element, is used to assign `<label>` element to the button (which
     /// makes the button prettier than a stupid looking filled circle from 1985).
     pub id: String,
-    /// This is the value that gets sent with the key, which is the score
-    pub value: String,
+    /// This is the value that gets sent with the key, which is a serialized string containing the
+    /// point value and the index of that score within the `CsvTestTable`
+    pub value: RadioValue,
+    /// The point value of a specified answer on a question. Displayed within the buttons.
+    pub point_value: String,
     /// Determine if this is the one that starts checked
     pub checked: bool
+}
+
+
+/// The `value` field on a radio button is included in the post request when a form is submitted.
+/// We can deserialize the values in the form request into this `RadioValue` type. This allows us to 
+/// correspond the form results to the original test they came from so that we can grade the test.
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct RadioValue {
+    /// The index of the column of the table on the form that this `RadioOption` belongs to.
+    pub label_index: usize,
+    /// The point value of a specified answer on a question. Displayed within the buttons.
+    pub point_value: String,
 }
 
 #[derive(Deserialize, Debug)]

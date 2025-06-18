@@ -21,6 +21,8 @@ use tracing::instrument;
 use crate::{app::router::{Routes, ROUTES}, exam::models::Test};
 
 use super::models::PrefilledTestData;
+use super::models::RadioName;
+use super::models::RadioValue;
 
 #[derive(Template)]
 #[template(path = "./exam_templates/exam.html", blocks = ["content"])] 
@@ -69,16 +71,26 @@ pub async fn get_test_page(
 }
 
 /// Handles parsing the test form, saving the graded test to the database, and emailing test results to the testee.
-#[instrument(skip(data, auth_status, headers, test))]
+#[instrument(skip(data, auth_status, headers, raw_form))]
 pub async fn post_test_form(
     State(data): State<Arc<AppState>>,
     Extension(auth_status): Extension<AuthStatus>,
     Path(test_index): Path<usize>,
     headers: axum::http::HeaderMap,
     Host(server_root_url): Host,
-    Form(test): Form<HashMap<String, String>>,
+    Form(raw_form): Form<HashMap<String, String>>,
 ) -> impl IntoResponse {
-    debug!("Received test form {:#?}", test);
+    debug!("Received raw test form {:#?}", raw_form);
+    let parsed: Vec<(RadioName, RadioValue)> = raw_form
+        .into_iter()
+        .map(|(k, v)| {
+            let name: RadioName = serde_json::from_str(&k).expect("Invalid RadioName JSON");
+            let value: RadioValue = serde_json::from_str(&v).expect("Invalid RadioValue JSON");
+            (name, value)
+        })
+        .collect();
+
+    debug!("Parsed form: {:#?}", parsed);
     (StatusCode::OK, Html("Bet"))
     // let proctor = match auth_status {
     //     AuthStatus::Authorized(user) => Proctor { id: user.user.id, first_name: user.user.first_name, last_name: user.user.last_name},

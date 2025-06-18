@@ -70,9 +70,9 @@
                 <td class="py-2 px-1 w-full border-b text-center {% if loop.last %}border-r border-gray-300 last:border-0{% else %}{% endif %}">
                   <input 
                     type="radio" 
-                    name={{ radio_button.name }}
+                    name="{{ radio_button.name|json }}"
                     id={{ radio_option.id }}
-                    value={{ radio_option.value }}
+                    value="{{ radio_option.value|json }}"
                     class="hidden peer" 
                     required
                     {% if radio_option.checked %}checked{% endif %}
@@ -82,7 +82,7 @@
                     class="inline-flex items-center justify-center w-full h-12 p-2 text-sm font-medium text-gray-900 bg-white border-2 border-gray-300 rounded-lg cursor-pointer peer-checked:bg-blue-600 peer-checked:text-white peer-checked:border-transparent hover:bg-gray-100 hover:shadow-sm transition duration-300"
                   >
                     {% if show_point_values %}
-                      {{ radio_option.value }}
+                      {{ radio_option.value.point_value }}
                     {% endif %}
                   </label>
                 </td>

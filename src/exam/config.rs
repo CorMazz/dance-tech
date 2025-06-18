@@ -1,9 +1,31 @@
+use std::collections::{BTreeMap, HashMap};
+
+use csv::ReaderBuilder;
 use glob::glob;
 use tracing::{error, info};
 
 use crate::exam::models::Test;
 
+use super::models::{CsvTestTable, ScoringCategory};
 
+pub fn parse_csv(csv_data: &str) -> CsvTestTable {
+    let mut rdr = ReaderBuilder::new()
+        .has_headers(true)
+        .from_reader(csv_data.as_bytes());
+
+    let headers = rdr.headers().unwrap().iter().map(|h| h.to_string()).collect();
+    let mut all_rows = vec![headers];
+
+    for result in rdr.records() {
+        let record = result.unwrap();
+        let row = record.iter().map(|s| s.to_string()).collect();
+        all_rows.push(row);
+    }
+
+    CsvTestTable {
+        rows: all_rows,
+    }
+}
 
 pub struct ExamConfig {
     pub tests: Vec<Test>
@@ -52,69 +74,43 @@ impl ExamConfig {
         //     std::env::current_dir().map_or_else(|_| "unknown".into(), |p| p.display().to_string())
         // );
 
-        let df_1 = polars::df![
-            "index" => &[
-                "Starter Step",
-                "Left Side Pass from Closed",
-                "Sugar Tuck",
-                "Cutoff Whip",
-                "Left Side Pass",
-                "Whip",
-                "Sugar Push",
-                "Spinning Side Pass",
-                "Right Side Pass",
-                "Basket Whip",
-                "Free Spin",
-            ],
-            "Footwork-.-Perfect" => &[4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4],
-            "Footwork-.-Variation?" => &[3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3],
-            "Footwork-.-Right Concept" => &[2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2],
-            "Footwork-.-Nope" => &[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-            "Timing-.-On" => &[2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2],
-            "Timing-.-Off" => &[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-        ].unwrap();
+        let df_1_csv = r"index,Footwork--~--Perfect,Footwork--~--Variation?,Footwork--~--Right Concept,Footwork--~--Nope,Timing--~--On,Timing--~--Off
+Starter Step,4,3,2,1,2,1
+Left Side Pass from Closed,4,3,2,1,2,1
+Sugar Tuck,4,3,2,1,2,1
+Cutoff Whip,4,3,2,1,2,1
+Left Side Pass,4,3,2,1,2,1
+Whip,4,3,2,1,2,1
+Sugar Push,4,3,2,1,2,1
+Spinning Side Pass,4,3,2,1,2,1
+Right Side Pass,4,3,2,1,2,1
+Basket Whip,4,3,2,1,2,1
+Free Spin,4,3,2,1,2,1
+";
 
-        let df_2 = polars::df![
-            "index" => &[
-                "Body Lead",
-                "Post",
-                "Strong Frame",
-                "Closed Connection",
-                "Connection Transition",
-                "On Time",
-                "Move Off Slot",
-                "Safe",
-            ],
-            "-.-Consistent >90%" => &[5, 5, 5, 5, 5, 5, 5, 5],
-            "-.-Present 75%" => &[4, 4, 4, 4, 4, 4, 4, 4],
-            "-.-Occasional 50%" => &[3, 3, 3, 3, 3, 3, 3, 3],
-            "-.-Lacking 25%" => &[2, 2, 2, 2, 2, 2, 2, 2],
-            "-.-Missing <10%" => &[1, 1, 1, 1, 1, 1, 1, 1],
-        ].unwrap();
+    let df_2_csv = r"index,--~--Consistent >90%,--~--Present 75%,--~--Occasional 50%,--~--Lacking 25%,--~--Missing <10%
+Body Lead,5,4,3,2,1
+Post,5,4,3,2,1
+Strong Frame,5,4,3,2,1
+Closed Connection,5,4,3,2,1
+Connection Transition,5,4,3,2,1
+On Time,5,4,3,2,1
+Move Off Slot,5,4,3,2,1
+Safe,5,4,3,2,1
+";
 
-        let df_3 = polars::df![
-            "index" => &[
-                "Body Angle",
-            ],
-            "-.-Perpendicular" => &[5],
-            "-.-Over-Angled" => &[4],
-            "-.-Angled" => &[3],
-            "-.-Under-Angled" => &[2],
-            "-.-Flat" => &[1],
-        ].unwrap();
+    let df_3_csv = r"index,--~--Perpendicular,--~--Over-Angled,--~--Angled,--~--Under-Angled,--~--Flat
+Body Angle,5,4,3,2,1
+";
 
+    let df_4_csv = r"index,--~--Overkill,--~--Too Strong,--~--Adequate,--~--Under-Prepped,--~--Missing
+Prep,5,4,3,2,1
+";
 
-        let df_4 = polars::df![
-            "index" => &[
-                "Prep",
-            ],
-            "-.-Overkill" => &[5],
-            "-.-Too Strong" => &[4],
-            "-.-Adequate" => &[3],
-            "-.-Under-Prepped" => &[2],
-            "-.-Missing" => &[1],
-        ].unwrap();
-
+        let df_1 = parse_csv(df_1_csv);
+        let df_2 = parse_csv(df_2_csv);
+        let df_3 = parse_csv(df_3_csv);
+        let df_4 = parse_csv(df_4_csv);
         let metadata = super::models::Metadata {
             test_name: "Plz Work".to_string(),
             config: super::models::TestConfig {
@@ -127,16 +123,16 @@ impl ExamConfig {
         let containers = vec![
             super::models::TestContainer {
                 name: "Pattern Scoring".to_string(),
-                tables: vec![super::handlers::convert_df_to_test_table(&df_1, &1)],
+                tables: vec![super::handlers::convert_df_to_test_table(&df_1, 1)],
                 dfs: vec![df_1]    
             },
 
             super::models::TestContainer {
                 name: "Technique Scoring".to_string(),
                 tables: vec![
-                    super::handlers::convert_df_to_test_table(&df_2, &2),
-                    super::handlers::convert_df_to_test_table(&df_3, &3),
-                    super::handlers::convert_df_to_test_table(&df_4, &4)
+                    super::handlers::convert_df_to_test_table(&df_2, 2),
+                    super::handlers::convert_df_to_test_table(&df_3, 3),
+                    super::handlers::convert_df_to_test_table(&df_4, 4)
                 ],
                 dfs: vec![df_2, df_3, df_4]    
             }
