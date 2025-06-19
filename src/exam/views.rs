@@ -5,8 +5,6 @@ use crate::app::utils::is_htmx_request;
 use crate::app::utils::render;
 use crate::app::utils::ErrorTemplate;
 use crate::auth::middleware::AuthStatus;
-use crate::exam::handlers::parse_test_form;
-use crate::exam::models::BonusItem;
 use crate::AppState;
 use askama::Template;
 use axum::extract::Path;
@@ -19,18 +17,12 @@ use axum::Extension;
 use axum::Form;
 use axum_extra::extract::Host;
 use reqwest::StatusCode;
-use tracing::debug;
-use tracing::error;
 use tracing::instrument;
-use tracing::warn;
 use uuid::Uuid;
 use crate::{app::router::{Routes, ROUTES}, exam::models::Test};
-
 use super::handlers::load_graded_test_from_db;
 use super::handlers::post_test_form_handler;
 use super::models::PrefilledTestData;
-use super::models::RadioName;
-use super::models::RadioValue;
 
 /// This struct is used to display both graded and ungraded tests.
 #[derive(Template)]
@@ -41,6 +33,9 @@ pub struct ExamTemplate {
     /// Used for on the fly test grading and the `submit button`
     test_index: usize, 
     is_demo_mode: bool,
+    /// If `true`, disables all the buttons so that the test is displayed as it was graded.
+    is_graded: bool,
+    /// If `true`, adds a checkbox that will trigger emailing test results the testee.
     email_functionality_active: bool,
     rts: Routes
 }
@@ -67,6 +62,7 @@ pub async fn get_test_page(
             test_index,
             is_demo_mode: data.app_config.is_demo_mode,
             email_functionality_active: data.smtp_config.is_some(),
+            is_graded: false,
             rts: ROUTES
         };
 
@@ -152,6 +148,7 @@ pub async fn get_graded_test_page(
                     test_index: 1,
                     is_demo_mode: data.app_config.is_demo_mode,
                     email_functionality_active: data.smtp_config.is_some(),
+                    is_graded: true,
                     rts: ROUTES
                 };
 

@@ -1,12 +1,12 @@
 
-{% macro render_container(container, show_point_values) %}
+{% macro render_container(container, show_point_values, freeze_buttons) %}
   <h2 class="my-title">{{ container.name }}</h2>
   {% for table in container.tables %}
-    {% call render_table(table, show_point_values=show_point_values) %}
+    {% call render_table(table, show_point_values=show_point_values, freeze_buttons=freeze_buttons) %}
   {% endfor %}
 {% endmacro %}
 
-{% macro render_table(table, show_point_values) %}
+{% macro render_table(table, show_point_values, freeze_buttons) %}
 
   <table class="bg-white w-full mx-1 table-fixed">
 
@@ -76,6 +76,7 @@
                     class="hidden peer" 
                     required
                     {% if radio_option.checked %}checked{% endif %}
+                    {% if freeze_buttons %}disabled{% endif %}
                   >
                   <label 
                     for={{ radio_option.id }}

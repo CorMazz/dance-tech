@@ -21,23 +21,28 @@
     </div>
 
     <div class="hidden sm:block justify-center">
-      <div class="flex flex-col text-center">
-        <input 
-            type="submit" 
-            value={% if is_demo_mode %}"Submission Disabled for Demo"{% else %}Submit Test{% endif %}
-            class="{% if is_demo_mode %}bg-gray-300 text-gray-900{% else %}bg-blue-500 hover:bg-blue-700 text-white{% endif %} w-full font-bold py-2 px-4 mb-4 rounded" {% if is_demo_mode %}disabled{% else %}{% endif %}
-            hx-post={{ rts.administer_exam(test_index)}} hx-select="#primary-content" hx-target="#primary-content" hx-swap="outerHTML" hx-push-url="true" hx-confirm="Confirm submission"
-        >                        
-      </div>
+      
+      {% if !is_graded %}
+        <div class="flex flex-col text-center">
+          <input 
+              type="submit" 
+              value={% if is_demo_mode %}"Submission Disabled for Demo"{% else %}Submit Test{% endif %}
+              class="{% if is_demo_mode %}bg-gray-300 text-gray-900{% else %}bg-blue-500 hover:bg-blue-700 text-white{% endif %} w-full font-bold py-2 px-4 mb-4 rounded" {% if is_demo_mode %}disabled{% else %}{% endif %}
+              hx-post={{ rts.administer_exam(test_index)}} hx-select="#primary-content" hx-target="#primary-content" hx-swap="outerHTML" hx-push-url="true" hx-confirm="Confirm submission"
+          >                        
+        </div>
+      {% endif %}
+
     </div>
+
     {% for container in test.containers %}
       <div class="my-card" data-comment={{ container.name }}>
-        {% call macros::render_container(container, show_point_values=test.metadata.config.show_point_values) %}
+        {% call macros::render_container(container, show_point_values=test.metadata.config.show_point_values, freeze_buttons=is_graded) %}
       </div>
     {% endfor %}
     
     {% if !test.bonus_items.is_empty() %}
-      {% call macros::render_bonuses(test.bonus_items, show_point_values=test.metadata.config.show_point_values, freeze_buttons=false) %}
+      {% call macros::render_bonuses(test.bonus_items, show_point_values=test.metadata.config.show_point_values, freeze_buttons=is_graded) %}
     {% endif %}
 
   </form>
