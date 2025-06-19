@@ -117,19 +117,28 @@ pub fn create_router(app_state: Arc<AppState>) -> Router {
         .route(ROUTES.google_oauth_callback, get(get_google_oauth_callback))
         .route(&ROUTES.graded_exam("{test_id}"), get(get_graded_test_page));
 
-    // Do not edit this unless necessary. Add routes to the router subsections above this
-    Router::new()
-        .merge(auth_required)
+
+    // DO NOT EDIT BELOW THIS LINE UNLESS YOU KNOW WHAT YOU'RE DOING
+
+    let auth_required = auth_required
         .route_layer(middleware::from_fn_with_state(
             app_state.clone(),
             require_auth_middleware,
-        ))
-        // Anything above this line will redirect to the login page if the user is not logged in
-        .merge(check_auth)
+        )
+    );
+
+    let check_auth = check_auth
         .route_layer(middleware::from_fn_with_state(
             app_state.clone(),
             check_auth_middleware,
-        ))
+        )
+    );
+
+    // Do not edit this unless necessary. Add routes to the router subsections above this
+    Router::new()
+        .merge(auth_required)
+        // Anything above this line will redirect to the login page if the user is not logged in
+        .merge(check_auth)
         // Anything above this line checks if the user is logged in and adds an AuthStatus extension to the request
         .merge(no_auth)
         .fallback(error_404_page)
