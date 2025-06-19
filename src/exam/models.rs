@@ -6,14 +6,6 @@ use uuid::Uuid;
 
 use super::errors::ExamError;
 
-pub struct GradedTest {
-    pub id: Uuid,
-    pub test: Test,
-    pub achieved_points: usize,
-    pub is_passing: bool,
-    pub proctor_id: Uuid,
-    pub testee_id: Uuid,
-}
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(deny_unknown_fields)]
@@ -21,19 +13,19 @@ pub struct Test {
     pub metadata: Metadata,
     /// Contains multiple different tables within it. Each table has a new set of headers
     pub containers: Vec<TestContainer>,
-    pub bonus_items: Option<Vec<BonusItem>>,
+    pub bonus_items: Vec<BonusItem>,
 }
 
 impl Test {
     #[instrument(skip(self))]
     /// Use the results of the form to mutate the `RadioOption.checked` field to `true` for the
     /// items contained within this test.
-    pub fn grade(mut self, form: Vec<(RadioName, RadioValue)>) -> Result<GradedTest, ExamError> {
+    pub fn grade(mut self, competencies: Vec<(RadioName, RadioValue)>, bonus_indices: Vec<usize>) -> Result<GradedTest, ExamError> {
         let mut score = 0; 
 
         // Registry of all expected radio buttons by RadioName to ensure that the form hits all
         // buttons 
-        let mut registry: HashSet<RadioName> = HashSet::new();
+        let mut competency_registry: HashSet<RadioName> = HashSet::new();
 
         // --- Reset all radio options to unchecked and build registry ---
         for (container_idx, container) in self.containers.iter_mut().enumerate() {
@@ -43,7 +35,7 @@ impl Test {
                         for option in &mut button.options {
                             option.checked = false;
 
-                            registry.insert(
+                            competency_registry.insert(
                                 RadioName {
                                     container_index: container_idx,
                                     table_index: table_idx,
@@ -57,7 +49,7 @@ impl Test {
             }
         }
 
-        for (radio_name, radio_value) in form {
+        for (radio_name, radio_value) in competencies {
             score += radio_value.point_value;
 
             let error_func = |component: &str| {
@@ -92,14 +84,27 @@ impl Test {
             selected_option.checked = true;
             
             // Theoretically if we made it down here, this component has to exist on the test...
-            if !registry.remove(&radio_name) {
+            if !competency_registry.remove(&radio_name) {
                 error!("Attempted to access a component that does not exist on the test:  `RadioName`: {radio_name:#?}\n`RadioValue`: {radio_value:#?}");
                 return Err(ExamError::ParseError)
             }
         }
 
-        if !registry.is_empty() {
-            error!("Not all required form inputs were provided. There are ungraded questions remaining.\nUngraded Questions: {registry:#?}");
+        for bonus_index in bonus_indices {
+
+            let bonus_item = self.bonus_items
+                .get_mut(bonus_index)
+                .ok_or_else(|| { 
+                    error!("Bonus index `{bonus_index}` is out of range on this test.");
+                    ExamError::ParseError
+                })?;
+            
+            bonus_item.achieved = true;
+            score += bonus_item.score;
+        }
+
+        if !competency_registry.is_empty() {
+            error!("Not all required form inputs were provided. There are ungraded questions remaining.\nUngraded Questions: {competency_registry:#?}");
             return Err(ExamError::ParseError);
         }
         let passing_percent = self.metadata.minimum_percent;
@@ -124,10 +129,15 @@ impl Test {
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(deny_unknown_fields)]
 pub struct BonusItem {
-    pub test_id: Option<Uuid>,
+    /// The index of the bonus item in the entire vector of bonus items in the test.
+    pub bonus_index: usize,
+    /// The name of the bonus item, displayed to the user.
     pub name: String,
-    pub score: i32,
-    pub achieved: Option<bool>,
+    /// The score of the bonus item. Does not penalize the user for not achieving it, as it is
+    /// bonus.
+    pub score: usize,
+    /// If the bonus item was achieved. Is used to display if the item is `checked` on the form.
+    pub achieved: bool,
 }
 
 /// Metadata contains information about the test needed for the application to work.
@@ -259,4 +269,25 @@ pub struct PrefilledTestData {
     pub first_name: Option<String>,
     pub last_name: Option<String>,
     pub email: Option<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+/// Passing may be failed even if the achieved percent is above the minimum percent if a competency with a failing score label was graded as failing. 
+pub struct TestGradeSummary {
+    pub achieved_score: i32,
+    pub achieved_percent: f32,
+    pub max_score: i32,
+    pub minimum_percent: f32,
+    pub is_passing: bool,
+    pub failure_explanation: Option<Vec<String>>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct GradedTest {
+    pub id: Uuid,
+    pub test: Test,
+    pub achieved_points: usize,
+    pub is_passing: bool,
+    pub proctor_id: Uuid,
+    pub testee_id: Uuid,
 }

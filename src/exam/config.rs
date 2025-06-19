@@ -6,19 +6,19 @@ use tracing::{error, info};
 
 use crate::exam::models::Test;
 
-use super::models::{CsvTestTable, ScoringCategory};
+use super::models::{BonusItem, CsvTestTable, ScoringCategory};
 
 pub fn parse_csv(csv_data: &str) -> CsvTestTable {
     let mut rdr = ReaderBuilder::new()
         .has_headers(true)
         .from_reader(csv_data.as_bytes());
 
-    let headers = rdr.headers().unwrap().iter().map(|h| h.to_string()).collect();
+    let headers = rdr.headers().unwrap().iter().map(std::string::ToString::to_string).collect();
     let mut all_rows = vec![headers];
 
     for result in rdr.records() {
         let record = result.unwrap();
-        let row = record.iter().map(|s| s.to_string()).collect();
+        let row = record.iter().map(std::string::ToString::to_string).collect();
         all_rows.push(row);
     }
 
@@ -138,10 +138,25 @@ Prep,5,4,3,2,1
             }
         ];
 
+        let bonus_items = vec![
+            BonusItem {
+                bonus_index: 0,
+                name: "No Thumbs".to_string(),
+                score: 3,
+                achieved: false,
+            }, 
+            BonusItem {
+                bonus_index: 1,
+                name: "Big Chungus".to_string(),
+                score: 1,
+                achieved: false,
+            }
+        ];
+
         let test = Test {
             metadata,
             containers,
-            bonus_items: None 
+            bonus_items,
         };
 
         Self { tests: vec![test] }

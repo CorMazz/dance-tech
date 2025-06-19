@@ -19,10 +19,18 @@ create table
         created_at timestamp
         with
             time zone default now(),
-            updated_at timestamp
+        updated_at timestamp
         with
             time zone default now()
     );
 
 CREATE INDEX users_email_idx ON users (email);
 
+create table
+    "graded_exams" (
+        id uuid primary key,
+        test_data JSONB not null,
+        created_at timestamp
+        with
+            time zone default now()
+    );

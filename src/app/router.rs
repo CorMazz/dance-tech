@@ -13,7 +13,7 @@ use crate::{
     }, check_in::views::{
         get_check_in_page, get_successful_checkout_session, post_create_check_out_session,
         post_update_available_products,
-    }, exam::views::{get_proctor_dashboard_page, get_test_page, post_test_form}, AppState
+    }, exam::views::{get_graded_test_page, get_proctor_dashboard_page, get_test_page, post_test_form}, AppState
 };
 use tower_http::services::ServeDir;
 
@@ -37,8 +37,9 @@ pub struct Routes {
     // Exam Routes
     pub exam_home: &'static str,
     /// The exam route has a variable in it, so it needs to be dynamically generated. See the
-    /// associated method `self.exam()`
+    /// associated method `self.administer_exam()`
     pub administer_exam_root: &'static str,
+    pub graded_exam_root: &'static str, 
     pub proctor_dashboard: &'static str,
 
     // Misc Routes
@@ -51,6 +52,10 @@ impl Routes {
     /// view.
     pub fn administer_exam(&self, exam_id: &(impl ToString + ?Sized)) -> String {
         format!("{}/{}", self.administer_exam_root, exam_id.to_string())
+    }
+
+    pub fn graded_exam(&self, exam_id: &(impl ToString + ?Sized)) -> String {
+        format!("{}/{}", self.graded_exam_root, exam_id.to_string())
     }
 }
 
@@ -74,6 +79,7 @@ pub const ROUTES: Routes = Routes {
     // Exam Routes
     exam_home: "/exam",
     administer_exam_root: "/administer-exam",
+    graded_exam_root: "/view-exam",
     proctor_dashboard: "/exam-proctor",
 
     // Misc Routes
@@ -108,7 +114,8 @@ pub fn create_router(app_state: Arc<AppState>) -> Router {
     // Anything in here does not even check authentication
     let no_auth = Router::new()
         .route(ROUTES.google_oauth_init, get(get_google_oauth_init_flow))
-        .route(ROUTES.google_oauth_callback, get(get_google_oauth_callback));
+        .route(ROUTES.google_oauth_callback, get(get_google_oauth_callback))
+        .route(&ROUTES.graded_exam("{test_id}"), get(get_graded_test_page));
 
     // Do not edit this unless necessary. Add routes to the router subsections above this
     Router::new()

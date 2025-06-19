@@ -35,6 +35,11 @@
         {% call macros::render_container(container, show_point_values=test.metadata.config.show_point_values) %}
       </div>
     {% endfor %}
+    
+    {% if !test.bonus_items.is_empty() %}
+      {% call macros::render_bonuses(test.bonus_items, show_point_values=test.metadata.config.show_point_values, freeze_buttons=false) %}
+    {% endif %}
+
   </form>
 </div>
 {% endblock %}

@@ -5,6 +5,8 @@ use crate::app::utils::is_htmx_request;
 use crate::app::utils::render;
 use crate::app::utils::ErrorTemplate;
 use crate::auth::middleware::AuthStatus;
+use crate::exam::handlers::parse_test_form;
+use crate::exam::models::BonusItem;
 use crate::AppState;
 use askama::Template;
 use axum::extract::Path;
@@ -12,18 +14,25 @@ use axum::extract::Query;
 use axum::extract::State;
 use axum::response::Html;
 use axum::response::IntoResponse;
+use axum::response::Redirect;
 use axum::Extension;
 use axum::Form;
 use axum_extra::extract::Host;
 use reqwest::StatusCode;
 use tracing::debug;
+use tracing::error;
 use tracing::instrument;
+use tracing::warn;
+use uuid::Uuid;
 use crate::{app::router::{Routes, ROUTES}, exam::models::Test};
 
+use super::handlers::load_graded_test_from_db;
+use super::handlers::post_test_form_handler;
 use super::models::PrefilledTestData;
 use super::models::RadioName;
 use super::models::RadioValue;
 
+/// This struct is used to display both graded and ungraded tests.
 #[derive(Template)]
 #[template(path = "./exam_templates/exam.html", blocks = ["content"])] 
 pub struct ExamTemplate {
@@ -80,20 +89,10 @@ pub async fn post_test_form(
     Host(server_root_url): Host,
     Form(raw_form): Form<HashMap<String, String>>,
 ) -> impl IntoResponse {
-    debug!("Received raw test form {:#?}", raw_form);
-    let parsed: Vec<(RadioName, RadioValue)> = raw_form
-        .into_iter()
-        .map(|(k, v)| {
-            let name: RadioName = serde_json::from_str(&k).expect("Invalid RadioName JSON");
-            let value: RadioValue = serde_json::from_str(&v).expect("Invalid RadioValue JSON");
-            (name, value)
-        })
-        .collect();
-
-    debug!("Parsed form: {parsed:#?}");
-    let graded = data.exam_config.tests.get(test_index).expect("Invalid Test ID").clone().grade(parsed);
-    debug!("Successfully graded test.");
-    (StatusCode::OK, Html("Bet"))
+    if let Err(e) = post_test_form_handler(data, test_index, raw_form).await {
+        return e.into_response(&headers)
+    }
+    Redirect::to(ROUTES.proctor_dashboard).into_response()
     // let proctor = match auth_status {
     //     AuthStatus::Authorized(user) => Proctor { id: user.user.id, first_name: user.user.first_name, last_name: user.user.last_name},
     //     AuthStatus::Unauthorized(e) => return e.into_response(&headers)
@@ -132,6 +131,39 @@ pub async fn post_test_form(
     //     error_response(&format!("Invalid test index ({}) in URL", test_index)).into_response()
     // }
 }
+
+#[instrument(skip(data, headers))]
+pub async fn get_graded_test_page(
+    State(data): State<Arc<AppState>>,
+    Path(test_id): Path<Uuid>,
+    headers: axum::http::HeaderMap,
+) -> impl IntoResponse  {
+    load_graded_test_from_db(test_id, &data.db).await
+        .map_or_else(
+            |err| {err.into_response(&headers)},
+            |graded_test| {
+                let template = ExamTemplate {
+                    test: graded_test.test,
+                    prefilled_user_info: PrefilledTestData {
+                        first_name: None,
+                        last_name: None,
+                        email: None
+                    },
+                    test_index: 1,
+                    is_demo_mode: data.app_config.is_demo_mode,
+                    email_functionality_active: data.smtp_config.is_some(),
+                    rts: ROUTES
+                };
+
+                if is_htmx_request(&headers) {
+                    (StatusCode::OK, Html(render(template.as_content()))).into_response()
+                } else {
+                    (StatusCode::OK, Html(render(template))).into_response()
+                }
+
+        })
+}
+
 
 
 #[derive(Template)]

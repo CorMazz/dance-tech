@@ -1,8 +1,16 @@
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, HashMap};
+use std::sync::Arc;
+use serde_json::{from_value, to_value};
+use sqlx::{Pool, Postgres};
+use tracing::{debug, error, instrument};
 use uuid::Uuid;
 
 use crate::exam::models::{RadioName, RadioValue, ScoringCategory};
-use super::models::{CsvTestTable, RadioButton, RadioOption, TestRow, HtmlTestTable};
+use crate::exam::models::{CsvTestTable, RadioButton, RadioOption, TestRow, HtmlTestTable};
+use crate::AppState;
+
+use super::errors::ExamError;
+use super::models::GradedTest;
 
 /// Take a `DataFrame` and convert it into a nested `TestTable` structure
 ///
@@ -93,4 +101,122 @@ pub fn convert_df_to_test_table(df: &CsvTestTable, container_idx: usize, table_i
         scoring_categories,
         rows,
     }
+}
+
+/// Given a raw submitted test form, parse it into the metadata, competencies, and bonus indices.
+#[instrument(skip(form))]
+pub fn parse_test_form(form: HashMap<String, String>) -> Result<(Vec<(RadioName, RadioValue)>, Vec<usize>), ExamError> {
+    let mut competencies: Vec<(RadioName, RadioValue)> = Vec::new();
+    let mut bonus_indices: Vec<usize> = Vec::new();
+
+    for (key, value) in form {
+        if let Some(json_str) = key.strip_prefix("competency") {
+            let name: RadioName = serde_json::from_str(json_str)
+                .map_err(|err| {
+                    error!(%err, "Unable to parse RadioName from `{json_str}`.");
+                    ExamError::ParseError
+                })?;
+            let val: RadioValue = serde_json::from_str(&value)
+                .map_err(|err| {
+                    error!(%err, "Unable to parse RadioValue from `{json_str}`.");
+                    ExamError::ParseError
+                })?;
+            competencies.push((name, val));
+        } else if let Some(index_str) = key.strip_prefix("bonus_index") {
+            let bonus_index: usize = index_str.parse()
+                .map_err(|err| {
+                    error!(%err, "Unable to parse usize from `{index_str}`.");
+                    ExamError::ParseError
+                })?;
+
+            bonus_indices.push(bonus_index);
+        } else {
+            error!("Unknown form key: {}", key);
+            return Err(ExamError::ParseError)
+        }
+    }
+    Ok((competencies, bonus_indices))
+}
+
+
+/// I already dealt with the headache of trying to store a graded test as something fancy in the
+/// database and split it into all of its different components. Let's take the easy route this time
+/// and just drop the whole shebang in there as JSONB.
+#[instrument(skip(test, db))]
+pub async fn save_graded_test_to_db(test: GradedTest, db: &Pool<Postgres>) -> Result<(), ExamError> {
+    let test_id = test.id;
+    let json_value = to_value(&test).expect("GradedTest should serialize to JSON");
+
+    sqlx::query!(
+        r#"
+        INSERT INTO graded_exams (id, test_data)
+        VALUES ($1, $2)
+        "#,
+        test_id,
+        json_value
+    )
+    .execute(db)
+    .await
+    .map_err(|err| {
+            error!(%err, %test_id, "Unable to save test to the database.");
+            ExamError::InternalServerError(Some("Unable to save the test to the database. Try again later or contact the site administrator.".to_string()))
+    })?;
+
+    debug!(%test_id, "Saved graded test to database.");
+    Ok(())
+}
+
+/// Loads a graded test from the database. 
+///
+/// The test was originally stored as JSONB, so it deserializes the JSON into a GradedTest object.
+#[instrument(skip(db))]
+pub async fn load_graded_test_from_db(
+    test_id: Uuid,
+    db: &Pool<Postgres>
+) -> Result<GradedTest, ExamError> {
+    let row = sqlx::query!(
+        r#"
+        SELECT test_data
+        FROM graded_exams
+        WHERE id = $1
+        "#,
+        test_id
+    )
+    .fetch_optional(db)
+    .await
+    .map_err(|err| {
+        error!(%err, "Database error while fetching graded test.");
+        ExamError::InternalServerError(Some("Unable to fetch the test. Please try again.".to_string()))
+    })?;
+
+    let row = row.ok_or_else(|| {
+        error!("No graded test found with ID: `{}`", test_id);
+        ExamError::GradedTestNotFound
+    })?;
+
+    let graded_test: GradedTest = from_value(row.test_data)
+        .map_err(|err| {
+            error!(%err, "Deserialization error while loading GradedTest.");
+            ExamError::InternalServerError(Some("Test data could not be processed. Please contact the site administrator.".to_string()))
+    })?;
+    debug!(%graded_test.id, "Loaded graded test from the database.");
+    Ok(graded_test)
+}
+
+#[instrument(skip(form, data, test_index))]
+pub async fn post_test_form_handler(data: Arc<AppState>, test_index: usize, form: HashMap<String, String>) -> Result<(), ExamError> {
+    debug!("Received raw test form {:#?}", form);
+    let (competencies, bonus_indices) = parse_test_form(form)?;
+    debug!("Parsed form into competencies: {competencies:#?} and bonus_indices: {bonus_indices:#?}.");
+    let test = data.exam_config.tests
+        .get(test_index)
+        .ok_or_else(|| {
+            error!("Invalid test index: `{test_index}.");
+            ExamError::TestIndexError   
+        })?.clone();
+
+    let graded_test = test.grade(competencies, bonus_indices)?;
+    debug!("Successfully graded test.");
+    save_graded_test_to_db(graded_test, &data.db).await?;
+    Ok(())
 }

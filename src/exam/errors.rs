@@ -12,6 +12,12 @@ pub enum ExamError {
 
     #[error("There was an error parsing the test results. Please contact the site administrator.")]
     ParseError,
+
+    #[error("The requested graded test does not exist.")]
+    GradedTestNotFound,
+
+    #[error("The requested test does not exist. Please contact the site administrator.")]
+    TestIndexError,
 }
 
 impl ExamError {
