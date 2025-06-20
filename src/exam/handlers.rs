@@ -51,9 +51,18 @@ pub fn convert_df_to_test_table(df: &CsvTestTable, container_idx: usize, table_i
                 let col_idx = headers.iter().position(|h| h == &full_header)
                     .unwrap_or_else(|| panic!("Column {full_header} not found in headers"));
 
-                let point_val = row.get(col_idx)
+                let full_point_val = row.get(col_idx)
                     .unwrap_or_else(|| panic!("Missing cell at row {row_idx}, column {col_idx}"));
-
+               
+                let point_val: usize;
+                let is_failing: bool;
+                if let Some(point_val_str) = full_point_val.strip_suffix("f")    {
+                    point_val = point_val_str.parse::<usize>().expect("Unable to parse point_value to `usize");
+                    is_failing = true;
+                } else {
+                    point_val = full_point_val.parse::<usize>().expect("Unable to parse point_value to `usize"); 
+                    is_failing = false;
+                }
 
                 let id = Uuid::new_v4();
 
@@ -61,7 +70,8 @@ pub fn convert_df_to_test_table(df: &CsvTestTable, container_idx: usize, table_i
                     id: id.to_string(),
                     value: RadioValue {
                         label_index: label_idx,
-                        point_value: point_val.parse::<usize>().expect("Unable to parse point_value to `usize"),
+                        point_value: point_val,
+                        fails_test: is_failing,
                     },
                     checked: label_idx == labels.len() - 1,
                 });
@@ -204,7 +214,7 @@ pub async fn load_graded_test_from_db(
 }
 
 #[instrument(skip(form, data, test_index))]
-pub async fn post_test_form_handler(data: Arc<AppState>, test_index: usize, form: HashMap<String, String>) -> Result<(), ExamError> {
+pub async fn post_test_form_handler(data: Arc<AppState>, test_index: usize, form: HashMap<String, String>, proctor_id: Uuid) -> Result<(), ExamError> {
     debug!("Received raw test form {:#?}", form);
     let (competencies, bonus_indices) = parse_test_form(form)?;
     debug!("Parsed form into competencies: {competencies:#?} and bonus_indices: {bonus_indices:#?}.");
@@ -215,7 +225,7 @@ pub async fn post_test_form_handler(data: Arc<AppState>, test_index: usize, form
             ExamError::TestIndexError   
         })?.clone();
 
-    let graded_test = test.grade(competencies, bonus_indices)?;
+    let graded_test = test.grade(competencies, bonus_indices, proctor_id)?;
     debug!("Successfully graded test.");
     save_graded_test_to_db(graded_test, &data.db).await?;
     Ok(())

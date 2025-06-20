@@ -75,36 +75,36 @@ impl ExamConfig {
         // );
 
         let df_1_csv = r"index,Footwork--~--Perfect,Footwork--~--Variation?,Footwork--~--Right Concept,Footwork--~--Nope,Timing--~--On,Timing--~--Off
-Starter Step,4,3,2,1,2,1
-Left Side Pass from Closed,4,3,2,1,2,1
-Sugar Tuck,4,3,2,1,2,1
-Cutoff Whip,4,3,2,1,2,1
-Left Side Pass,4,3,2,1,2,1
-Whip,4,3,2,1,2,1
-Sugar Push,4,3,2,1,2,1
-Spinning Side Pass,4,3,2,1,2,1
-Right Side Pass,4,3,2,1,2,1
-Basket Whip,4,3,2,1,2,1
-Free Spin,4,3,2,1,2,1
+Starter Step,4,3,2f,1f,2,1f
+Left Side Pass from Closed,4,3,2f,1f,2,1f
+Sugar Tuck,4,3,2f,1f,2,1f
+Cutoff Whip,4,3,2f,1f,2,1f
+Left Side Pass,4,3,2f,1f,2,1f
+Whip,4,3,2f,1f,2,1f
+Sugar Push,4,3,2f,1f,2,1f
+Spinning Side Pass,4,3,2f,1f,2,1f
+Right Side Pass,4,3,2f,1f,2,1f
+Basket Whip,4,3,2f,1f,2,1f
+Free Spin,4,3,2f,1f,2,1f
 ";
 
     let df_2_csv = r"index,--~--Consistent >90%,--~--Present 75%,--~--Occasional 50%,--~--Lacking 25%,--~--Missing <10%
-Body Lead,5,4,3,2,1
-Post,5,4,3,2,1
-Strong Frame,5,4,3,2,1
-Closed Connection,5,4,3,2,1
-Connection Transition,5,4,3,2,1
-On Time,5,4,3,2,1
-Move Off Slot,5,4,3,2,1
-Safe,5,4,3,2,1
+Body Lead,5,4,3,2f,1f
+Post,5,4,3f,2f,1f
+Strong Frame,5,4,3,2f,1f
+Closed Connection,5,4,3,2f,1f
+Connection Transition,5,4,3f,2f,1f
+On Time,5,4,3f,2f,1f
+Move Off Slot,5,4,3,2f,1f
+Safe,5,4f,3f,2f,1f
 ";
 
     let df_3_csv = r"index,--~--Perpendicular,--~--Over-Angled,--~--Angled,--~--Under-Angled,--~--Flat
-Body Angle,5,4,3,2,1
+Body Angle,5f,4,3,2,1f
 ";
 
     let df_4_csv = r"index,--~--Overkill,--~--Too Strong,--~--Adequate,--~--Under-Prepped,--~--Missing
-Prep,5,4,3,2,1
+Prep,5f,4,3,2,1f
 ";
 
         let df_1 = parse_csv(df_1_csv);

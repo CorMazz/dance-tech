@@ -20,7 +20,8 @@ impl Test {
     #[instrument(skip(self))]
     /// Use the results of the form to mutate the `RadioOption.checked` field to `true` for the
     /// items contained within this test.
-    pub fn grade(mut self, competencies: Vec<(RadioName, RadioValue)>, bonus_indices: Vec<usize>) -> Result<GradedTest, ExamError> {
+    pub fn grade(mut self, competencies: Vec<(RadioName, RadioValue)>, bonus_indices: Vec<usize>, proctor_id: Uuid) -> Result<GradedTest, ExamError> {
+        let mut failure_explanations: Vec<FailureExplanation> = Vec::new();
         let mut score = 0; 
 
         // Registry of all expected radio buttons by RadioName to ensure that the form hits all
@@ -50,8 +51,6 @@ impl Test {
         }
 
         for (radio_name, radio_value) in competencies {
-            score += radio_value.point_value;
-
             let error_func = |component: &str| {
                 error!("Index out of range for the {component}. `RadioName`: {radio_name:#?}\n`RadioValue`: {radio_value:#?}");
                 ExamError::ParseError
@@ -81,7 +80,32 @@ impl Test {
                 .get_mut(radio_value.label_index)
                 .ok_or_else(|| error_func("option"))?;
 
+            score += selected_option.value.point_value;
             selected_option.checked = true;
+
+            if selected_option.value.fails_test {
+                // This could be "Sugar Push"
+                let competency_name = row.left_label.clone();
+                
+                let scoring_category = table.scoring_categories
+                    .get(radio_name.category_index)
+                    .ok_or_else(|| error_func("scoring category"))?;
+
+                // This could be "Footwork", but it can also be ""
+                let scoring_category_name = scoring_category.name.clone();
+                
+                // This could be "Perfect"
+                let scoring_category_value = scoring_category.values
+                    .get(radio_value.label_index)
+                    .ok_or_else(|| error_func("scoring category value"))?
+                    .clone();
+
+                failure_explanations.push(FailureExplanation::Competency {
+                    competency_name,
+                    scoring_category_name,
+                    scoring_category_value,
+                });
+            }
             
             // Theoretically if we made it down here, this component has to exist on the test...
             if !competency_registry.remove(&radio_name) {
@@ -112,14 +136,16 @@ impl Test {
 
         #[allow(clippy::cast_precision_loss)]
         let percent = (score as f32 / max_score as f32) * 100.0;
-        let is_passing = percent >= passing_percent;
+
+        if percent >= passing_percent {failure_explanations.insert(0, FailureExplanation::Score)}
+        let is_passing = failure_explanations.is_empty();
 
         Ok(GradedTest {
             id: Uuid::new_v4(),
             test: self,
             achieved_points: score,
             is_passing,
-            proctor_id: Uuid::new_v4(),
+            proctor_id,
             testee_id: Uuid::new_v4(),
         })
     }
@@ -262,6 +288,8 @@ pub struct RadioValue {
     pub label_index: usize,
     /// The point value of a specified answer on a question. Displayed within the buttons.
     pub point_value: usize,
+    /// If this value causes the whole test to be a failure
+    pub fails_test: bool
 }
 
 #[derive(Deserialize, Debug)]
@@ -280,6 +308,25 @@ pub struct TestGradeSummary {
     pub minimum_percent: f32,
     pub is_passing: bool,
     pub failure_explanation: Option<Vec<String>>,
+}
+
+/// When specific `RadioOptions` fail the test, this struct is created and fed to the HTML to be
+/// rendered. There is no `Display` implementation on this because I want to be able to format it
+/// nicely within the HTML.
+pub enum FailureExplanation {
+    /// For when a specific competency is failing the test.
+    /// "You achieved a value of 'You're Ass' in category 'Footwork' for 'Sugar Push'. This fails
+    /// the test."
+    Competency {
+        /// This could be "Sugar Push"
+        competency_name: String,
+        /// This could be "Footwork", but it can also be ""
+        scoring_category_name: String,
+        /// This could be "Perfect"
+        scoring_category_value: String,
+    },
+    /// For when the overall achieved score is too low
+    Score
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]

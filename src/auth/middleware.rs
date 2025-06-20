@@ -57,7 +57,7 @@ pub async fn check_auth_utility(
         data.auth_config.access_token_public_key.clone(),
         &access_token,
     )
-    .map_err(|e| AuthError::InternalServerError(Some(format!("{e:?}"))))?;
+    .map_err(|e| AuthError::InternalServerError(Some(format!("CORY IS THIS THE SESSION ERROR{e:?}"))))?;
 
     let access_token_uuid = uuid::Uuid::parse_str(&access_token_details.token_uuid.to_string())
         .map_err(|_| AuthError::InvalidToken)?;

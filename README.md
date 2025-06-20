@@ -125,20 +125,25 @@ Ensure you are launching the server from the root of this repository. File paths
 
 ## To Do:
 
-- Add user exam dashboard with:
+- Change password via email link
+- Exam Queue
+- User Exam Dashboard
     - Explanation of exams
-    - Exam queue
-    - Let users see their past results
-- Add admin dashboard that:
-    - Lets admins add/remove roles from users
-- Add proctor exam dashboard that:
-    - Lets proctors search through user exams
+    - View of exam queue
+    - Signed in users can view past exam results
     - Export exam data
-- Finish adding exam functionality such as:
+- Admin Dashboard
+    - Let admins add/remove roles from users
+- Proctor Exam Dashboard
+    - Exam search by user, exam name, proctor, etc.
+    - Export exam data
+- Exams
+    - Load exams from `test_definitions/<exam_name>.yml`
+    - Link exams to users by email
+    - Show results on graded exams
     - Add `/live-grading` endpoint for exams
-    - Store exams in database (entire exam as JSONB for simplicity)
-    - Retrieve exams from database
-- Refactor `exam.html` to use macros instead of `include`
+    - Fix styling on exam page
+    - Email users
 - Make primary colorscheme look less dumb
 - Modify check-in page to only show check-in options based on user roles
 
@@ -152,3 +157,6 @@ Ensure you are launching the server from the root of this repository. File paths
 6/11/2025: 8 hrs
 6/14/2025: 3 hrs
 6/15/2025: 4 hrs
+6/16/2025: 8 hrs
+6/18/2025: 3 hrs
+6/19/2025: 4 hrs

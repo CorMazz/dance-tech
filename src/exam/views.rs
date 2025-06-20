@@ -85,7 +85,17 @@ pub async fn post_test_form(
     Host(server_root_url): Host,
     Form(raw_form): Form<HashMap<String, String>>,
 ) -> impl IntoResponse {
-    if let Err(e) = post_test_form_handler(data, test_index, raw_form).await {
+    let proctor_id: Uuid;
+    match auth_status {
+        AuthStatus::Authorized(proctor) => {
+            proctor_id = proctor.user.id;
+        },
+        AuthStatus::Unauthorized(err) => {
+            return err.into_response(&headers)
+        }
+    }
+
+    if let Err(e) = post_test_form_handler(data, test_index, raw_form, proctor_id).await {
         return e.into_response(&headers)
     }
     Redirect::to(ROUTES.proctor_dashboard).into_response()
