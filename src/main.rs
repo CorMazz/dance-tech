@@ -18,25 +18,25 @@ mod auth;
 mod check_in;
 mod exam;
 use app::config::{AppConfig, SMTPConfig};
-use auth::config::{AuthConfig, GoogleOAuthConfig};
-use check_in::config::CheckInConfig;
-use lettre::transport::smtp::PoolConfig;
-use lettre::{AsyncSmtpTransport, Tokio1Executor, transport::smtp::authentication::Credentials};
-use oauth2::reqwest;
-use std::{sync::Arc, time::Duration};
-use tower_http::trace::TraceLayer;
-use tracing_subscriber::layer::SubscriberExt;
-use tracing_subscriber::{EnvFilter, fmt};
-use tokio::sync::mpsc;
 use app::router::create_router;
+use auth::config::{AuthConfig, GoogleOAuthConfig};
 use axum::http::{
     HeaderValue, Method,
     header::{ACCEPT, AUTHORIZATION, CONTENT_TYPE},
 };
+use check_in::config::CheckInConfig;
 use dotenv::dotenv;
+use lettre::transport::smtp::PoolConfig;
+use lettre::{AsyncSmtpTransport, Tokio1Executor, transport::smtp::authentication::Credentials};
+use oauth2::reqwest;
 use redis::Client;
 use sqlx::{Pool, Postgres, postgres::PgPoolOptions};
+use std::{sync::Arc, time::Duration};
+use tokio::sync::mpsc;
 use tower_http::cors::CorsLayer;
+use tower_http::trace::TraceLayer;
+use tracing_subscriber::layer::SubscriberExt;
+use tracing_subscriber::{EnvFilter, fmt};
 
 /// The global application state shared across features.
 #[allow(dead_code)]
@@ -82,7 +82,6 @@ async fn main() {
         .build()
         .expect("Client should build");
 
-
     let smtp_config = SMTPConfig::init();
     let smtp_mailer: Option<AsyncSmtpTransport<Tokio1Executor>> =
         smtp_config.as_ref().and_then(|config| {
@@ -107,7 +106,6 @@ async fn main() {
         });
 
     let google_oauth_config = GoogleOAuthConfig::init();
-
 
     let pool = match PgPoolOptions::new()
         .max_connections(10)
@@ -135,7 +133,6 @@ async fn main() {
         }
     };
 
-
     let cors = CorsLayer::new()
         .allow_origin("http://localhost:3000".parse::<HeaderValue>().unwrap())
         .allow_methods([Method::GET, Method::POST, Method::PATCH, Method::DELETE])
@@ -157,11 +154,7 @@ async fn main() {
 
     let actor_app_state = app_state.clone();
     tokio::spawn(async move {
-        product_manager_actor_runtime(
-            product_request_rx,
-            trigger_update_rx,
-            actor_app_state
-        ).await
+        product_manager_actor_runtime(product_request_rx, trigger_update_rx, actor_app_state).await
     });
 
     let app = create_router(app_state)

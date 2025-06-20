@@ -1,9 +1,7 @@
 // use std::collections::HashMap;
 
-
-
 // /// Parses the test form data, which should have a format of a hashmap more or less like this
-// /// 
+// ///
 // /// Takes in a test_template which it will then mutate, adding the results so that it is graded.
 // pub fn parse_test_form_data(test: HashMap<String, String>, mut test_template: Test, proctor: Option<Proctor>) -> Result<Test, TestError> {
 //
@@ -11,7 +9,7 @@
 //
 //     // Sort the keys so that the graded test gets reconstructed in the same order as the test definition
 //     let mut sorted_keys: Vec<&String> = test.keys().collect();
-//     sorted_keys.sort(); 
+//     sorted_keys.sort();
 //
 //     for key in sorted_keys {
 //         let value = &test[key];
@@ -24,11 +22,11 @@
 //             match (key_parts.len(), value_parts.len()) {
 //                 (8, 4) => {
 //                     match (
-//                         key_parts[1].parse::<usize>(), 
-//                         key_parts[3].parse::<usize>(), 
-//                         key_parts[5].parse::<usize>(), 
-//                         key_parts[7].parse::<usize>(), 
-//                         value_parts[1].parse::<usize>(), 
+//                         key_parts[1].parse::<usize>(),
+//                         key_parts[3].parse::<usize>(),
+//                         key_parts[5].parse::<usize>(),
+//                         key_parts[7].parse::<usize>(),
+//                         value_parts[1].parse::<usize>(),
 //                         value_parts[3].parse::<i32>()
 //                     ) {
 //                         (Ok(table_index), Ok(section_index), Ok(item_index), Ok(scoring_category_index), Ok(scoring_category_label_index), Ok(points)) => {
@@ -54,7 +52,7 @@
 //                                 .get_or_insert_with(Vec::new)
 //                                 .push(AchievedScoreLabel {
 //                                      scoring_category_name,
-//                                      value: label, 
+//                                      value: label,
 //                                     });
 //                         }
 //                         },
@@ -88,7 +86,7 @@
 //         } else {
 //             user_info.insert(key.clone(), value.clone());
 //         }
-//     } 
+//     }
 //
 //     // Construct the GradedTestee instance from the user_info hashmap
 //     let testee: Testee = match (

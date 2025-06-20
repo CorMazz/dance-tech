@@ -1,6 +1,6 @@
-pub mod handlers;
+pub mod config;
 pub mod errors;
-pub mod views;
+pub mod handlers;
 pub mod models;
 pub mod utils;
-pub mod config;
+pub mod views;

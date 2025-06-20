@@ -1,8 +1,8 @@
 //! Utility functions for the application.
 
+use crate::app::router::Routes;
 use askama::Template;
 use axum::response::Html;
-use crate::app::router::Routes;
 
 /// Get an environment variable or panic if not set.
 pub fn get_env_var(var_name: &str) -> String {

@@ -4,9 +4,7 @@ use crate::{
     AppState,
     check_in::{
         errors::CheckInError,
-        models::{
-            CheckoutSessionResponse, StripeCheckoutSession, 
-        },
+        models::{CheckoutSessionResponse, StripeCheckoutSession},
     },
 };
 use axum::response::Redirect;
@@ -107,12 +105,8 @@ pub async fn verify_successful_checkout_session(
     Ok(session.payment_status == "paid")
 }
 
-
-
 /// Ping the ProductManager actor and request the list of products.
-pub async fn get_products_from_actor(
-    data: &AppState,
-) -> Result<Vec<Product>, CheckInError> {
+pub async fn get_products_from_actor(data: &AppState) -> Result<Vec<Product>, CheckInError> {
     let (product_tx, product_rx) = tokio::sync::oneshot::channel();
 
     data.check_in_config

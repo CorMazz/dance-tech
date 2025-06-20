@@ -6,9 +6,9 @@ use axum::{
     response::{Html, IntoResponse},
 };
 
+use crate::app::router::ROUTES;
 use crate::app::router::Routes;
 use crate::app::utils::ErrorTemplate;
-use crate::app::router::ROUTES;
 
 // #######################################################################################################################################################
 // home.html
@@ -17,7 +17,7 @@ use crate::app::router::ROUTES;
 #[derive(Template)]
 #[template(path = "./app_templates/home.html", blocks = ["content"])]
 pub struct HomeTemplate {
-    rts: Routes
+    rts: Routes,
 }
 
 /// Serve the home page template.

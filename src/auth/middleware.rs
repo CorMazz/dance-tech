@@ -1,7 +1,8 @@
-use sqlx::types::Json;
-use tracing::{debug, instrument};
 use crate::auth::models::Roles;
-use std::sync::Arc;
+use crate::{
+    AppState,
+    auth::{errors::AuthError, handlers, models::User},
+};
 use axum::{
     body::Body,
     extract::State,
@@ -10,12 +11,11 @@ use axum::{
     response::{IntoResponse, Redirect},
 };
 use axum_extra::extract::cookie::CookieJar;
-use serde::{Deserialize, Serialize};
-use crate::{
-    AppState,
-    auth::{errors::AuthError, handlers, models::User},
-};
 use redis::AsyncCommands;
+use serde::{Deserialize, Serialize};
+use sqlx::types::Json;
+use std::sync::Arc;
+use tracing::{debug, instrument};
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct AuthorizedUser {
@@ -57,7 +57,9 @@ pub async fn check_auth_utility(
         data.auth_config.access_token_public_key.clone(),
         &access_token,
     )
-    .map_err(|e| AuthError::InternalServerError(Some(format!("CORY IS THIS THE SESSION ERROR{e:?}"))))?;
+    .map_err(|e| {
+        AuthError::InternalServerError(Some(format!("CORY IS THIS THE SESSION ERROR{e:?}")))
+    })?;
 
     let access_token_uuid = uuid::Uuid::parse_str(&access_token_details.token_uuid.to_string())
         .map_err(|_| AuthError::InvalidToken)?;
@@ -143,7 +145,9 @@ pub async fn require_auth_middleware(
             next.run(req).await
         }
         Err(e) => match e {
-            AuthError::NotLoggedIn | AuthError::ExpiredSession => Redirect::to("/login").into_response(),
+            AuthError::NotLoggedIn | AuthError::ExpiredSession => {
+                Redirect::to("/login").into_response()
+            }
             _ => e.into_response(req.headers()),
         },
     }

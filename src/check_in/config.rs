@@ -16,14 +16,14 @@ pub struct CheckInConfig {
 impl CheckInConfig {
     pub fn init(
         product_request_tx: mpsc::Sender<oneshot::Sender<Vec<Product>>>,
-        trigger_update_tx: mpsc::Sender<()>
+        trigger_update_tx: mpsc::Sender<()>,
     ) -> Self {
         let secret_key = get_env_var("STRIPE_SECRET_KEY");
 
         Self {
             secret_key,
             product_request_tx,
-            trigger_update_tx
+            trigger_update_tx,
         }
     }
 }

@@ -1,4 +1,3 @@
-use sqlx::types::Json;
 use crate::auth::models::Roles;
 use argon2::{
     Argon2, PasswordHash, PasswordHasher, PasswordVerifier,
@@ -18,6 +17,7 @@ use oauth2::{
     basic::BasicClient,
 };
 use serde::Deserialize;
+use sqlx::types::Json;
 use sqlx::{Pool, Postgres};
 use std::sync::Arc;
 use tracing::error;

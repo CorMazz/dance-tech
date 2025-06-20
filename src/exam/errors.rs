@@ -1,9 +1,9 @@
 //! Error types for exam operations.
 
-use axum::response::IntoResponse;
-use thiserror::Error;
 use crate::app::router::ROUTES;
 use crate::app::utils::{ErrorTemplate, is_htmx_request, render};
+use axum::response::IntoResponse;
+use thiserror::Error;
 
 #[derive(Debug, Clone, Error)]
 pub enum ExamError {
@@ -28,10 +28,9 @@ impl ExamError {
         self,
         headers: &axum::http::HeaderMap,
     ) -> axum::http::Response<axum::body::Body> {
-
         let template = ErrorTemplate {
             error_message: self.to_string(),
-            rts: ROUTES
+            rts: ROUTES,
         };
 
         if is_htmx_request(headers) {

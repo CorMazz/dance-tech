@@ -3,21 +3,24 @@
 //! potential for lock contention, and it is a shiny new thing that I just learned.
 //! Resume-driven-development ftw!
 
+use crate::AppState;
+use crate::check_in::errors::CheckInError;
+use crate::check_in::models::Product;
+use crate::check_in::models::StripePrice;
+use crate::check_in::models::StripePriceList;
+use crate::check_in::models::StripeProduct;
+use crate::check_in::models::StripeProductSearchResponse;
 use std::collections::HashMap;
 use std::sync::Arc;
+use tokio::{
+    sync::{mpsc, oneshot},
+    time::{Duration, MissedTickBehavior, interval},
+};
 use tracing::debug;
 use tracing::error;
 use tracing::info;
 use tracing::instrument;
 use tracing::warn;
-use crate::check_in::models::StripePriceList;
-use crate::check_in::models::StripeProductSearchResponse;
-use crate::AppState;
-use tokio::{sync::{mpsc, oneshot}, time::{interval, Duration, MissedTickBehavior}};
-use crate::check_in::models::Product;
-use crate::check_in::errors::CheckInError;
-use crate::check_in::models::StripePrice;
-use crate::check_in::models::StripeProduct;
 
 /// The main task that will run in a tokio thread to manage the list of products that are offered
 /// on the check-in page. Will query Stripe for available products every 5 minutes by default, but
@@ -79,7 +82,6 @@ pub async fn product_manager_actor_runtime(
     }
 }
 
-
 /// Use the Stripe search API to get all products that are active and have a metadata key of
 /// `"show-on-dancetech":"true"`. See the Stripe Dashboard for setting metadata.
 #[tracing::instrument(skip(client, secret_key))]
@@ -130,7 +132,7 @@ pub async fn get_stripe_products(
 /// A utility function used to query the Stripe product search API to get all the products that are
 /// active and have a `show-on-dancetech: true` metadata tag. This lets us update the products
 /// available from the Stripe dashboard rather than from the dance-tech server configuration.
-#[tracing::instrument(skip(client, secret_key))]    
+#[tracing::instrument(skip(client, secret_key))]
 pub async fn fetch_all_products(
     client: &reqwest::Client,
     secret_key: &str,

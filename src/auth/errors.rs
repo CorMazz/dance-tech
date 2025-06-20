@@ -1,9 +1,9 @@
 //! Error types for authentication operations.
 
-use axum::response::IntoResponse;
-use thiserror::Error;
 use crate::app::router::ROUTES;
 use crate::app::utils::{ErrorTemplate, is_htmx_request, render};
+use axum::response::IntoResponse;
+use thiserror::Error;
 
 #[derive(Debug, Clone, Error)]
 pub enum AuthError {
@@ -65,7 +65,7 @@ impl AuthError {
 
         let template = ErrorTemplate {
             error_message: message,
-            rts: ROUTES
+            rts: ROUTES,
         };
 
         if is_htmx_request(headers) {

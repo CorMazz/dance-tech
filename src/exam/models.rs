@@ -6,7 +6,6 @@ use uuid::Uuid;
 
 use super::errors::ExamError;
 
-
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(deny_unknown_fields)]
 pub struct Test {
@@ -20,12 +19,17 @@ impl Test {
     #[instrument(skip(self))]
     /// Use the results of the form to mutate the `RadioOption.checked` field to `true` for the
     /// items contained within this test.
-    pub fn grade(mut self, competencies: Vec<(RadioName, RadioValue)>, bonus_indices: Vec<usize>, proctor_id: Uuid) -> Result<GradedTest, ExamError> {
+    pub fn grade(
+        mut self,
+        competencies: Vec<(RadioName, RadioValue)>,
+        bonus_indices: Vec<usize>,
+        proctor_id: Uuid,
+    ) -> Result<GradedTest, ExamError> {
         let mut failure_explanations: Vec<FailureExplanation> = Vec::new();
-        let mut score = 0; 
+        let mut score = 0;
 
         // Registry of all expected radio buttons by RadioName to ensure that the form hits all
-        // buttons 
+        // buttons
         let mut competency_registry: HashSet<RadioName> = HashSet::new();
 
         // --- Reset all radio options to unchecked and build registry ---
@@ -36,14 +40,12 @@ impl Test {
                         for option in &mut button.options {
                             option.checked = false;
 
-                            competency_registry.insert(
-                                RadioName {
-                                    container_index: container_idx,
-                                    table_index: table_idx,
-                                    category_index: category_idx,
-                                    row_index: row_idx,
-                                },
-                            );
+                            competency_registry.insert(RadioName {
+                                container_index: container_idx,
+                                table_index: table_idx,
+                                category_index: category_idx,
+                                row_index: row_idx,
+                            });
                         }
                     }
                 }
@@ -52,11 +54,14 @@ impl Test {
 
         for (radio_name, radio_value) in competencies {
             let error_func = |component: &str| {
-                error!("Index out of range for the {component}. `RadioName`: {radio_name:#?}\n`RadioValue`: {radio_value:#?}");
+                error!(
+                    "Index out of range for the {component}. `RadioName`: {radio_name:#?}\n`RadioValue`: {radio_value:#?}"
+                );
                 ExamError::ParseError
             };
 
-            let container = self.containers
+            let container = self
+                .containers
                 .get_mut(radio_name.container_index)
                 .ok_or_else(|| error_func("container"))?;
 
@@ -86,16 +91,18 @@ impl Test {
             if selected_option.value.fails_test {
                 // This could be "Sugar Push"
                 let competency_name = row.left_label.clone();
-                
-                let scoring_category = table.scoring_categories
+
+                let scoring_category = table
+                    .scoring_categories
                     .get(radio_name.category_index)
                     .ok_or_else(|| error_func("scoring category"))?;
 
                 // This could be "Footwork", but it can also be ""
                 let scoring_category_name = scoring_category.name.clone();
-                
+
                 // This could be "Perfect"
-                let scoring_category_value = scoring_category.values
+                let scoring_category_value = scoring_category
+                    .values
                     .get(radio_value.label_index)
                     .ok_or_else(|| error_func("scoring category value"))?
                     .clone();
@@ -106,29 +113,30 @@ impl Test {
                     scoring_category_value,
                 });
             }
-            
+
             // Theoretically if we made it down here, this component has to exist on the test...
             if !competency_registry.remove(&radio_name) {
-                error!("Attempted to access a component that does not exist on the test:  `RadioName`: {radio_name:#?}\n`RadioValue`: {radio_value:#?}");
-                return Err(ExamError::ParseError)
+                error!(
+                    "Attempted to access a component that does not exist on the test:  `RadioName`: {radio_name:#?}\n`RadioValue`: {radio_value:#?}"
+                );
+                return Err(ExamError::ParseError);
             }
         }
 
         for bonus_index in bonus_indices {
+            let bonus_item = self.bonus_items.get_mut(bonus_index).ok_or_else(|| {
+                error!("Bonus index `{bonus_index}` is out of range on this test.");
+                ExamError::ParseError
+            })?;
 
-            let bonus_item = self.bonus_items
-                .get_mut(bonus_index)
-                .ok_or_else(|| { 
-                    error!("Bonus index `{bonus_index}` is out of range on this test.");
-                    ExamError::ParseError
-                })?;
-            
             bonus_item.achieved = true;
             score += bonus_item.score;
         }
 
         if !competency_registry.is_empty() {
-            error!("Not all required form inputs were provided. There are ungraded questions remaining.\nUngraded Questions: {competency_registry:#?}");
+            error!(
+                "Not all required form inputs were provided. There are ungraded questions remaining.\nUngraded Questions: {competency_registry:#?}"
+            );
             return Err(ExamError::ParseError);
         }
         let passing_percent = self.metadata.minimum_percent;
@@ -137,7 +145,9 @@ impl Test {
         #[allow(clippy::cast_precision_loss)]
         let percent = (score as f32 / max_score as f32) * 100.0;
 
-        if percent >= passing_percent {failure_explanations.insert(0, FailureExplanation::Score)}
+        if percent >= passing_percent {
+            failure_explanations.insert(0, FailureExplanation::Score)
+        }
         let is_passing = failure_explanations.is_empty();
 
         Ok(GradedTest {
@@ -198,7 +208,7 @@ pub struct TestContainer {
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct CsvTestTable {
-    pub rows: Vec<Vec<String>>
+    pub rows: Vec<Vec<String>>,
 }
 
 /// A table can also be thought of as a `DataFrame` style structure with a column multi-index to
@@ -206,7 +216,7 @@ pub struct CsvTestTable {
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct HtmlTestTable {
     pub scoring_categories: Vec<ScoringCategory>,
-    pub rows: Vec<TestRow>
+    pub rows: Vec<TestRow>,
 }
 
 /// The text labels for the different scores
@@ -215,7 +225,7 @@ pub struct ScoringCategory {
     /// The name of the concept being scored. IE: 'Footwork'. Can be `""`.
     pub name: String,
     /// The words used to describe what a score means. IE: 'Perfect', 'Right Concept', 'Not So Much'
-    pub values: Vec<String>
+    pub values: Vec<String>,
 }
 
 /// A single row in a test table. A row may have two different scoring categories, such as when
@@ -246,11 +256,11 @@ pub struct RadioButton {
     pub name: RadioName,
     /// The number of options should correspond with the number of score labels for the corresponding
     /// `TestTable`.
-    pub options: Vec<RadioOption>
+    pub options: Vec<RadioOption>,
 }
 
 /// The `name` field on a radio button is included in the post request when a form is submitted.
-/// We can deserialize the keys in the form request into this `RadioName` type. This allows us to 
+/// We can deserialize the keys in the form request into this `RadioName` type. This allows us to
 /// correspond the form results to the original test they came from so that we can grade the test.
 #[derive(Debug, Serialize, Deserialize, Clone, Eq, Hash, PartialEq)]
 #[allow(clippy::struct_field_names)]
@@ -275,12 +285,11 @@ pub struct RadioOption {
     /// point value and the index of that score within the `CsvTestTable`
     pub value: RadioValue,
     /// Determine if this is the one that starts checked
-    pub checked: bool
+    pub checked: bool,
 }
 
-
 /// The `value` field on a radio button is included in the post request when a form is submitted.
-/// We can deserialize the values in the form request into this `RadioValue` type. This allows us to 
+/// We can deserialize the values in the form request into this `RadioValue` type. This allows us to
 /// correspond the form results to the original test they came from so that we can grade the test.
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct RadioValue {
@@ -289,7 +298,7 @@ pub struct RadioValue {
     /// The point value of a specified answer on a question. Displayed within the buttons.
     pub point_value: usize,
     /// If this value causes the whole test to be a failure
-    pub fails_test: bool
+    pub fails_test: bool,
 }
 
 #[derive(Deserialize, Debug)]
@@ -300,7 +309,7 @@ pub struct PrefilledTestData {
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
-/// Passing may be failed even if the achieved percent is above the minimum percent if a competency with a failing score label was graded as failing. 
+/// Passing may be failed even if the achieved percent is above the minimum percent if a competency with a failing score label was graded as failing.
 pub struct TestGradeSummary {
     pub achieved_score: i32,
     pub achieved_percent: f32,
@@ -326,7 +335,7 @@ pub enum FailureExplanation {
         scoring_category_value: String,
     },
     /// For when the overall achieved score is too low
-    Score
+    Score,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]

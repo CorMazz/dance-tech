@@ -14,8 +14,8 @@ pub enum Roles {
     /// passed. For instance, if you pass the standard leader test, in the leader test definition
     /// it may specify that passing confers the role of "Advanced Leader". Then, on the Stripe API
     /// you can specify that in order to see the "Advanced Class (Leader)" lesson, users must have
-    /// the `Roles::Dynamic("Advanced Leader")` role. 
-    Dynamic(String)
+    /// the `Roles::Dynamic("Advanced Leader")` role.
+    Dynamic(String),
 }
 
 impl Roles {
@@ -23,7 +23,7 @@ impl Roles {
         match s.to_ascii_lowercase().as_str() {
             "admin" => Self::Admin,
             "proctor" => Self::Proctor,
-            other => Self::Dynamic(other.to_string())
+            other => Self::Dynamic(other.to_string()),
         }
     }
 }

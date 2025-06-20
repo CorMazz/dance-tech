@@ -1,9 +1,12 @@
 //! Error types for check-in operations.
 
+use crate::app::{
+    router::ROUTES,
+    utils::{ErrorTemplate, is_htmx_request, render},
+};
 use axum::response::IntoResponse;
 use thiserror::Error;
 use tracing::error;
-use crate::app::{router::ROUTES, utils::{is_htmx_request, render, ErrorTemplate}};
 
 #[derive(Debug, Clone, Error)]
 pub enum CheckInError {

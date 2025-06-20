@@ -1,13 +1,13 @@
-use std::collections::{BTreeMap, HashMap};
-use std::sync::Arc;
 use serde_json::{from_value, to_value};
 use sqlx::{Pool, Postgres};
+use std::collections::{BTreeMap, HashMap};
+use std::sync::Arc;
 use tracing::{debug, error, instrument};
 use uuid::Uuid;
 
-use crate::exam::models::{RadioName, RadioValue, ScoringCategory};
-use crate::exam::models::{CsvTestTable, RadioButton, RadioOption, TestRow, HtmlTestTable};
 use crate::AppState;
+use crate::exam::models::{CsvTestTable, HtmlTestTable, RadioButton, RadioOption, TestRow};
+use crate::exam::models::{RadioName, RadioValue, ScoringCategory};
 
 use super::errors::ExamError;
 use super::models::GradedTest;
@@ -17,7 +17,11 @@ use super::models::GradedTest;
 /// A `DataFrame` represents the test questions in wide format, as a human would visualize them and
 /// as they will be rendered by the HTML. The HTML itself needs to be generated from the
 /// `DataFrame`, and these `TestTable` objects help with that.
-pub fn convert_df_to_test_table(df: &CsvTestTable, container_idx: usize, table_idx: usize) -> HtmlTestTable {
+pub fn convert_df_to_test_table(
+    df: &CsvTestTable,
+    container_idx: usize,
+    table_idx: usize,
+) -> HtmlTestTable {
     const DL: &str = "--~--";
 
     let headers = &df.rows[0];
@@ -30,7 +34,10 @@ pub fn convert_df_to_test_table(df: &CsvTestTable, container_idx: usize, table_i
         if let Some((category, label)) = header.split_once(DL) {
             let category = category.trim().to_string();
             let label = label.trim().to_string();
-            category_map.entry(category.clone()).or_default().push(label.clone());
+            category_map
+                .entry(category.clone())
+                .or_default()
+                .push(label.clone());
         } else {
             panic!("Add the damn delimiter.")
         }
@@ -48,19 +55,26 @@ pub fn convert_df_to_test_table(df: &CsvTestTable, container_idx: usize, table_i
             for (label_idx, label) in labels.iter().enumerate() {
                 // Reconstruct full column name to find its index
                 let full_header = format!("{category}{DL}{label}");
-                let col_idx = headers.iter().position(|h| h == &full_header)
+                let col_idx = headers
+                    .iter()
+                    .position(|h| h == &full_header)
                     .unwrap_or_else(|| panic!("Column {full_header} not found in headers"));
 
-                let full_point_val = row.get(col_idx)
+                let full_point_val = row
+                    .get(col_idx)
                     .unwrap_or_else(|| panic!("Missing cell at row {row_idx}, column {col_idx}"));
-               
+
                 let point_val: usize;
                 let is_failing: bool;
-                if let Some(point_val_str) = full_point_val.strip_suffix("f")    {
-                    point_val = point_val_str.parse::<usize>().expect("Unable to parse point_value to `usize");
+                if let Some(point_val_str) = full_point_val.strip_suffix("f") {
+                    point_val = point_val_str
+                        .parse::<usize>()
+                        .expect("Unable to parse point_value to `usize");
                     is_failing = true;
                 } else {
-                    point_val = full_point_val.parse::<usize>().expect("Unable to parse point_value to `usize"); 
+                    point_val = full_point_val
+                        .parse::<usize>()
+                        .expect("Unable to parse point_value to `usize");
                     is_failing = false;
                 }
 
@@ -95,7 +109,8 @@ pub fn convert_df_to_test_table(df: &CsvTestTable, container_idx: usize, table_i
             }
         }
 
-        let left_label = row.first()
+        let left_label = row
+            .first()
             .unwrap_or_else(|| panic!("Missing 'index' column at row {row_idx}"))
             .to_string();
 
@@ -115,45 +130,46 @@ pub fn convert_df_to_test_table(df: &CsvTestTable, container_idx: usize, table_i
 
 /// Given a raw submitted test form, parse it into the metadata, competencies, and bonus indices.
 #[instrument(skip(form))]
-pub fn parse_test_form(form: HashMap<String, String>) -> Result<(Vec<(RadioName, RadioValue)>, Vec<usize>), ExamError> {
+pub fn parse_test_form(
+    form: HashMap<String, String>,
+) -> Result<(Vec<(RadioName, RadioValue)>, Vec<usize>), ExamError> {
     let mut competencies: Vec<(RadioName, RadioValue)> = Vec::new();
     let mut bonus_indices: Vec<usize> = Vec::new();
 
     for (key, value) in form {
         if let Some(json_str) = key.strip_prefix("competency") {
-            let name: RadioName = serde_json::from_str(json_str)
-                .map_err(|err| {
-                    error!(%err, "Unable to parse RadioName from `{json_str}`.");
-                    ExamError::ParseError
-                })?;
-            let val: RadioValue = serde_json::from_str(&value)
-                .map_err(|err| {
-                    error!(%err, "Unable to parse RadioValue from `{json_str}`.");
-                    ExamError::ParseError
-                })?;
+            let name: RadioName = serde_json::from_str(json_str).map_err(|err| {
+                error!(%err, "Unable to parse RadioName from `{json_str}`.");
+                ExamError::ParseError
+            })?;
+            let val: RadioValue = serde_json::from_str(&value).map_err(|err| {
+                error!(%err, "Unable to parse RadioValue from `{json_str}`.");
+                ExamError::ParseError
+            })?;
             competencies.push((name, val));
         } else if let Some(index_str) = key.strip_prefix("bonus_index") {
-            let bonus_index: usize = index_str.parse()
-                .map_err(|err| {
-                    error!(%err, "Unable to parse usize from `{index_str}`.");
-                    ExamError::ParseError
-                })?;
+            let bonus_index: usize = index_str.parse().map_err(|err| {
+                error!(%err, "Unable to parse usize from `{index_str}`.");
+                ExamError::ParseError
+            })?;
 
             bonus_indices.push(bonus_index);
         } else {
             error!("Unknown form key: {}", key);
-            return Err(ExamError::ParseError)
+            return Err(ExamError::ParseError);
         }
     }
     Ok((competencies, bonus_indices))
 }
 
-
 /// I already dealt with the headache of trying to store a graded test as something fancy in the
 /// database and split it into all of its different components. Let's take the easy route this time
 /// and just drop the whole shebang in there as JSONB.
 #[instrument(skip(test, db))]
-pub async fn save_graded_test_to_db(test: GradedTest, db: &Pool<Postgres>) -> Result<(), ExamError> {
+pub async fn save_graded_test_to_db(
+    test: GradedTest,
+    db: &Pool<Postgres>,
+) -> Result<(), ExamError> {
     let test_id = test.id;
     let json_value = to_value(&test).expect("GradedTest should serialize to JSON");
 
@@ -176,13 +192,13 @@ pub async fn save_graded_test_to_db(test: GradedTest, db: &Pool<Postgres>) -> Re
     Ok(())
 }
 
-/// Loads a graded test from the database. 
+/// Loads a graded test from the database.
 ///
 /// The test was originally stored as JSONB, so it deserializes the JSON into a GradedTest object.
 #[instrument(skip(db))]
 pub async fn load_graded_test_from_db(
     test_id: Uuid,
-    db: &Pool<Postgres>
+    db: &Pool<Postgres>,
 ) -> Result<GradedTest, ExamError> {
     let row = sqlx::query!(
         r#"
@@ -196,7 +212,9 @@ pub async fn load_graded_test_from_db(
     .await
     .map_err(|err| {
         error!(%err, "Database error while fetching graded test.");
-        ExamError::InternalServerError(Some("Unable to fetch the test. Please try again.".to_string()))
+        ExamError::InternalServerError(Some(
+            "Unable to fetch the test. Please try again.".to_string(),
+        ))
     })?;
 
     let row = row.ok_or_else(|| {
@@ -204,26 +222,37 @@ pub async fn load_graded_test_from_db(
         ExamError::GradedTestNotFound
     })?;
 
-    let graded_test: GradedTest = from_value(row.test_data)
-        .map_err(|err| {
-            error!(%err, "Deserialization error while loading GradedTest.");
-            ExamError::InternalServerError(Some("Test data could not be processed. Please contact the site administrator.".to_string()))
+    let graded_test: GradedTest = from_value(row.test_data).map_err(|err| {
+        error!(%err, "Deserialization error while loading GradedTest.");
+        ExamError::InternalServerError(Some(
+            "Test data could not be processed. Please contact the site administrator.".to_string(),
+        ))
     })?;
     debug!(%graded_test.id, "Loaded graded test from the database.");
     Ok(graded_test)
 }
 
 #[instrument(skip(form, data, test_index))]
-pub async fn post_test_form_handler(data: Arc<AppState>, test_index: usize, form: HashMap<String, String>, proctor_id: Uuid) -> Result<(), ExamError> {
+pub async fn post_test_form_handler(
+    data: Arc<AppState>,
+    test_index: usize,
+    form: HashMap<String, String>,
+    proctor_id: Uuid,
+) -> Result<(), ExamError> {
     debug!("Received raw test form {:#?}", form);
     let (competencies, bonus_indices) = parse_test_form(form)?;
-    debug!("Parsed form into competencies: {competencies:#?} and bonus_indices: {bonus_indices:#?}.");
-    let test = data.exam_config.tests
+    debug!(
+        "Parsed form into competencies: {competencies:#?} and bonus_indices: {bonus_indices:#?}."
+    );
+    let test = data
+        .exam_config
+        .tests
         .get(test_index)
         .ok_or_else(|| {
             error!("Invalid test index: `{test_index}.");
-            ExamError::TestIndexError   
-        })?.clone();
+            ExamError::TestIndexError
+        })?
+        .clone();
 
     let graded_test = test.grade(competencies, bonus_indices, proctor_id)?;
     debug!("Successfully graded test.");

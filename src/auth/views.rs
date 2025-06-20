@@ -12,16 +12,16 @@ use axum_extra::extract::CookieJar;
 use reqwest::StatusCode;
 use serde::Deserialize;
 
-use crate::app::router::{Routes, ROUTES};
 use crate::AppState;
+use crate::app::router::{ROUTES, Routes};
 use crate::app::utils::{is_htmx_request, render};
 use crate::auth::handlers::{
     GoogleOAuthCallbackParams, google_oauth_callback_handler, google_oauth_init_flow_handler,
     login_user_handler, logout_handler, register_user_handler,
 };
+use crate::auth::models::Roles;
 use crate::auth::models::User;
 use crate::auth::{errors::AuthError, middleware::AuthStatus};
-use crate::auth::models::Roles;
 
 #[derive(Template)]
 #[template(path = "./app_templates/user_dropdown.html")]
@@ -41,7 +41,12 @@ pub async fn get_user_dropdown(Extension(auth_status): Extension<AuthStatus>) ->
     let is_proctor = user.as_ref().is_some_and(|u| u.has_role(Roles::Proctor));
     let is_admin = user.as_ref().is_some_and(|u| u.has_role(Roles::Admin));
 
-    let template = UserDropdownTemplate { rts: ROUTES, user, is_proctor, is_admin };
+    let template = UserDropdownTemplate {
+        rts: ROUTES,
+        user,
+        is_proctor,
+        is_admin,
+    };
 
     (StatusCode::OK, Html(template.render().unwrap()))
 }
@@ -53,7 +58,7 @@ pub async fn get_user_dropdown(Extension(auth_status): Extension<AuthStatus>) ->
 #[derive(Template)]
 #[template(path = "./auth_templates/sign-up.html")]
 pub struct SignUpTemplate {
-    rts: Routes
+    rts: Routes,
 }
 
 pub async fn get_signup_page() -> impl IntoResponse {

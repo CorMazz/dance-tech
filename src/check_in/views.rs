@@ -1,26 +1,26 @@
-use crate::app::router::Routes;
-use crate::app::router::ROUTES;
-use crate::auth::middleware::AuthStatus;
-use crate::auth::models::Roles;
 use crate::AppState;
+use crate::app::router::ROUTES;
+use crate::app::router::Routes;
 use crate::app::utils::is_htmx_request;
 use crate::app::utils::render;
+use crate::auth::middleware::AuthStatus;
+use crate::auth::models::Roles;
 use crate::check_in::handlers::create_stripe_checkout_session;
 use crate::check_in::handlers::verify_successful_checkout_session;
 use crate::check_in::models::Product;
 use askama::Template;
+use axum::Extension;
+use axum::Form;
 use axum::extract::Query;
 use axum::extract::State;
 use axum::response::Redirect;
-use axum::Extension;
-use axum::Form;
 use axum::{
     http::StatusCode,
     response::{Html, IntoResponse},
 };
 use serde::Deserialize;
-use tracing::error;
 use std::sync::Arc;
+use tracing::error;
 
 use crate::check_in::handlers::get_products_from_actor;
 
@@ -47,9 +47,12 @@ pub async fn get_check_in_page(
 ) -> impl IntoResponse {
     let products = match get_products_from_actor(&data).await {
         Ok(products) => products,
-        Err(err) => return err.into_response(&headers)
+        Err(err) => return err.into_response(&headers),
     };
-    let template = CheckInTemplate { products, rts: ROUTES };
+    let template = CheckInTemplate {
+        products,
+        rts: ROUTES,
+    };
 
     if is_htmx_request(&headers) {
         (StatusCode::OK, Html(render(template.as_content()))).into_response()
@@ -79,7 +82,9 @@ pub async fn post_create_check_out_session(
     headers: axum::http::HeaderMap,
     Form(session_info): Form<CheckoutSessionForm>,
 ) -> impl IntoResponse {
-    match create_stripe_checkout_session(&data, &session_info.product_id, &session_info.price_id).await {
+    match create_stripe_checkout_session(&data, &session_info.product_id, &session_info.price_id)
+        .await
+    {
         Ok(redirect) => redirect.into_response(),
         Err(err) => err.into_response(&headers),
     }
@@ -144,9 +149,9 @@ pub async fn post_update_available_products(
     match auth_status {
         AuthStatus::Authorized(user) => {
             if !user.user.has_role(Roles::Admin) {
-                return Redirect::to(ROUTES.login)
+                return Redirect::to(ROUTES.login);
             }
-        },
+        }
         AuthStatus::Unauthorized(_) => return Redirect::to(ROUTES.login),
     }
 

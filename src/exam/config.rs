@@ -13,22 +13,28 @@ pub fn parse_csv(csv_data: &str) -> CsvTestTable {
         .has_headers(true)
         .from_reader(csv_data.as_bytes());
 
-    let headers = rdr.headers().unwrap().iter().map(std::string::ToString::to_string).collect();
+    let headers = rdr
+        .headers()
+        .unwrap()
+        .iter()
+        .map(std::string::ToString::to_string)
+        .collect();
     let mut all_rows = vec![headers];
 
     for result in rdr.records() {
         let record = result.unwrap();
-        let row = record.iter().map(std::string::ToString::to_string).collect();
+        let row = record
+            .iter()
+            .map(std::string::ToString::to_string)
+            .collect();
         all_rows.push(row);
     }
 
-    CsvTestTable {
-        rows: all_rows,
-    }
+    CsvTestTable { rows: all_rows }
 }
 
 pub struct ExamConfig {
-    pub tests: Vec<Test>
+    pub tests: Vec<Test>,
 }
 
 impl ExamConfig {
@@ -88,7 +94,7 @@ Basket Whip,4,3,2f,1f,2,1f
 Free Spin,4,3,2f,1f,2,1f
 ";
 
-    let df_2_csv = r"index,--~--Consistent >90%,--~--Present 75%,--~--Occasional 50%,--~--Lacking 25%,--~--Missing <10%
+        let df_2_csv = r"index,--~--Consistent >90%,--~--Present 75%,--~--Occasional 50%,--~--Lacking 25%,--~--Missing <10%
 Body Lead,5,4,3,2f,1f
 Post,5,4,3f,2f,1f
 Strong Frame,5,4,3,2f,1f
@@ -99,11 +105,11 @@ Move Off Slot,5,4,3,2f,1f
 Safe,5,4f,3f,2f,1f
 ";
 
-    let df_3_csv = r"index,--~--Perpendicular,--~--Over-Angled,--~--Angled,--~--Under-Angled,--~--Flat
+        let df_3_csv = r"index,--~--Perpendicular,--~--Over-Angled,--~--Angled,--~--Under-Angled,--~--Flat
 Body Angle,5f,4,3,2,1f
 ";
 
-    let df_4_csv = r"index,--~--Overkill,--~--Too Strong,--~--Adequate,--~--Under-Prepped,--~--Missing
+        let df_4_csv = r"index,--~--Overkill,--~--Too Strong,--~--Adequate,--~--Under-Prepped,--~--Missing
 Prep,5f,4,3,2,1f
 ";
 
@@ -124,18 +130,17 @@ Prep,5f,4,3,2,1f
             super::models::TestContainer {
                 name: "Pattern Scoring".to_string(),
                 tables: vec![super::handlers::convert_df_to_test_table(&df_1, 0, 0)],
-                dfs: vec![df_1]    
+                dfs: vec![df_1],
             },
-
             super::models::TestContainer {
                 name: "Technique Scoring".to_string(),
                 tables: vec![
                     super::handlers::convert_df_to_test_table(&df_2, 1, 0),
                     super::handlers::convert_df_to_test_table(&df_3, 1, 1),
-                    super::handlers::convert_df_to_test_table(&df_4, 1, 2)
+                    super::handlers::convert_df_to_test_table(&df_4, 1, 2),
                 ],
-                dfs: vec![df_2, df_3, df_4]    
-            }
+                dfs: vec![df_2, df_3, df_4],
+            },
         ];
 
         let bonus_items = vec![
@@ -144,13 +149,13 @@ Prep,5f,4,3,2,1f
                 name: "No Thumbs".to_string(),
                 score: 3,
                 achieved: false,
-            }, 
+            },
             BonusItem {
                 bonus_index: 1,
                 name: "Big Chungus".to_string(),
                 score: 1,
                 achieved: false,
-            }
+            },
         ];
 
         let test = Test {
