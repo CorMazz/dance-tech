@@ -1,9 +1,11 @@
 
 {% macro render_container(container, show_point_values, freeze_buttons) %}
-  <h2 class="my-title">{{ container.name }}</h2>
-  {% for table in container.tables %}
-    {% call render_table(table, show_point_values=show_point_values, freeze_buttons=freeze_buttons) %}
-  {% endfor %}
+  <div class="my-card" data-comment={{ container.name }}>
+    <h2 class="my-title">{{ container.name }}</h2>
+    {% for table in container.tables %}
+      {% call render_table(table, show_point_values=show_point_values, freeze_buttons=freeze_buttons) %}
+    {% endfor %}
+  </div>
 {% endmacro %}
 
 {% macro render_table(table, show_point_values, freeze_buttons) %}
@@ -129,4 +131,50 @@
     </tbody>
   </table>
 
+{% endmacro %}
+
+{# Renders a `TestGrade` object #}
+{% macro render_grade(grade) %}
+  {% if grade.is_passing %}
+    <div class="my-card bg-green-100 hover:bg-green-200 text-center">
+  {% else %}
+    <div class="my-card bg-red-100 hover:bg-red-200 text-center">
+  {% endif %}
+
+    <h2 class="my-title">Scoring Information</h2>
+    <p class="text-xl"><span class="font-semibold">Score: </span> {{ grade.achieved_score }} / {{ grade.max_score }} = {{ "{:.0}"|format(grade.achieved_percent) }}%</p> 
+    <p class="text-xl"><span class="font-semibold">Passing Score: </span>{{ "{:.0}"|format(grade.minimum_percent) }}%</p>
+
+      {% if grade.is_passing %}
+        <p class="font-semibold text-xl"></p>
+          Status: 
+          <span class="font-bold text-green-700">Passing</span>
+        </p>
+      {% else %} 
+        <p class="font-semibold text-xl">
+          Status:
+          <span class="font-bold text-red-700">Failing</span> 
+        </p>
+
+        {% if !grade.failure_explanations.is_empty() %}
+          <ul>
+            {% for failure_explanation in grade.failure_explanations %}
+              <li>
+              {% match failure_explanation %}
+                {% when FailureExplanation::Score %}
+                  <span class="font-medium">Your score of <span class="text-red-600">{{ "{:.0}"|format(grade.achieved_percent) }}</span> is lower than the minimum passing score of <span class="text-red-600">{{ "{:.0}"|format(grade.minimum_percent) }}</span></span>
+                  {% when FailureExplanation::Competency with { competency_name, scoring_category_name, scoring_category_value } %}
+                  {% if scoring_category_name == "" %}
+                    <span class="font-medium">Competency <span class="text-red-600">'{{ competency_name }}'</span> is failing the test because a label of <span class="text-red-600">'{{ scoring_category_value }}'</span> was achieved.</span>
+                  {% else %}
+                    <span class="font-medium">Competency <span class="text-red-600">'{{ competency_name }}'</span> is failing the test because a label of <span class="text-red-600">'{{ scoring_category_value }}'</span> was achieved for the <span class="text-red-600">'{{ scoring_category_name }}'</span> category.</span>
+                  {% endif %}
+              {% endmatch %}
+
+              </li>
+            {% endfor %}
+          </ul>
+        {% endif %}
+      {% endif %}
+</div>
 {% endmacro %}

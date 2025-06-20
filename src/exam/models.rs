@@ -145,16 +145,24 @@ impl Test {
         #[allow(clippy::cast_precision_loss)]
         let percent = (score as f32 / max_score as f32) * 100.0;
 
-        if percent >= passing_percent {
-            failure_explanations.insert(0, FailureExplanation::Score)
+        if percent < passing_percent {
+            failure_explanations.insert(0, FailureExplanation::Score);
         }
         let is_passing = failure_explanations.is_empty();
+
+        let grade = TestGrade {
+            max_score: self.metadata.max_score,
+            minimum_percent: self.metadata.minimum_percent,
+            achieved_score: score,
+            achieved_percent: percent,
+            is_passing,
+            failure_explanations,
+        };
 
         Ok(GradedTest {
             id: Uuid::new_v4(),
             test: self,
-            achieved_points: score,
-            is_passing,
+            grade,
             proctor_id,
             testee_id: Uuid::new_v4(),
         })
@@ -181,8 +189,9 @@ pub struct BonusItem {
 #[serde(deny_unknown_fields)]
 pub struct Metadata {
     pub test_name: String,
+    /// 100 = 100%
     pub minimum_percent: f32,
-    pub max_score: i32,
+    pub max_score: usize,
     pub config: TestConfig,
 }
 
@@ -308,20 +317,10 @@ pub struct PrefilledTestData {
     pub email: Option<String>,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
-/// Passing may be failed even if the achieved percent is above the minimum percent if a competency with a failing score label was graded as failing.
-pub struct TestGradeSummary {
-    pub achieved_score: i32,
-    pub achieved_percent: f32,
-    pub max_score: i32,
-    pub minimum_percent: f32,
-    pub is_passing: bool,
-    pub failure_explanation: Option<Vec<String>>,
-}
-
 /// When specific `RadioOptions` fail the test, this struct is created and fed to the HTML to be
 /// rendered. There is no `Display` implementation on this because I want to be able to format it
 /// nicely within the HTML.
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub enum FailureExplanation {
     /// For when a specific competency is failing the test.
     /// "You achieved a value of 'You're Ass' in category 'Footwork' for 'Sugar Push'. This fails
@@ -342,8 +341,23 @@ pub enum FailureExplanation {
 pub struct GradedTest {
     pub id: Uuid,
     pub test: Test,
-    pub achieved_points: usize,
-    pub is_passing: bool,
+    pub grade: TestGrade,
     pub proctor_id: Uuid,
     pub testee_id: Uuid,
+}
+
+/// Used to show the results of a test to the user
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct TestGrade {
+    pub achieved_score: usize,
+    /// 100 = 100%. 
+    pub achieved_percent: f32,
+    /// The minimum percent threshold to pass the test. Repeated in the test `Metadata`. 100 =
+    /// 100%.
+    pub minimum_percent: f32,
+    /// The maximum score possible on the test without bonus points. Repeated in the test
+    /// `Metadata`.
+    pub max_score: usize,
+    pub is_passing: bool,
+    pub failure_explanations: Vec<FailureExplanation>,
 }

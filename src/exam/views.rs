@@ -4,6 +4,7 @@ use std::sync::Arc;
 use super::handlers::load_graded_test_from_db;
 use super::handlers::post_test_form_handler;
 use super::models::PrefilledTestData;
+use super::models::TestGrade;
 use crate::AppState;
 use crate::app::utils::ErrorTemplate;
 use crate::app::utils::is_htmx_request;
@@ -11,7 +12,7 @@ use crate::app::utils::render;
 use crate::auth::middleware::AuthStatus;
 use crate::{
     app::router::{ROUTES, Routes},
-    exam::models::Test,
+    exam::models::{Test, FailureExplanation},
 };
 use askama::Template;
 use axum::Extension;
@@ -27,17 +28,14 @@ use reqwest::StatusCode;
 use tracing::instrument;
 use uuid::Uuid;
 
-/// This struct is used to display both graded and ungraded tests.
+/// The same template is used to display graded and ungraded tests, using different structs
 #[derive(Template)]
 #[template(path = "./exam_templates/exam.html", blocks = ["content"])]
-pub struct ExamTemplate {
+pub struct AdministerExamTemplate {
     test: Test,
-    prefilled_user_info: PrefilledTestData,
     /// Used for on the fly test grading and the `submit button`
     test_index: usize,
     is_demo_mode: bool,
-    /// If `true`, disables all the buttons so that the test is displayed as it was graded.
-    is_graded: bool,
     /// If `true`, adds a checkbox that will trigger emailing test results the testee.
     email_functionality_active: bool,
     rts: Routes,
@@ -64,13 +62,11 @@ pub async fn get_test_page(
             }
         },
         |test| {
-            let template = ExamTemplate {
+            let template = AdministerExamTemplate {
                 test: test.clone(),
-                prefilled_user_info,
                 test_index,
                 is_demo_mode: data.app_config.is_demo_mode,
                 email_functionality_active: data.smtp_config.is_some(),
-                is_graded: false,
                 rts: ROUTES,
             };
 
@@ -144,6 +140,18 @@ pub async fn post_test_form(
     // }
 }
 
+
+/// The same template is used to display graded and ungraded tests, using different structs
+#[derive(Template)]
+#[template(path = "./exam_templates/exam.html", blocks = ["content"])]
+pub struct GradedExamTemplate {
+    test: Test,
+    grade: TestGrade,
+    /// Used for on the fly test grading and the `submit button`
+    // test_index: usize,
+    rts: Routes,
+}
+
 #[instrument(skip(data, headers))]
 pub async fn get_graded_test_page(
     State(data): State<Arc<AppState>>,
@@ -155,17 +163,9 @@ pub async fn get_graded_test_page(
         .map_or_else(
             |err| err.into_response(&headers),
             |graded_test| {
-                let template = ExamTemplate {
+                let template = GradedExamTemplate {
                     test: graded_test.test,
-                    prefilled_user_info: PrefilledTestData {
-                        first_name: None,
-                        last_name: None,
-                        email: None,
-                    },
-                    test_index: 1,
-                    is_demo_mode: data.app_config.is_demo_mode,
-                    email_functionality_active: data.smtp_config.is_some(),
-                    is_graded: true,
+                    grade: graded_test.grade,
                     rts: ROUTES,
                 };
 

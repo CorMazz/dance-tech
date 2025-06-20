@@ -140,7 +140,6 @@ Ensure you are launching the server from the root of this repository. File paths
 - Exams
     - Load exams from `test_definitions/<exam_name>.yml`
     - Link exams to users by email
-    - Show results on graded exams
     - Add `/live-grading` endpoint for exams
     - Fix styling on exam page
     - Email users

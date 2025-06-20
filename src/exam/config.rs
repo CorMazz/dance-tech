@@ -124,7 +124,7 @@ Prep,5f,4,3,2,1f
                 show_point_values: true,
             },
             max_score: 69,
-            minimum_percent: 0.69,
+            minimum_percent: 69.0,
         };
         let containers = vec![
             super::models::TestContainer {
