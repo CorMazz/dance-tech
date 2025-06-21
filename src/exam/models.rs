@@ -361,3 +361,107 @@ pub struct TestGrade {
     pub is_passing: bool,
     pub failure_explanations: Vec<FailureExplanation>,
 }
+
+pub mod deserialize {
+    //! A series of structs used to deserialize a test from YAML.
+    use std::{fs, path::Path};
+
+    use crate::exam::handlers::{convert_df_to_test_table, parse_csv};
+
+    use super::*;
+    
+
+    #[derive(Deserialize)]
+    pub struct TestYaml {
+        metadata: MetadataYaml,
+        containers: Vec<ContainerYaml>,
+        bonus_items: Vec<BonusItemYaml>,
+    }
+
+    #[derive(Deserialize)]
+    struct MetadataYaml {
+        pub test_name: String,
+        // 100 = 100%
+        pub minimum_percent: f32,
+        pub config: TestConfig
+    }
+
+    #[derive(Deserialize)]
+    struct ContainerYaml {
+        name: String,
+        tables: Vec<CsvTableYaml>,
+    }
+
+    #[derive(Deserialize)]
+    struct CsvTableYaml {
+        csv: String,
+    }
+
+
+    #[derive(Deserialize)]
+    struct BonusItemYaml {
+        pub name: String,
+        pub score: usize,
+    }
+
+    impl TestYaml {
+        /// Load a `TestYaml` from a YAML file at the given path.
+        pub fn load<P: AsRef<Path>>(path: P) -> Result<Self, ExamError> {
+            let contents = fs::read_to_string(path).map_err(|err| ExamError::ReadError(err.to_string()))?;
+            let yaml = serde_yaml::from_str::<Self>(&contents).map_err(|err| ExamError::ReadError(err.to_string()))?;
+            Ok(yaml)
+        }
+        /// Convert a `TestYaml` object into a Test object.
+        pub fn into_test(self) -> Test {
+            let containers: Vec<TestContainer> = self.containers.iter().enumerate().map(|(i, c)| {
+                let dfs: Vec<_> = c.tables.iter().map(|t| parse_csv(&t.csv)).collect();
+                let tables = dfs.iter().enumerate().map(|(j, df)| convert_df_to_test_table(df, i, j)).collect();
+                TestContainer {
+                    name: c.name.clone(),
+                    tables,
+                    dfs,
+                }
+            }).collect();
+               
+            // compute max_score by summing max score per button across all tables
+            let max_score: usize = containers
+                .iter()
+                .flat_map(|container| &container.tables)
+                .flat_map(|table| &table.rows)
+                .flat_map(|row| &row.buttons)
+                .map(|button| {
+                    button
+                        .options
+                        .iter()
+                        .map(|opt| opt.value.point_value)
+                        .max()
+                        .unwrap_or(0)
+                })
+                .sum();
+
+            let metadata = Metadata {
+                test_name: self.metadata.test_name, 
+                minimum_percent: self.metadata.minimum_percent,
+                max_score,
+                config: self.metadata.config,
+            };
+
+            let bonus_items: Vec<BonusItem> = self.bonus_items
+                .into_iter()
+                .enumerate()
+                .map(|(i, b)| BonusItem {
+                    bonus_index: i,
+                    name: b.name,
+                    score: b.score,
+                    achieved: false,
+                })
+                .collect();
+
+            Test {
+                metadata,
+                containers,
+                bonus_items,
+            }
+        }
+    }
+}

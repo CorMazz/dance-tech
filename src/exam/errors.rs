@@ -10,6 +10,9 @@ pub enum ExamError {
     #[error("An internal server error occurred: {0:?}")]
     InternalServerError(Option<String>),
 
+    #[error("Unable to read file: `{0:?}`")]
+    ReadError(String),
+
     #[error("There was an error parsing the test results. Please contact the site administrator.")]
     ParseError,
 

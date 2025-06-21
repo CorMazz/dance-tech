@@ -1,0 +1,49 @@
+metadata:
+  test_name: "Standard Follower Test"
+  config:
+    live_grading: true
+    show_point_values: true
+  minimum_percent: 60.0
+
+containers:
+  - name: "Pattern Scoring"
+    tables:
+      - csv: |
+          index,Footwork--~--Perfect,Footwork--~--Right Concept,Footwork--~--Nope,Timing--~--On,Timing--~--Off,Shaping--~--Shaped,Shaping--~--Flat
+          Left Side Pass,2,1,0f,1,0,1,0
+          Right Side Pass,2,1,0f,1,0,1,0
+          Whip,2,1,0f,1,0,1,0
+          Spinning Side Pass,2,1,0f,1,0,1,0
+          Sugar Push,2,1,0f,1,0,1,0
+
+  - name: "Technique Scoring"
+    tables:
+      - csv: |
+          index,--~--Consistent >90%,--~--Present 75%,--~--Occasional 50%,--~--Lacking 25%,--~--Missing <10%
+          Strong Frame,8,5,0f,0f,0f
+          Post,6,4,2,0f,0f
+          Anchor in 3rd Position,8,0f,0f,0f,0f
+          Stretch,6,4,2,0f,0f
+          Variable Speed,4,3,2,1,0
+          Connection Transition,8,5,0f,0f,0f
+          Connection Hierarchy,6,4,2,0f,0f
+          Directionality,6,4,0f,0f,0f
+          Kissing Connection,6,4,2,0f,0f
+          Spins,4,3,0f,0f,0f
+          Personal Safety,8,5,0f,0f,0f
+          Partner Safety,8,0f,0f,0f,0f
+
+      - csv: |
+          index,--~--Perpendicular,--~--Over-Angled,--~--Angled,--~--Under-Angled,--~--Flat
+          Body Angle,0f,2,3,2,0f
+
+bonus_items:
+  - name: "No Biceps"
+    score: 1
+  - name: "Spotting"
+    score: 1
+  - name: "Connection in Motion"
+    score: 2
+  - name: "Swung Triple"
+    score: 4
+

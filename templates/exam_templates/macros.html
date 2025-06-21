@@ -157,7 +157,7 @@
         </p>
 
         {% if !grade.failure_explanations.is_empty() %}
-          <ul>
+          <ul class="max-h-12 overflow-y-auto mt-4 space-y-2">
             {% for failure_explanation in grade.failure_explanations %}
               <li>
               {% match failure_explanation %}

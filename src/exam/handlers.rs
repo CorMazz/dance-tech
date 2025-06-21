@@ -1,3 +1,4 @@
+use csv::ReaderBuilder;
 use serde_json::{from_value, to_value};
 use sqlx::{Pool, Postgres};
 use std::collections::{BTreeMap, HashMap};
@@ -271,4 +272,31 @@ pub async fn post_test_form_handler(
     let graded_test = live_grade_handler(data.clone(), test_index, form, proctor_id)?;
     save_graded_test_to_db(graded_test, &data.db).await?;
     Ok(())
+}
+
+
+/// Read a string into a CSV. Used to load the tests from files.
+pub fn parse_csv(csv_data: &str) -> CsvTestTable {
+    let mut rdr = ReaderBuilder::new()
+        .has_headers(true)
+        .from_reader(csv_data.as_bytes());
+
+    let headers = rdr
+        .headers()
+        .expect("Unable to parse headers")
+        .iter()
+        .map(std::string::ToString::to_string)
+        .collect();
+    let mut all_rows = vec![headers];
+
+    for result in rdr.records() {
+        let record = result.unwrap();
+        let row = record
+            .iter()
+            .map(std::string::ToString::to_string)
+            .collect();
+        all_rows.push(row);
+    }
+
+    CsvTestTable { rows: all_rows }
 }

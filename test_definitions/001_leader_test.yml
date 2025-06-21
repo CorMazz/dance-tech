@@ -1,0 +1,50 @@
+metadata:
+  test_name: "Standard Leader Test"
+  config:
+    live_grading: true
+    show_point_values: true
+  minimum_percent: 60.0
+
+containers:
+  - name: "Pattern Scoring"
+    tables:
+      - csv: |
+          index,Footwork--~--Perfect,Footwork--~--Variation?,Footwork--~--Right Concept,Footwork--~--Nope,Timing--~--On,Timing--~--Off
+          Starter Step,3,2,1,0f,1,0
+          Left Side Pass from Closed,3,2,1,0f,1,0
+          Sugar Tuck,3,2,1,0f,1,0
+          Cutoff Whip,3,2,1,0f,1,0
+          Left Side Pass,3,2,1,0f,1,0
+          Whip,3,2,1,0f,1,0
+          Sugar Push,3,2,1,0f,1,0
+          Spinning Side Pass,3,2,1,0f,1,0
+          Right Side Pass,3,2,1,0f,1,0
+          Basket Whip,3,2,1,0f,1,0
+          Free Spin,3,2,1,0f,1,0
+
+  - name: "Technique Scoring"
+    tables:
+      - csv: |
+          index,--~--Consistent >90%,--~--Present 75%,--~--Occasional 50%,--~--Lacking 25%,--~--Missing <10%
+          Body Lead,8,6,0f,0f,0f
+          Post,6,4,0f,0f,0f
+          Strong Frame,6,4,2,0f,0f
+          Closed Connection,4,3,2,0f,0f
+          Connection Transition,4,3,2f,0f,0f
+          On Time,8,6,0f,0f,0f
+          Move Off Slot,4,3,0f,0f,0f
+          Safe,8,0f,0f,0f,0f
+      - csv: |
+          index,--~--Perpendicular,--~--Over-Angled,--~--Angled,--~--Under-Angled,--~--Flat
+          Body Angle,0f,2,3,2,0f
+      - csv: |
+          index,--~--Overkill,--~--Too Strong,--~--Adequate,--~--Under-Prepped,--~--Missing
+          Prep,0f,2,3,0,0f
+
+bonus_items:
+  - name: "No Thumbs"
+    score: 1
+  - name: "Clear Turn Signal"
+    score: 1
+  - name: "Swung Triple"
+    score: 4

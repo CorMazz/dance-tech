@@ -138,11 +138,12 @@ Ensure you are launching the server from the root of this repository. File paths
     - Exam search by user, exam name, proctor, etc.
     - Export exam data
 - Exams
-    - Load exams from `test_definitions/<exam_name>.yml`
     - Link exams to users by email
-    - Add `/live-grading` endpoint for exams
     - Fix styling on exam page
     - Email users
+    - Have exams apply roles to users
+- Check-In
+    - Parse role requirements from Stripe API
 - Make primary colorscheme look less dumb
 - Modify check-in page to only show check-in options based on user roles
 
@@ -159,3 +160,5 @@ Ensure you are launching the server from the root of this repository. File paths
 6/16/2025: 8 hrs
 6/18/2025: 3 hrs
 6/19/2025: 4 hrs
+6/20/2025: 1.5 hrs
+6/21/2025: 2 hrs
