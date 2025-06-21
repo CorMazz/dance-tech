@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 use std::sync::Arc;
 
+use super::handlers::live_grade_handler;
 use super::handlers::load_graded_test_from_db;
 use super::handlers::post_test_form_handler;
 use super::models::PrefilledTestData;
@@ -12,7 +13,7 @@ use crate::app::utils::render;
 use crate::auth::middleware::AuthStatus;
 use crate::{
     app::router::{ROUTES, Routes},
-    exam::models::{Test, FailureExplanation},
+    exam::models::{FailureExplanation, Test},
 };
 use askama::Template;
 use axum::Extension;
@@ -89,13 +90,12 @@ pub async fn post_test_form(
     Host(server_root_url): Host,
     Form(raw_form): Form<HashMap<String, String>>,
 ) -> impl IntoResponse {
-    let proctor_id: Uuid;
-    match auth_status {
+    let proctor_id = match auth_status {
         AuthStatus::Authorized(proctor) => {
-            proctor_id = proctor.user.id;
+            proctor.user.id
         }
         AuthStatus::Unauthorized(err) => return err.into_response(&headers),
-    }
+    };
 
     if let Err(e) = post_test_form_handler(data, test_index, raw_form, proctor_id).await {
         return e.into_response(&headers);
@@ -140,15 +140,12 @@ pub async fn post_test_form(
     // }
 }
 
-
 /// The same template is used to display graded and ungraded tests, using different structs
 #[derive(Template)]
 #[template(path = "./exam_templates/exam.html", blocks = ["content"])]
 pub struct GradedExamTemplate {
     test: Test,
     grade: TestGrade,
-    /// Used for on the fly test grading and the `submit button`
-    // test_index: usize,
     rts: Routes,
 }
 
@@ -176,6 +173,44 @@ pub async fn get_graded_test_page(
                 }
             },
         )
+}
+
+/// Used for live grading, just render the `Grade` struct
+#[derive(Template)]
+#[template(
+    ext = "txt",
+    source = r#"
+{% import "./exam_templates/macros.html" as macros %}
+{% call macros::render_grade(grade) %}
+"#)]
+pub struct TestGradeTemplate {
+    grade: TestGrade
+}
+
+/// Let users get feedback on the fly by grading partially completed tests and returning just the
+/// grade object. This will always be an HTMX request.
+#[instrument(skip(data, auth_status, headers, raw_form))]
+pub async fn post_live_grading(
+    State(data): State<Arc<AppState>>,
+    Extension(auth_status): Extension<AuthStatus>,
+    Path(test_index): Path<usize>,
+    headers: axum::http::HeaderMap,
+    Host(server_root_url): Host,
+    Form(raw_form): Form<HashMap<String, String>>,
+) -> impl IntoResponse {
+    let proctor_id = match auth_status {
+        AuthStatus::Authorized(proctor) => {
+            proctor.user.id
+        }
+        AuthStatus::Unauthorized(err) => return err.into_response(&headers),
+    };
+    match live_grade_handler(data, test_index, raw_form, proctor_id) {
+        Ok(graded_test) => {
+            let template = TestGradeTemplate { grade: graded_test.grade };
+            return (StatusCode::OK, Html(render(template))).into_response()
+        }
+        Err(e) => return e.into_response(&headers)
+    }
 }
 
 #[derive(Template)]

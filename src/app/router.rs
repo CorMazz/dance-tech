@@ -1,20 +1,16 @@
 use crate::{
-    AppState,
-    app::views::{error_404_page, get_home_page},
-    auth::{
+    app::views::{error_404_page, get_home_page}, auth::{
         middleware::{check_auth_middleware, require_auth_middleware},
         views::{
             get_google_oauth_callback, get_google_oauth_init_flow, get_login_page, get_logout_page,
             get_signup_page, get_user_dropdown, post_login_form, post_signup_form,
         },
-    },
-    check_in::views::{
+    }, check_in::views::{
         get_check_in_page, get_successful_checkout_session, post_create_check_out_session,
         post_update_available_products,
-    },
-    exam::views::{
-        get_graded_test_page, get_proctor_dashboard_page, get_test_page, post_test_form,
-    },
+    }, exam::views::{
+        get_graded_test_page, get_proctor_dashboard_page, get_test_page, post_live_grading, post_test_form
+    }, AppState
 };
 use axum::{
     Router, middleware,
@@ -46,6 +42,7 @@ pub struct Routes {
     /// associated method `self.administer_exam()`
     pub administer_exam_root: &'static str,
     pub graded_exam_root: &'static str,
+    pub live_grading_root: &'static str,
     pub proctor_dashboard: &'static str,
 
     // Misc Routes
@@ -62,6 +59,10 @@ impl Routes {
 
     pub fn graded_exam(&self, exam_id: &(impl ToString + ?Sized)) -> String {
         format!("{}/{}", self.graded_exam_root, exam_id.to_string())
+    }
+    
+    pub fn live_grading(&self, exam_id: &(impl ToString + ?Sized)) -> String {
+        format!("{}/{}", self.live_grading_root, exam_id.to_string())
     }
 }
 
@@ -86,6 +87,7 @@ pub const ROUTES: Routes = Routes {
     exam_home: "/exam",
     administer_exam_root: "/administer-exam",
     graded_exam_root: "/view-exam",
+    live_grading_root: "/private/live-grading",
     proctor_dashboard: "/exam-proctor",
 
     // Misc Routes
@@ -102,6 +104,10 @@ pub fn create_router(app_state: Arc<AppState>) -> Router {
         .route(
             &ROUTES.administer_exam("{test_index}"),
             get(get_test_page).post(post_test_form),
+        )
+        .route(
+            &ROUTES.live_grading("{test_index}"),
+            post(post_live_grading)
         );
 
     // Anything in here will check if the user is signed in and add that info to the request

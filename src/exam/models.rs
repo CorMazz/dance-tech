@@ -350,7 +350,7 @@ pub struct GradedTest {
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct TestGrade {
     pub achieved_score: usize,
-    /// 100 = 100%. 
+    /// 100 = 100%.
     pub achieved_percent: f32,
     /// The minimum percent threshold to pass the test. Repeated in the test `Metadata`. 100 =
     /// 100%.

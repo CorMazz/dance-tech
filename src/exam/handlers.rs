@@ -232,13 +232,14 @@ pub async fn load_graded_test_from_db(
     Ok(graded_test)
 }
 
+/// Used to return a `Grade` object to the live grading endpoint. 
 #[instrument(skip(form, data, test_index))]
-pub async fn post_test_form_handler(
+pub fn live_grade_handler(
     data: Arc<AppState>,
     test_index: usize,
     form: HashMap<String, String>,
     proctor_id: Uuid,
-) -> Result<(), ExamError> {
+) -> Result<GradedTest, ExamError> {
     debug!("Received raw test form {:#?}", form);
     let (competencies, bonus_indices) = parse_test_form(form)?;
     debug!(
@@ -256,6 +257,18 @@ pub async fn post_test_form_handler(
 
     let graded_test = test.grade(competencies, bonus_indices, proctor_id)?;
     debug!("Successfully graded test.");
+    Ok(graded_test)
+}
+
+/// Receive the form from a test page, parse it, grade the test, and save it to the database.
+#[instrument(skip(form, data, test_index))]
+pub async fn post_test_form_handler(
+    data: Arc<AppState>,
+    test_index: usize,
+    form: HashMap<String, String>,
+    proctor_id: Uuid,
+) -> Result<(), ExamError> {
+    let graded_test = live_grade_handler(data.clone(), test_index, form, proctor_id)?;
     save_graded_test_to_db(graded_test, &data.db).await?;
     Ok(())
 }
