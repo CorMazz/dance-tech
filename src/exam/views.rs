@@ -4,7 +4,9 @@ use std::sync::Arc;
 use super::handlers::live_grade_handler;
 use super::handlers::load_graded_test_from_db;
 use super::handlers::post_test_form_handler;
+use super::handlers::queue::retrieve_test_queue;
 use super::models::PrefilledTestData;
+use super::models::QueueEntry;
 use super::models::TestGrade;
 use crate::AppState;
 use crate::app::utils::ErrorTemplate;
@@ -226,10 +228,9 @@ pub async fn get_proctor_dashboard_page(
 ) -> impl IntoResponse {
     let test_names = data
         .exam_config
-        .tests
-        .iter()
-        .map(|test| test.metadata.test_name.clone())
-        .collect();
+        .test_names
+        .clone();
+
     let template: ProctorDashboardTemplate = ProctorDashboardTemplate {
         rts: ROUTES,
         test_names,
@@ -241,3 +242,66 @@ pub async fn get_proctor_dashboard_page(
         (StatusCode::OK, Html(render(template)))
     }
 }
+
+
+#[derive(Template)]
+#[template(path = "./exam_templates/user_dashboard.html", blocks = ["content"])]
+pub struct UserDashboardTemplate {
+    rts: Routes,
+}
+
+pub async fn get_user_dashboard_page(
+    State(data): State<Arc<AppState>>,
+    headers: axum::http::HeaderMap,
+) -> impl IntoResponse {
+
+    let template = UserDashboardTemplate {
+        rts: ROUTES,
+    };
+
+    if is_htmx_request(&headers) {
+        (StatusCode::OK, Html(render(template.as_content())))
+    } else {
+        (StatusCode::OK, Html(render(template)))
+    }
+}
+
+/// The queue is only ever intended to be rendered within another page, so it has no content block.
+#[derive(Template)]
+#[template(path = "./exam_templates/queue.html")]
+pub struct QueueTemplate {
+    /// If the current user has the role `Admin` or `Proctor`.
+    is_superuser: bool,
+    is_demo_mode: bool,
+    queue: Vec<QueueEntry>,
+}
+
+/// This can fail if there are users in the queue signed up to take a test that no longer exists.
+/// That invariant is maintained by clearing the queue everytime the app starts, since that ensures
+/// that only valid `test_index` (indices into the vec of test names) are in the db.
+pub async fn get_queue_widget(
+    State(data): State<Arc<AppState>>,
+    headers: axum::http::HeaderMap,
+    Extension(auth_status): Extension<AuthStatus>,
+) -> impl IntoResponse {
+    let user = match auth_status {
+        AuthStatus::Authorized(authorized_user) => Some(authorized_user.user),
+        AuthStatus::Unauthorized(_) => None,
+    };
+
+    let is_superuser = user.as_ref().is_some_and(crate::auth::models::User::is_superuser);
+
+    match retrieve_test_queue(&data.db, data.exam_config.test_names.clone()).await {
+        Ok(queue) => {
+            let template = QueueTemplate {
+                is_superuser,
+                is_demo_mode: data.app_config.is_demo_mode,
+                queue,
+            };
+            return (StatusCode::OK, Html(render(template))).into_response()
+        }
+        Err(e) => return e.into_response(&headers)
+    }
+}
+
+

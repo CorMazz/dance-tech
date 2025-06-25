@@ -11,7 +11,7 @@ use crate::exam::models::{CsvTestTable, HtmlTestTable, RadioButton, RadioOption,
 use crate::exam::models::{RadioName, RadioValue, ScoringCategory};
 
 use super::errors::ExamError;
-use super::models::GradedTest;
+use super::models::{GradedTest, QueueEntry};
 
 /// Take a `DataFrame` and convert it into a nested `TestTable` structure
 ///
@@ -299,4 +299,180 @@ pub fn parse_csv(csv_data: &str) -> CsvTestTable {
     }
 
     CsvTestTable { rows: all_rows }
+}
+
+pub mod queue {
+    //! Functionality to enable a queue for users to be tested
+    use sqlx::types::Json;
+    use crate::auth::models::Roles;
+    use sqlx::PgPool;
+    use tracing::warn;
+
+    use crate::auth::models::User;
+
+    use super::*;
+
+    #[instrument(skip(db))]
+    pub async fn add_user_to_test_queue(
+        db: &PgPool,
+        user_id: Uuid,
+        test_index: i32,
+        max_length: usize,
+    ) -> Result<(), ExamError> {
+        let count = sqlx::query_scalar!(
+            "SELECT COUNT(*) FROM exam_queue"
+        )
+        .fetch_one(db)
+        .await
+        .map_err(|e| {
+            error!("Error adding user to queue: {e}");
+            ExamError::DatabaseError
+        })?
+        .unwrap_or(0);
+
+        if count >= max_length as i64 {
+            return Err(ExamError::QueueFull);
+        }
+
+        let result = sqlx::query!(
+            "INSERT INTO exam_queue (user_id, test_index)
+             VALUES ($1, $2)
+             ON CONFLICT (user_id, test_index) DO NOTHING",
+            user_id,
+            test_index
+        )
+        .execute(db)
+        .await;
+
+        match result {
+            Ok(_) => Ok(()),
+            Err(e) => { 
+                error!("Error adding user to queue: {e}");
+                Err(ExamError::DatabaseError)
+            }
+        }
+    }
+
+    // /// Remove and return the first user in the test queue.
+    // #[instrument(skip(db))]
+    // pub async fn pop_user_from_test_queue(
+    //     db: &PgPool,
+    // ) -> Result<Option<QueueEntry>, ExamError> {
+    //     let mut tx = db.begin().await.map_err(|e| ExamError::DatabaseError(e.to_string()))?;
+    //
+    //     if let Some(entry) = sqlx::query_as!(
+    //         QueueEntry,
+    //         r#"
+    //         SELECT * FROM exam_queue
+    //         ORDER BY inserted_at
+    //         FOR UPDATE SKIP LOCKED
+    //         LIMIT 1
+    //         "#
+    //     )
+    //     .fetch_optional(&mut *tx)
+    //     .await
+    //     .map_err(|e| ExamError::DatabaseError(e.to_string()))?
+    //     {
+    //         sqlx::query!(
+    //             "DELETE FROM exam_queue WHERE id = $1",
+    //             entry.id
+    //         )
+    //         .execute(&mut *tx)
+    //         .await
+    //         .map_err(|e| ExamError::DatabaseError(e.to_string()))?;
+    //
+    //         tx.commit().await.map_err(|e| ExamError::DatabaseError(e.to_string()))?;
+    //         Ok(Some(entry))
+    //     } else {
+    //         tx.rollback().await.ok();
+    //         Ok(None)
+    //     }
+    // }
+
+    /// Remove a specific user from the test queue based on their `user_id` and `test_index`.
+    /// Returns a boolean indicating if a user was removed or not.
+    #[instrument(skip(db))]
+    pub async fn remove_user_from_test_queue(
+        db: &PgPool,
+        user_id: Uuid,
+        test_index: i32,
+    ) -> Result<bool, ExamError> {
+        let res = sqlx::query!(
+            "DELETE FROM exam_queue WHERE user_id = $1 AND test_index = $2",
+            user_id,
+            test_index
+        )
+        .execute(db)
+        .await
+        .map_err(|e| {
+            error!("Error removing a user from the queue: {e}");
+            ExamError::DatabaseError
+        })?;
+
+        let was_user_removed = res.rows_affected() > 0;
+
+        if !was_user_removed {
+            warn!("A user and id combination was not found in the database and thus wasn't removed.");
+        }
+
+        Ok(was_user_removed)
+    }
+
+    /// Get the full list of users currently in the queue.
+    #[instrument(skip(db))]
+    pub async fn retrieve_test_queue(
+        db: &PgPool,
+        test_names: Vec<String>,
+    ) -> Result<Vec<QueueEntry>, ExamError> {
+        let rows = sqlx::query!(
+            r#"
+            SELECT
+                u.id,
+                u.first_name,
+                u.last_name,
+                u.email,
+                u.password,
+                u.roles as "roles: Json<Vec<Roles>>",
+                u.created_at,
+                u.updated_at,
+                q.test_index
+            FROM exam_queue q
+            JOIN users u ON q.user_id = u.id
+            ORDER BY q.inserted_at
+            "#
+        )
+        .fetch_all(db)
+        .await
+        .map_err(|e| {
+            error!("Error retrieving queue: {e}");
+            ExamError::DatabaseError
+        })?;
+
+        let entries = rows
+            .into_iter()
+            .map(|r| {
+                let test_name = test_names.get(r.test_index as usize).ok_or_else(|| {
+                    error!("Invalid test index {} in queue row. This shouldn't happen. Try restarting the app which will clear the queue.", r.test_index);
+                    ExamError::DatabaseError
+                })?
+                .to_string();
+
+                Ok(QueueEntry {
+                    user: User {
+                        id: r.id,
+                        first_name: r.first_name,
+                        last_name: r.last_name,
+                        email: r.email,
+                        password: r.password,
+                        roles: r.roles,
+                        created_at: r.created_at,
+                        updated_at: r.updated_at,
+                    },
+                    test_index: r.test_index,
+                    test_name,
+                })
+            })
+            .collect::<Result<Vec<_>, ExamError>>()?;        
+        Ok(entries)
+    }
 }

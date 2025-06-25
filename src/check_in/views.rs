@@ -148,7 +148,7 @@ pub async fn post_update_available_products(
 ) -> impl IntoResponse {
     match auth_status {
         AuthStatus::Authorized(user) => {
-            if !user.user.has_role(Roles::Admin) {
+            if !user.user.is_admin() {
                 return Redirect::to(ROUTES.login);
             }
         }

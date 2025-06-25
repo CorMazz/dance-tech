@@ -36,6 +36,9 @@ impl From<&str> for Roles {
     }
 }
 
+/// Possibly refactor this into a `UserInfo` and `UserPrivate` set of structs to 
+/// avoid passing the user's password around everytime I need the other info
+/// Can use `#[sqlx(flatten)]` for this.
 #[allow(non_snake_case)]
 #[derive(Debug, Deserialize, sqlx::FromRow, Serialize, Clone)]
 pub struct User {
@@ -44,7 +47,8 @@ pub struct User {
     pub last_name: String,
     pub email: String,
     pub password: String,
-    /// Is Json so that it can be stored in the DB
+    /// Currently is Json because that's the only way I could get the damn thing to compile
+    /// as opposed to just an Array in Postgres
     pub roles: Json<Vec<Roles>>,
     #[serde(rename = "createdAt")]
     pub created_at: Option<DateTime<Utc>>,
@@ -57,6 +61,21 @@ impl User {
     /// `Roles::Dynamic()`
     pub fn has_role<T: Into<Roles>>(&self, role: T) -> bool {
         self.roles.contains(&role.into())
+    }
+
+    /// Check if the user is an Admin
+    pub fn is_admin(&self) -> bool {
+        self.has_role(Roles::Admin)
+    }
+
+    /// Check if the user is a Proctor
+    pub fn is_proctor(&self) -> bool {
+        self.has_role(Roles::Proctor)
+    }
+   
+    /// Check if the user is an Admin or a Proctor
+    pub fn is_superuser(&self) -> bool {
+        self.is_admin() || self.is_proctor()
     }
 }
 

@@ -9,7 +9,7 @@ use crate::{
         get_check_in_page, get_successful_checkout_session, post_create_check_out_session,
         post_update_available_products,
     }, exam::views::{
-        get_graded_test_page, get_proctor_dashboard_page, get_test_page, post_live_grading, post_test_form
+        get_graded_test_page, get_proctor_dashboard_page, get_queue_widget, get_test_page, get_user_dashboard_page, post_live_grading, post_test_form
     }, AppState
 };
 use axum::{
@@ -37,13 +37,14 @@ pub struct Routes {
     pub update_products: &'static str,
 
     // Exam Routes
-    pub exam_home: &'static str,
     /// The exam route has a variable in it, so it needs to be dynamically generated. See the
     /// associated method `self.administer_exam()`
     pub administer_exam_root: &'static str,
     pub graded_exam_root: &'static str,
     pub live_grading_root: &'static str,
     pub proctor_dashboard: &'static str,
+    pub user_dashboard: &'static str,
+    pub queue: &'static str,
 
     // Misc Routes
     pub user_dropdown: &'static str,
@@ -84,11 +85,12 @@ pub const ROUTES: Routes = Routes {
     update_products: "/update-products",
 
     // Exam Routes
-    exam_home: "/exam",
     administer_exam_root: "/administer-exam",
     graded_exam_root: "/view-exam",
     live_grading_root: "/private/live-grading",
     proctor_dashboard: "/exam-proctor",
+    user_dashboard: "/exam-dashboard",
+    queue: "/queue",
 
     // Misc Routes
     user_dropdown: "/private/user-dropdown",
@@ -116,6 +118,8 @@ pub fn create_router(app_state: Arc<AppState>) -> Router {
         .route(ROUTES.sign_up, get(get_signup_page).post(post_signup_form))
         .route(ROUTES.login, get(get_login_page).post(post_login_form))
         .route(ROUTES.check_in, get(get_check_in_page))
+        .route(ROUTES.user_dashboard, get(get_user_dashboard_page))
+        .route(ROUTES.queue, get(get_queue_widget))
         .route(
             ROUTES.create_checkout_session,
             post(post_create_check_out_session),

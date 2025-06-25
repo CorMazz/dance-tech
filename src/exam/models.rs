@@ -4,6 +4,8 @@ use serde::{Deserialize, Serialize};
 use tracing::{error, instrument};
 use uuid::Uuid;
 
+use crate::auth::models::User;
+
 use super::errors::ExamError;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -464,4 +466,14 @@ pub mod deserialize {
             }
         }
     }
+}
+
+/// A struct representing a user in line to take a specific test (given by the `test_index`).
+#[derive(Debug, sqlx::FromRow)]
+pub struct QueueEntry {
+    pub user: User,
+    /// There is an invariant assumed that `test_index` will not be invalid
+    /// This invariant is maintained by clearing the queue every time the server starts.
+    pub test_index: i32,
+    pub test_name: String,
 }

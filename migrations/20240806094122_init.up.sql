@@ -34,3 +34,14 @@ create table
         with
             time zone default now()
     );
+
+create table
+    "exam_queue" (
+        id serial primary key,
+        user_id uuid not null references users(id) on delete cascade,
+        test_index integer not null,
+        inserted_at timestamp
+        with
+            time zone default now(),
+        unique(user_id, test_index)
+      );

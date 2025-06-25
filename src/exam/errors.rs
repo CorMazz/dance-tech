@@ -10,6 +10,12 @@ pub enum ExamError {
     #[error("An internal server error occurred: {0:?}")]
     InternalServerError(Option<String>),
 
+    #[error("There was an error with the Redis database. Please contact the site administrator.")]
+    RedisError,
+
+    #[error("There was an error with the database. Please contact the site administrator.")]
+    DatabaseError,
+
     #[error("Unable to read file: `{0:?}`")]
     ReadError(String),
 
@@ -18,6 +24,15 @@ pub enum ExamError {
 
     #[error("The requested graded test does not exist.")]
     GradedTestNotFound,
+
+    #[error("The queue is full. Please try again later.")]
+    QueueFull,
+
+    #[error("There was an error with the queue. Please contact the site administrator: {0:?}")]
+    QueueError(String),
+
+    #[error("This user is already in the queue for this test.")]
+    AlreadyInQueue,
 
     #[error("The requested test does not exist. Please contact the site administrator.")]
     TestIndexError,

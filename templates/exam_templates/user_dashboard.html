@@ -1,0 +1,24 @@
+
+{% extends "../extensible_templates/main_nav.html" %}
+
+{% block title %}User Dashboard{% endblock %}
+
+{% block content %}
+<div class="my-container">
+  <div class="my-grid">
+
+    <div class="my-card ">
+      <div class="p-6">
+        <h2 class="my-title">Welcome to the Advancement Test</h2>
+        <p class="my-paragraph">
+          The advancement test is intended to allow dancers to move to a higher level of instruction. Sign up for a test, show the proctor how you dance, and if you pass you'll be granted access to the next level class.
+        </p>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="my-card" hx-get={{ rts.queue }} hx-trigger="load">
+
+</div>
+{% endblock %}

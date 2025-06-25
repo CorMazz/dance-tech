@@ -38,8 +38,8 @@ pub async fn get_user_dropdown(Extension(auth_status): Extension<AuthStatus>) ->
         AuthStatus::Unauthorized(_) => None,
     };
 
-    let is_proctor = user.as_ref().is_some_and(|u| u.has_role(Roles::Proctor));
-    let is_admin = user.as_ref().is_some_and(|u| u.has_role(Roles::Admin));
+    let is_proctor = user.as_ref().is_some_and(|u| u.is_proctor());
+    let is_admin = user.as_ref().is_some_and(|u| u.is_admin());
 
     let template = UserDropdownTemplate {
         rts: ROUTES,

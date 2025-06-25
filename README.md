@@ -134,6 +134,7 @@ Ensure you are launching the server from the root of this repository. File paths
     - Export exam data
 - Admin Dashboard
     - Let admins add/remove roles from users
+    - Trigger product update
 - Proctor Exam Dashboard
     - Exam search by user, exam name, proctor, etc.
     - Export exam data

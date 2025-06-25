@@ -5,6 +5,7 @@ use crate::exam::models::deserialize::TestYaml;
 
 pub struct ExamConfig {
     pub tests: Vec<Test>,
+    pub test_names: Vec<String>,
 }
 
 impl ExamConfig {
@@ -50,7 +51,11 @@ impl ExamConfig {
             std::env::current_dir().map_or_else(|_| "unknown".into(), |p| p.display().to_string())
         );
 
+        let mut test_names: Vec<String> = Vec::with_capacity(tests.len());
+        for test in &tests {
+            test_names.push(test.metadata.test_name.clone());
+        }
 
-        Self { tests }
+        Self { tests, test_names }
     }
 }
