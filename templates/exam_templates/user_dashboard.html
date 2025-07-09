@@ -15,10 +15,24 @@
         </p>
       </div>
     </div>
-
   </div>
 
-  <div class="my-card" hx-get={{ rts.queue }} hx-trigger="load">
+  <div 
+    id="add-to-queue-container" 
+    hx-get="{{ rts.add_to_queue }}" 
+    hx-trigger="load" 
+    hx-target="#add-to-queue-container"
+  >
+  </div>
+
+  <div 
+    id="queue-container" 
+    class="my-card" 
+    hx-get="{{ rts.queue }}" 
+    hx-trigger="load, submit from form" 
+    hx-target="#queue-container"
+  >
+  </div>
 
 </div>
 {% endblock %}

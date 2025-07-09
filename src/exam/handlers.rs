@@ -317,6 +317,7 @@ pub mod queue {
         db: &PgPool,
         user_id: Uuid,
         test_index: i32,
+        n_tests: usize,
         max_length: usize,
     ) -> Result<(), ExamError> {
         let count = sqlx::query_scalar!(
@@ -332,6 +333,11 @@ pub mod queue {
 
         if count >= max_length as i64 {
             return Err(ExamError::QueueFull);
+        }
+
+        if test_index > (n_tests as i32 - 1)  {
+            error!("Invalid test index.");
+            return Err(ExamError::DatabaseError)
         }
 
         let result = sqlx::query!(

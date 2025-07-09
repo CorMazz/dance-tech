@@ -9,7 +9,7 @@ use crate::{
         get_check_in_page, get_successful_checkout_session, post_create_check_out_session,
         post_update_available_products,
     }, exam::views::{
-        get_graded_test_page, get_proctor_dashboard_page, get_queue_widget, get_test_page, get_user_dashboard_page, post_live_grading, post_test_form
+        get_graded_test_page, get_join_queue_widget, get_proctor_dashboard_page, get_queue_widget, get_test_page, get_user_dashboard_page, post_join_queue_widget, post_live_grading, post_test_form
     }, AppState
 };
 use axum::{
@@ -45,6 +45,7 @@ pub struct Routes {
     pub proctor_dashboard: &'static str,
     pub user_dashboard: &'static str,
     pub queue: &'static str,
+    pub add_to_queue: &'static str,
 
     // Misc Routes
     pub user_dropdown: &'static str,
@@ -91,6 +92,7 @@ pub const ROUTES: Routes = Routes {
     proctor_dashboard: "/exam-proctor",
     user_dashboard: "/exam-dashboard",
     queue: "/queue",
+    add_to_queue: "/queue/add",
 
     // Misc Routes
     user_dropdown: "/private/user-dropdown",
@@ -120,6 +122,7 @@ pub fn create_router(app_state: Arc<AppState>) -> Router {
         .route(ROUTES.check_in, get(get_check_in_page))
         .route(ROUTES.user_dashboard, get(get_user_dashboard_page))
         .route(ROUTES.queue, get(get_queue_widget))
+        .route(ROUTES.add_to_queue, get(get_join_queue_widget).post(post_join_queue_widget))
         .route(
             ROUTES.create_checkout_session,
             post(post_create_check_out_session),

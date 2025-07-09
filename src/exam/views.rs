@@ -1,13 +1,16 @@
 use std::collections::HashMap;
 use std::sync::Arc;
 
+use super::errors::ExamError;
 use super::handlers::live_grade_handler;
 use super::handlers::load_graded_test_from_db;
 use super::handlers::post_test_form_handler;
+use super::handlers::queue::add_user_to_test_queue;
 use super::handlers::queue::retrieve_test_queue;
 use super::models::PrefilledTestData;
 use super::models::QueueEntry;
 use super::models::TestGrade;
+use crate::auth::errors::AuthError;
 use crate::AppState;
 use crate::app::utils::ErrorTemplate;
 use crate::app::utils::is_htmx_request;
@@ -28,6 +31,7 @@ use axum::response::IntoResponse;
 use axum::response::Redirect;
 use axum_extra::extract::Host;
 use reqwest::StatusCode;
+use serde::Deserialize;
 use tracing::instrument;
 use uuid::Uuid;
 
@@ -304,4 +308,88 @@ pub async fn get_queue_widget(
     }
 }
 
+/// Used for live grading, just render the `Grade` struct
+#[derive(Template)]
+#[template(path = "./exam_templates/join_queue.html")]
+pub struct JoinQueueTemplate {
+    rts: Routes,
+    test_names: Vec<String>,
+    is_signed_in: bool,
+}
 
+pub async fn get_join_queue_widget(
+    State(data): State<Arc<AppState>>,
+    Extension(auth_status): Extension<AuthStatus>,
+) -> impl IntoResponse {
+    let user = match auth_status {
+        AuthStatus::Authorized(authorized_user) => Some(authorized_user.user),
+        AuthStatus::Unauthorized(_) => None,
+    };
+
+    let is_signed_in = user.is_some();
+
+    let template = JoinQueueTemplate {
+        rts: ROUTES,
+        test_names: data.exam_config.test_names.clone(),
+        is_signed_in
+    };
+
+    (StatusCode::OK, Html(render(template)))
+
+}
+
+#[derive(Deserialize)]
+pub struct JoinQueueForm {
+    pub user_id: String,
+    pub test_index: usize,
+}
+
+pub async fn post_join_queue_widget(
+    State(data): State<Arc<AppState>>,
+    Extension(auth_status): Extension<AuthStatus>,
+    Form(form): Form<JoinQueueForm>,
+) -> impl IntoResponse {
+    let Some(authorized_user) = (match auth_status {
+        AuthStatus::Authorized(user) => Some(user.user),
+        AuthStatus::Unauthorized(_) => None,
+    }) else {
+        return Redirect::to(ROUTES.login).into_response();
+    };
+
+    let user_id = match form.user_id.to_lowercase().as_str() {
+        "self" => authorized_user.id,
+        other => match Uuid::parse_str(other) {
+            Ok(uuid) => uuid,
+            Err(_) => {
+                return (
+                    StatusCode::BAD_REQUEST,
+                    "Invalid user ID".into_response(),
+                )
+                    .into_response();
+            }
+        },
+    };
+
+    let queue_result = add_user_to_test_queue(
+        &data.db,
+        user_id,
+        form.test_index as i32,
+        data.exam_config.test_names.len(),
+        data.exam_config.queue_length,
+    )
+    .await;
+
+    match queue_result {
+        Ok(()) => StatusCode::OK.into_response(),
+        Err(ExamError::QueueFull) => (
+            StatusCode::CONFLICT,
+            "Queue is full".into_response(),
+        )
+            .into_response(),
+        Err(_) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "Failed to join queue".into_response(),
+        )
+            .into_response(),
+    }
+}

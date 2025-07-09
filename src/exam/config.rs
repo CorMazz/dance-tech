@@ -1,11 +1,13 @@
 use glob::glob;
 use tracing::{error, info};
+use crate::app::utils::get_env_var;
 use crate::exam::models::Test;
 use crate::exam::models::deserialize::TestYaml;
 
 pub struct ExamConfig {
     pub tests: Vec<Test>,
     pub test_names: Vec<String>,
+    pub queue_length: usize,
 }
 
 impl ExamConfig {
@@ -56,6 +58,7 @@ impl ExamConfig {
             test_names.push(test.metadata.test_name.clone());
         }
 
-        Self { tests, test_names }
+        let queue_length = std::env::var("QUEUE_LENGTH").unwrap_or_else(|_| "15".to_string()).parse::<usize>().unwrap_or(15);
+        Self { tests, test_names, queue_length }
     }
 }

@@ -163,3 +163,5 @@ Ensure you are launching the server from the root of this repository. File paths
 6/19/2025: 4 hrs
 6/20/2025: 1.5 hrs
 6/21/2025: 2 hrs
+7/7/2025: 4 hrs
+7/8/2025: 2 hrs

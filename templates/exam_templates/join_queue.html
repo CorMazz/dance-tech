@@ -1,0 +1,22 @@
+
+<div class="my-section">
+  <h1 class="py-4 text-3xl font-bold text-gray-800">Join the Queue</h1>
+
+  <div class="my-flexbox">
+    {% for test_name in test_names %}
+      <form 
+        hx-post="{{ rts.add_to_queue }}"
+        hx-swap="none"
+        hx-push-url="false"
+        class="my-card"
+      >
+      <input type="hidden" name="user_id" value="self">
+      <input type="hidden" name="test_index" value="{{ loop.index0 }}">
+      <button type="submit" class="w-full">
+        <h5 class="my-title">{{ test_name }}</h5>
+        <p class="my-paragraph">Take this test.</p>
+      </button>
+    </form>
+    {% endfor %}
+  </div>
+</div>
