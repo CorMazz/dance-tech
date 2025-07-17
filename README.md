@@ -129,7 +129,6 @@ Ensure you are launching the server from the root of this repository. File paths
 - Exam Queue
 - User Exam Dashboard
     - Explanation of exams
-    - View of exam queue
     - Signed in users can view past exam results
     - Export exam data
 - Admin Dashboard
@@ -165,3 +164,5 @@ Ensure you are launching the server from the root of this repository. File paths
 6/21/2025: 2 hrs
 7/7/2025: 4 hrs
 7/8/2025: 2 hrs
+7/17/2025: 8 hrs
+Total: 67.5 hrs

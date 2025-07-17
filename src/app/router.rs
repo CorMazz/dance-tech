@@ -9,7 +9,7 @@ use crate::{
         get_check_in_page, get_successful_checkout_session, post_create_check_out_session,
         post_update_available_products,
     }, exam::views::{
-        delete_queue_widget, get_graded_test_page, get_join_queue_widget, get_proctor_dashboard_page, get_queue_widget, get_test_page, get_user_dashboard_page, post_live_grading, post_queue_widget, post_test_form
+        delete_queue_widget, get_graded_test_page, get_join_queue_widget, get_proctor_dashboard_page, get_queue_widget, get_test_page, get_user_autocomplete, get_user_dashboard_page, get_user_info_widget, post_live_grading, post_queue_widget, post_test_form
     }, AppState
 };
 use axum::{
@@ -46,10 +46,13 @@ pub struct Routes {
     pub user_dashboard: &'static str,
     pub queue_widget: &'static str,
     pub join_queue_widget: &'static str,
+    /// The div that displays a user's name and info when proctoring a test.
+    pub user_info_widget: &'static str,
 
     // Misc Routes
     pub user_dropdown: &'static str,
     pub admin_dashboard: &'static str,
+    pub search_users: &'static str,
 }
 
 impl Routes {
@@ -98,10 +101,12 @@ pub const ROUTES: Routes = Routes {
     user_dashboard: "/exam-dashboard",
     queue_widget: "/widgets/queue",
     join_queue_widget: "/widgets/join-queue",
+    user_info_widget: "/widgets/user-info",
 
     // Misc Routes
     user_dropdown: "/widgets/user-dropdown",
     admin_dashboard: "/admin-dashboard",
+    search_users: "/widgets/search-users"
 };
 
 pub fn create_router(app_state: Arc<AppState>) -> Router {
@@ -110,6 +115,8 @@ pub fn create_router(app_state: Arc<AppState>) -> Router {
         .route(ROUTES.logout, get(get_logout_page))
         .route(ROUTES.update_products, post(post_update_available_products))
         .route(ROUTES.proctor_dashboard, get(get_proctor_dashboard_page))
+        .route(ROUTES.user_info_widget, get(get_user_info_widget))
+        .route(ROUTES.search_users, get(get_user_autocomplete))
         .route(
             &ROUTES.administer_exam("{test_index}"),
             get(get_test_page).post(post_test_form),

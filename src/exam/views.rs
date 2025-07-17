@@ -1,3 +1,4 @@
+use crate::auth::handlers::search_for_users;
 use std::collections::HashMap;
 use std::sync::Arc;
 
@@ -11,6 +12,8 @@ use super::handlers::queue::retrieve_test_queue;
 use super::models::PrefilledTestData;
 use super::models::QueueEntry;
 use super::models::TestGrade;
+use crate::auth::handlers::get_user;
+use crate::auth::models::User;
 use crate::AppState;
 use crate::app::utils::ErrorTemplate;
 use crate::app::utils::is_htmx_request;
@@ -442,6 +445,100 @@ pub async fn delete_queue_widget(
         Err(..) => (
             StatusCode::INTERNAL_SERVER_ERROR,
             "Failed to remove user from queue.".into_response(),
+        )
+            .into_response(),
+    }
+}
+
+/// Used to assign a test to a specific user when proctoring
+#[derive(Deserialize)]
+pub struct UserEmailForm {
+    pub email: String
+}
+
+#[derive(Template)]
+#[template(path = "./exam_templates/user_info_widget.html")]
+pub struct UserInfoWidgetTemplate {
+    pub user: Option<User>
+}
+
+/// Used to display information about the user that we are proctoring a test for.
+pub async fn get_user_info_widget(
+    State(data): State<Arc<AppState>>,
+    Extension(auth_status): Extension<AuthStatus>,
+    Query(form): Query<UserEmailForm>,
+) -> impl IntoResponse {
+    let Some(_) = (match auth_status {
+        AuthStatus::Authorized(user) => Some(user.user),
+        AuthStatus::Unauthorized(_) => None,
+    }) else {
+        return Redirect::to(ROUTES.login).into_response();
+    };
+
+    let user = get_user(
+        &form.email,
+        &data.db,
+    )
+    .await;
+
+    match user {
+        Ok(user) => {
+            let template = UserInfoWidgetTemplate {
+                user
+            };
+            (StatusCode::OK, render(template)).into_response()
+        } 
+        Err(..) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "Failed to get user info. Please try again later.".into_response(),
+        )
+            .into_response(),
+    }
+}
+
+
+/// Will be placed inside of a `<datalist>` element
+#[derive(Template)]
+#[template(
+    ext = "txt",
+    source = r#"
+{% for user in users %}
+    <option value={{ user.email }}></option>
+{% endfor %}
+"#)]
+pub struct UserEmailAutoCompleteTemplate {
+    pub users: Vec<User>
+}
+
+/// Used for autocomplete on the test page when entering user emails
+pub async fn get_user_autocomplete(
+    State(data): State<Arc<AppState>>,
+    Extension(auth_status): Extension<AuthStatus>,
+    Query(form): Query<UserEmailForm>,
+) -> impl IntoResponse {
+    let Some(_) = (match auth_status {
+        AuthStatus::Authorized(user) => Some(user.user),
+        AuthStatus::Unauthorized(_) => None,
+    }) else {
+        return Redirect::to(ROUTES.login).into_response();
+    };
+
+    let users = search_for_users(
+        form.email,
+        &data.db,
+    )
+    .await;
+
+    match users {
+        Ok(users) => {
+            let template = UserEmailAutoCompleteTemplate {
+                users
+            };
+            (StatusCode::OK, render(template)).into_response()
+        } 
+        Err(..) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "Failed to get user info. Please try again later.".into_response(),
         )
             .into_response(),
     }

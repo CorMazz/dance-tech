@@ -5,7 +5,8 @@ use std::collections::{BTreeMap, HashMap};
 use std::sync::Arc;
 use tracing::{debug, error, instrument};
 use uuid::Uuid;
-
+use axum::Json;
+use crate::auth::models::{User, Roles};
 use crate::AppState;
 use crate::exam::models::{CsvTestTable, HtmlTestTable, RadioButton, RadioOption, TestRow};
 use crate::exam::models::{RadioName, RadioValue, ScoringCategory};
@@ -136,6 +137,7 @@ pub fn parse_test_form(
 ) -> Result<(Vec<(RadioName, RadioValue)>, Vec<usize>), ExamError> {
     let mut competencies: Vec<(RadioName, RadioValue)> = Vec::new();
     let mut bonus_indices: Vec<usize> = Vec::new();
+    let mut email: String;
 
     for (key, value) in form {
         if let Some(json_str) = key.strip_prefix("competency") {
@@ -155,6 +157,8 @@ pub fn parse_test_form(
             })?;
 
             bonus_indices.push(bonus_index);
+        } else if key == "email" {
+            email = value;
         } else {
             error!("Unknown form key: {}", key);
             return Err(ExamError::ParseError);
@@ -482,3 +486,5 @@ pub mod queue {
         Ok(entries)
     }
 }
+
+

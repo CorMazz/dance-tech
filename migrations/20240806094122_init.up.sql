@@ -26,6 +26,10 @@ create table
 
 CREATE INDEX users_email_idx ON users (email);
 
+CREATE INDEX users_email_trgm_idx
+ON users
+USING GIN (email gin_trgm_ops);
+
 create table
     "graded_exams" (
         id uuid primary key,

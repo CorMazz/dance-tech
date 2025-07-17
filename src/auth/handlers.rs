@@ -20,7 +20,7 @@ use serde::Deserialize;
 use sqlx::types::Json;
 use sqlx::{Pool, Postgres};
 use std::sync::Arc;
-use tracing::error;
+use tracing::{error, instrument};
 use uuid::Uuid;
 
 use crate::{
@@ -371,6 +371,7 @@ async fn save_token_data_to_redis(
 }
 
 /// Gets a user from the database
+#[instrument(skip(db))]
 pub async fn get_user(email: &str, db: &Pool<Postgres>) -> Result<Option<User>, AuthError> {
     sqlx::query_as!(
         User,
@@ -391,7 +392,49 @@ pub async fn get_user(email: &str, db: &Pool<Postgres>) -> Result<Option<User>, 
     )
     .fetch_optional(db)
     .await
-    .map_err(|e| AuthError::InternalServerError(Some(format!("Database error: {e}"))))
+    .map_err(|err| {
+        error!(%err, "Error getting user by email.");
+        AuthError::InternalServerError(None)
+    })
+}
+
+/// Searches for a testee by matching the query string to the first name, last name, or email 
+/// using trigram similarity metrics.
+#[instrument(skip(db))]
+pub async fn search_for_users(
+    query: String,
+    db: &Pool<Postgres>,
+) -> Result<Vec<User>, AuthError> {
+    sqlx::query_as!(
+        User,
+        r#"
+        SELECT 
+            id, 
+            email, 
+            first_name,
+            last_name,
+            roles as "roles: Json<Vec<Roles>>",
+            password, 
+            created_at,
+            updated_at
+        FROM users
+        WHERE first_name % $1
+           OR last_name % $1
+           OR email % $1
+        ORDER BY
+           GREATEST(similarity(first_name, $1),
+                    similarity(last_name, $1),
+                    similarity(email, $1)) DESC
+        LIMIT 5
+        "#,
+        query
+    )
+    .fetch_all(db)
+    .await
+    .map_err(|err| {
+        error!(%err, "Error searching for users");
+        AuthError::DatabaseError
+    })
 }
 
 async fn login_user(

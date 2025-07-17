@@ -1,0 +1,15 @@
+{# Used to display the user's information on the test page. Will be contained within a <form> tag #}
+
+
+{% match user %}
+  {% when None %}
+  {% when Some with (info) %}
+    <div class="my-card">
+      <h2 class="text-xl font-semibold text-gray-800">
+        {{ info.first_name }} {{ info.last_name }}
+      </h2>
+      <p class="text-sm text-gray-600 mt-1">
+        {{ info.email }}
+      </p>
+    </div>
+{% endmatch %}

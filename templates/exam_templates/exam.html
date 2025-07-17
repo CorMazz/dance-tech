@@ -5,12 +5,46 @@
 {% block title %}{{ test.metadata.test_name }}{% endblock %}
 
 {% block content %}
+
 <div class="mx-auto p-4">
   <h2 class="text-4xl font-bold mb-4 text-center">{{ test.metadata.test_name }}</h2>
   <form id="dancer-test" method="post" class="bg-white p-6 rounded shadow-md">
 
-    <!-- User Info Section -->
+    {# User Info Section #} 
     <div class="card block shadow-md rounded border border-gray-300 mb-6 p-4">
+      <input 
+        id="email" type="email" name="email" list="email-datalist"
+        {# We want to search for possible email matches every time we type, and put them in a datalist.
+           The datalist is weird though, and when you accept the input from the datalist it counts as a
+           keyup event, which would make the datalist open again right after you closed it, which is 
+           annoying. To fix this, we need to make sure that the original event that triggered the keyup
+           was an instance of KeyboardEvent, since accepting the datalist suggestion isn't a KeyboardEvent.
+        #}
+        hx-on:keyup="this.dispatchEvent(new CustomEvent('email-input-keyup', { bubbles: true, detail: { userTyped: event instanceof KeyboardEvent }}))"
+        {# When we're finally done typing we want to search for user details #}
+        hx-on:change="this.dispatchEvent(new CustomEvent('email-input-changed', { bubbles: true }))"
+      />
+      <datalist id="email-datalist"></datalist>
+      <div id="user-info-container"></div>
+      
+      {# Update the user info (the email input needs to update two things, which can't be done on a single element) #}
+      <div 
+        hx-get="{{ rts.user_info_widget }}" 
+        hx-trigger="email-input-keyup from:#email delay:400ms, email-input-changed from:#email delay:500ms" 
+        hx-include="#email"
+        hx-target="#user-info-container" 
+        hx-swap="innerHTML">
+      </div>
+
+      {# Update the datalist for autocomplete #}
+      <div 
+        hx-get="{{ rts.search_users }}" 
+        hx-trigger="email-input-keyup[event.detail?.userTyped] from:#email delay:400ms" 
+        hx-include="#email"
+        hx-target="#email-datalist" 
+        hx-swap="innerHTML">
+      </div>
+
       {# include "../exam_templates/testee_info.html" #}
     </div>
 
