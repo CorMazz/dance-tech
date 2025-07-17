@@ -9,7 +9,7 @@ use crate::{
         get_check_in_page, get_successful_checkout_session, post_create_check_out_session,
         post_update_available_products,
     }, exam::views::{
-        get_graded_test_page, get_join_queue_widget, get_proctor_dashboard_page, get_queue_widget, get_test_page, get_user_dashboard_page, post_join_queue_widget, post_live_grading, post_test_form
+        delete_queue_widget, get_graded_test_page, get_join_queue_widget, get_proctor_dashboard_page, get_queue_widget, get_test_page, get_user_dashboard_page, post_live_grading, post_queue_widget, post_test_form
     }, AppState
 };
 use axum::{
@@ -44,8 +44,8 @@ pub struct Routes {
     pub live_grading_root: &'static str,
     pub proctor_dashboard: &'static str,
     pub user_dashboard: &'static str,
-    pub queue: &'static str,
-    pub add_to_queue: &'static str,
+    pub queue_widget: &'static str,
+    pub join_queue_widget: &'static str,
 
     // Misc Routes
     pub user_dropdown: &'static str,
@@ -65,6 +65,11 @@ impl Routes {
     
     pub fn live_grading(&self, exam_id: &(impl ToString + ?Sized)) -> String {
         format!("{}/{}", self.live_grading_root, exam_id.to_string())
+    }
+
+    /// Used for post and delete methods on the queue.
+    pub fn queue_query(&self, user_id: &(impl ToString + ?Sized), test_id: &(impl ToString + ?Sized)) -> String {
+        format!("{}?user_id={}&test_index={}", self.queue_widget, user_id.to_string(), test_id.to_string())
     }
 }
 
@@ -88,14 +93,14 @@ pub const ROUTES: Routes = Routes {
     // Exam Routes
     administer_exam_root: "/administer-exam",
     graded_exam_root: "/view-exam",
-    live_grading_root: "/private/live-grading",
+    live_grading_root: "/widgets/live-grading",
     proctor_dashboard: "/exam-proctor",
     user_dashboard: "/exam-dashboard",
-    queue: "/queue",
-    add_to_queue: "/queue/add",
+    queue_widget: "/widgets/queue",
+    join_queue_widget: "/widgets/join-queue",
 
     // Misc Routes
-    user_dropdown: "/private/user-dropdown",
+    user_dropdown: "/widgets/user-dropdown",
     admin_dashboard: "/admin-dashboard",
 };
 
@@ -121,8 +126,8 @@ pub fn create_router(app_state: Arc<AppState>) -> Router {
         .route(ROUTES.login, get(get_login_page).post(post_login_form))
         .route(ROUTES.check_in, get(get_check_in_page))
         .route(ROUTES.user_dashboard, get(get_user_dashboard_page))
-        .route(ROUTES.queue, get(get_queue_widget))
-        .route(ROUTES.add_to_queue, get(get_join_queue_widget).post(post_join_queue_widget))
+        .route(ROUTES.queue_widget, get(get_queue_widget).post(post_queue_widget).delete(delete_queue_widget))
+        .route(ROUTES.join_queue_widget, get(get_join_queue_widget))
         .route(
             ROUTES.create_checkout_session,
             post(post_create_check_out_session),

@@ -6,11 +6,11 @@ use super::handlers::live_grade_handler;
 use super::handlers::load_graded_test_from_db;
 use super::handlers::post_test_form_handler;
 use super::handlers::queue::add_user_to_test_queue;
+use super::handlers::queue::remove_user_from_test_queue;
 use super::handlers::queue::retrieve_test_queue;
 use super::models::PrefilledTestData;
 use super::models::QueueEntry;
 use super::models::TestGrade;
-use crate::auth::errors::AuthError;
 use crate::AppState;
 use crate::app::utils::ErrorTemplate;
 use crate::app::utils::is_htmx_request;
@@ -274,6 +274,7 @@ pub async fn get_user_dashboard_page(
 #[derive(Template)]
 #[template(path = "./exam_templates/queue.html")]
 pub struct QueueTemplate {
+    rts: Routes,
     /// If the current user has the role `Admin` or `Proctor`.
     is_superuser: bool,
     is_demo_mode: bool,
@@ -298,6 +299,7 @@ pub async fn get_queue_widget(
     match retrieve_test_queue(&data.db, data.exam_config.test_names.clone()).await {
         Ok(queue) => {
             let template = QueueTemplate {
+                rts: ROUTES,
                 is_superuser,
                 is_demo_mode: data.app_config.is_demo_mode,
                 queue,
@@ -339,15 +341,19 @@ pub async fn get_join_queue_widget(
 }
 
 #[derive(Deserialize)]
-pub struct JoinQueueForm {
+pub struct QueueQueryParameters {
     pub user_id: String,
     pub test_index: usize,
 }
 
-pub async fn post_join_queue_widget(
+/// Add a user to the queue.
+///
+/// Eventually add toasts to give users feedback on whether joining the queue
+/// was successful
+pub async fn post_queue_widget(
     State(data): State<Arc<AppState>>,
     Extension(auth_status): Extension<AuthStatus>,
-    Form(form): Form<JoinQueueForm>,
+    Query(form): Query<QueueQueryParameters>,
 ) -> impl IntoResponse {
     let Some(authorized_user) = (match auth_status {
         AuthStatus::Authorized(user) => Some(user.user),
@@ -389,6 +395,53 @@ pub async fn post_join_queue_widget(
         Err(_) => (
             StatusCode::INTERNAL_SERVER_ERROR,
             "Failed to join queue".into_response(),
+        )
+            .into_response(),
+    }
+}
+
+
+/// Removes a user from the queue upon receiving a delete request. If called with a request header HX-Trigger equal to 
+/// "administer-test-button", will redirect to the proper administer test page with the query parameters
+/// equal to the queue user's information. If there is no response header, just deletes the user and returns empty html.
+pub async fn delete_queue_widget(
+    State(data): State<Arc<AppState>>,
+    Extension(auth_status): Extension<AuthStatus>,
+    Query(form): Query<QueueQueryParameters>,
+) -> impl IntoResponse {
+    let Some(authorized_user) = (match auth_status {
+        AuthStatus::Authorized(user) => Some(user.user),
+        AuthStatus::Unauthorized(_) => None,
+    }) else {
+        return Redirect::to(ROUTES.login).into_response();
+    };
+
+    let user_id = match form.user_id.to_lowercase().as_str() {
+        "self" => authorized_user.id,
+        other => match Uuid::parse_str(other) {
+            Ok(uuid) => uuid,
+            Err(_) => {
+                return (
+                    StatusCode::BAD_REQUEST,
+                    "Invalid user ID".into_response(),
+                )
+                    .into_response();
+            }
+        },
+    };
+
+    let queue_result = remove_user_from_test_queue(
+        &data.db,
+        user_id,
+        form.test_index as i32,
+    )
+    .await;
+
+    match queue_result {
+        Ok(..) => StatusCode::OK.into_response(),
+        Err(..) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "Failed to remove user from queue.".into_response(),
         )
             .into_response(),
     }

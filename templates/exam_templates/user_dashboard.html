@@ -18,19 +18,23 @@
   </div>
 
   <div 
-    id="add-to-queue-container" 
-    hx-get="{{ rts.add_to_queue }}" 
+    {% let id = "join-queue-container" %}
+    id={{ id }}
+    hx-get="{{ rts.join_queue_widget }}" 
     hx-trigger="load" 
-    hx-target="#add-to-queue-container"
+    hx-target=#{{ id }}
   >
   </div>
 
   <div 
-    id="queue-container" 
+    {# If you change this id, also change it in `join_queue.html`. #}
+    {% let id = "queue-container" %}
+    id={{ id }}
     class="my-card" 
-    hx-get="{{ rts.queue }}" 
-    hx-trigger="load, submit from form" 
-    hx-target="#queue-container"
+    hx-get="{{ rts.queue_widget }}" 
+    {# `refresh-queue` is defined in `join_queue.html`. #}
+    hx-trigger="load, refresh-queue" 
+    hx-target=#{{ id }}
   >
   </div>
 
