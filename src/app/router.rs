@@ -61,6 +61,11 @@ impl Routes {
     pub fn administer_exam(&self, exam_id: &(impl ToString + ?Sized)) -> String {
         format!("{}/{}", self.administer_exam_root, exam_id.to_string())
     }
+    
+    /// Prefill the user info for the test
+    pub fn administer_exam_for_user(&self, exam_id: &(impl ToString + ?Sized), user_email: &impl ToString) -> String {
+        format!("{}?email={}", self.administer_exam(exam_id), user_email.to_string())
+    }
 
     pub fn graded_exam(&self, exam_id: &(impl ToString + ?Sized)) -> String {
         format!("{}/{}", self.graded_exam_root, exam_id.to_string())

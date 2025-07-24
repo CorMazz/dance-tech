@@ -19,7 +19,6 @@ use crate::auth::handlers::{
     GoogleOAuthCallbackParams, google_oauth_callback_handler, google_oauth_init_flow_handler,
     login_user_handler, logout_handler, register_user_handler,
 };
-use crate::auth::models::Roles;
 use crate::auth::models::User;
 use crate::auth::{errors::AuthError, middleware::AuthStatus};
 

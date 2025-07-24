@@ -11,44 +11,45 @@
   <form id="dancer-test" method="post" class="bg-white p-6 rounded shadow-md">
 
     {# User Info Section #} 
-    <div class="card block shadow-md rounded border border-gray-300 mb-6 p-4">
-      <input 
-        id="email" type="email" name="email" list="email-datalist"
-        {# We want to search for possible email matches every time we type, and put them in a datalist.
-           The datalist is weird though, and when you accept the input from the datalist it counts as a
-           keyup event, which would make the datalist open again right after you closed it, which is 
-           annoying. To fix this, we need to make sure that the original event that triggered the keyup
-           was an instance of KeyboardEvent, since accepting the datalist suggestion isn't a KeyboardEvent.
-        #}
-        hx-on:keyup="this.dispatchEvent(new CustomEvent('email-input-keyup', { bubbles: true, detail: { userTyped: event instanceof KeyboardEvent }}))"
-        {# When we're finally done typing we want to search for user details #}
-        hx-on:change="this.dispatchEvent(new CustomEvent('email-input-changed', { bubbles: true }))"
-      />
-      <datalist id="email-datalist"></datalist>
-      <div id="user-info-container"></div>
-      
-      {# Update the user info (the email input needs to update two things, which can't be done on a single element) #}
-      <div 
-        hx-get="{{ rts.user_info_widget }}" 
-        hx-trigger="email-input-keyup from:#email delay:400ms, email-input-changed from:#email delay:500ms" 
-        hx-include="#email"
-        hx-target="#user-info-container" 
-        hx-swap="innerHTML">
+    {% if grade is not defined %}
+      <div class="card block shadow-md rounded border border-gray-300 mb-6 p-4">
+        <input 
+           id="email" type="email" name="email" list="email-datalist" value="{{ testee_email }}"
+          {# We want to search for possible email matches every time we type, and put them in a datalist.
+             The datalist is weird though, and when you accept the input from the datalist it counts as a
+             keyup event, which would make the datalist open again right after you closed it, which is 
+             annoying. To fix this, we need to make sure that the original event that triggered the keyup
+             was an instance of KeyboardEvent, since accepting the datalist suggestion isn't a KeyboardEvent.
+          #}
+          hx-on:keyup="this.dispatchEvent(new CustomEvent('email-input-keyup', { bubbles: true, detail: { userTyped: event instanceof KeyboardEvent }}))"
+          {# When we're finally done typing we want to ensure we search for user details #}
+          hx-on:change="this.dispatchEvent(new CustomEvent('email-input-changed', { bubbles: true }))"
+        />
+        <datalist id="email-datalist"></datalist>
+        <div id="user-info-container"></div>
+        
+        {# Update the user info (the email input needs to update two things, which can't be done on a single element) #}
+        <div 
+          hx-get="{{ rts.user_info_widget }}" 
+          hx-trigger="load, email-input-keyup from:#email delay:400ms, email-input-changed from:#email delay:400ms" 
+          hx-include="#email"  {# include the form info from the email element #}
+          hx-target="#user-info-container" 
+          hx-swap="innerHTML">
+        </div>
+
+        {# Update the datalist for autocomplete #}
+        <div 
+          hx-get="{{ rts.search_users }}" 
+          hx-trigger="load, email-input-keyup[event.detail?.userTyped] from:#email delay:400ms" 
+          hx-include="#email"
+          hx-target="#email-datalist" 
+          hx-swap="innerHTML">
+        </div>
+
       </div>
+    {% endif %}
 
-      {# Update the datalist for autocomplete #}
-      <div 
-        hx-get="{{ rts.search_users }}" 
-        hx-trigger="email-input-keyup[event.detail?.userTyped] from:#email delay:400ms" 
-        hx-include="#email"
-        hx-target="#email-datalist" 
-        hx-swap="innerHTML">
-      </div>
-
-      {# include "../exam_templates/testee_info.html" #}
-    </div>
-
-    <!-- Tiny Screen Warning -->
+    {# Tiny Screen Warning #}
     <div class="sm:hidden mt-4 p-4 border border-gray-300 rounded-lg shadow-lg bg-gray-100">
       <h1 class="text-xl font-semibold text-gray-700 mb-2">Screen Too Small</h1>
       <p class="text-gray-600">For the best experience, please use a larger screen or switch to landscape mode on your mobile device.</p>

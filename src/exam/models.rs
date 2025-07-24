@@ -312,12 +312,6 @@ pub struct RadioValue {
     pub fails_test: bool,
 }
 
-#[derive(Deserialize, Debug)]
-pub struct PrefilledTestData {
-    pub first_name: Option<String>,
-    pub last_name: Option<String>,
-    pub email: Option<String>,
-}
 
 /// When specific `RadioOptions` fail the test, this struct is created and fed to the HTML to be
 /// rendered. There is no `Display` implementation on this because I want to be able to format it

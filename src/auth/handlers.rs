@@ -48,15 +48,16 @@ pub async fn register_user_handler(
     email: String,
     password: String,
 ) -> Result<(), AuthError> {
-    if get_user(&email, &data.db).await?.is_some() {
+    if get_user_by_email(&email, &data.db).await?.is_some() {
         return Err(AuthError::DuplicateEmail);
     }
 
     let salt = SaltString::generate(&mut OsRng);
     let hashed_password = Argon2::default()
         .hash_password(password.as_bytes(), &salt)
-        .map_err(|e| {
-            AuthError::InternalServerError(Some(format!("Error while hashing password: {e}")))
+        .map_err(|err| {
+            error!(%err, "Error while hashing password.");
+            AuthError::FatalInternalServerError
         })
         .map(|hash| hash.to_string())?;
 
@@ -70,7 +71,11 @@ pub async fn register_user_handler(
     )
     .execute(&data.db)
     .await
-    .map_err(|e| AuthError::InternalServerError(Some(format!("Database error: {e}"))))?;
+    .map_err(|err| {
+        error!(%err, "Error registering new user.");
+        AuthError::DatabaseError
+    })?;
+
     Ok(())
 }
 
@@ -84,7 +89,7 @@ pub async fn login_user_handler(
     email: String,
     password: String,
 ) -> Result<impl IntoResponse, AuthError> {
-    let user = get_user(&email, &data.db)
+    let user = get_user_by_email(&email, &data.db)
         .await?
         .ok_or(AuthError::InvalidEmailOrPassword)?;
 
@@ -115,10 +120,8 @@ pub async fn google_oauth_init_flow_handler(
 
     data.google_oauth_config.as_ref().map_or_else(
         || {
-            Err(AuthError::InternalServerError(Some(
-                "Google OAuth is not configured, unable to continue with the authorization flow."
-                    .to_string(),
-            )))
+            error!("Google OAuth is not configured, unable to continue with the authorization flow.");
+            Err(AuthError::OAuthError)
         },
         |config| {
             let client = BasicClient::new(config.client_id.clone())
@@ -167,7 +170,7 @@ pub struct GoogleOAuthCallbackParams {
 }
 
 #[allow(dead_code)]
-#[derive(Deserialize)]
+#[derive(Deserialize, Debug)]
 pub struct GoogleAccessTokenPayload {
     pub email_verified: Option<bool>,
     pub email: Option<String>,
@@ -178,6 +181,7 @@ pub struct GoogleAccessTokenPayload {
     pub sub: String,
 }
 
+#[instrument(skip(data))]
 pub async fn google_oauth_callback_handler(
     data: Arc<AppState>,
     cookie_jar: CookieJar,
@@ -189,7 +193,10 @@ pub async fn google_oauth_callback_handler(
 
     let pkce_cookie = cookie_jar
         .get("oauth_pkce_verifier")
-        .ok_or_else(|| AuthError::OAuthError(Some("Unable to get PKCE cookie.".to_string())))?;
+        .ok_or_else(|| {
+            error!("Unable to get PKCE cookie.");
+            AuthError::OAuthError
+        })?;
 
     if csrf_cookie.value() != callback_params.state {
         return Err(AuthError::CSRFTokenMismatch);
@@ -197,7 +204,7 @@ pub async fn google_oauth_callback_handler(
 
     let config = data.google_oauth_config.as_ref().ok_or_else(|| {
         error!("Google OAuth config is missing.");
-        AuthError::OAuthError(Some("OAuth config not found. That means Google OAuth isn't intended to be accessed. Did you manually type in this endpoint?".to_string()))
+        AuthError::OAuthError
     })?;
 
     let oauth_client = BasicClient::new(config.client_id.clone())
@@ -236,7 +243,10 @@ pub async fn google_oauth_callback_handler(
         .set_pkce_verifier(PkceCodeVerifier::new(pkce_cookie.value().to_string()))
         .request_async(&data.http_client)
         .await
-        .map_err(|e| AuthError::OAuthError(Some(e.to_string())))?;
+        .map_err(|err| {
+            error!(%err, "There was an issue getting the token.");
+            AuthError::OAuthError
+        })?;
 
     // The following request returns this upon success
     // {
@@ -254,16 +264,24 @@ pub async fn google_oauth_callback_handler(
         .bearer_auth(token.access_token().secret())
         .send()
         .await
-        .map_err(|e| AuthError::OAuthError(Some(e.to_string())))?
+        .map_err(|err| {
+            error!(%err, "Error getting user info from google.");
+            AuthError::OAuthError
+        })?
         .json::<GoogleAccessTokenPayload>()
         .await
-        .map_err(|e| AuthError::OAuthError(Some(e.to_string())))?;
+        .map_err(|err| {
+            error!(%err, "Error getting user info from google.");
+            AuthError::OAuthError
+        })?;
+
 
     let email = user_info.email.as_ref().ok_or_else(|| {
-        AuthError::OAuthError(Some("Google did not return an email address when signing in. The app cannot handle this. Try signing in without Google or try again later.".to_string()))
+        error!("Email not found in the user info: {:#?}", user_info);
+        AuthError::OAuthError
     })?;
 
-    let user = get_user(email, &data.db).await?;
+    let user = get_user_by_email(email, &data.db).await?;
 
     match user {
         Some(user) => {
@@ -277,6 +295,7 @@ pub async fn google_oauth_callback_handler(
 // Logout
 // #######################################################################################################################################################
 
+#[instrument(skip(data))]
 pub async fn logout_handler(
     cookie_jar: CookieJar,
     authorized_user: AuthorizedUser,
@@ -288,17 +307,21 @@ pub async fn logout_handler(
         .ok_or(AuthError::NotLoggedIn)?;
 
     let refresh_token_details = verify_jwt_token(
-        data.auth_config.refresh_token_public_key.clone(),
-        &refresh_token,
-    )
-    .map_err(|e| AuthError::InternalServerError(Some(format!("{e:?}"))))?;
+            data.auth_config.refresh_token_public_key.clone(),
+            &refresh_token,
+        )
+        .map_err(|err| {
+            error!(%err, "Error while verifying jwt token.");
+            AuthError::FatalInternalServerError
+        })?;
 
     let mut redis_client = data
         .redis_client
         .get_multiplexed_async_connection()
         .await
-        .map_err(|e: RedisError| {
-            AuthError::InternalServerError(Some(format!("Redis error: {e}")))
+        .map_err(|err| {
+            error!(%err, "Error while getting redis client.");
+            AuthError::FatalInternalServerError
         })?;
 
     redis_client
@@ -307,8 +330,9 @@ pub async fn logout_handler(
             authorized_user.access_token_uuid.to_string(),
         ])
         .await
-        .map_err(|e: RedisError| {
-            AuthError::InternalServerError(Some(format!("Redis error: {e}")))
+        .map_err(|err| {
+            error!(%err, "Error while deleting token from redis database.");
+            AuthError::FatalInternalServerError
         })?;
 
     let access_cookie = Cookie::build(("access_token", ""))
@@ -370,9 +394,9 @@ async fn save_token_data_to_redis(
     Ok(())
 }
 
-/// Gets a user from the database
+/// Gets a user from the database by email
 #[instrument(skip(db))]
-pub async fn get_user(email: &str, db: &Pool<Postgres>) -> Result<Option<User>, AuthError> {
+pub async fn get_user_by_email(email: &str, db: &Pool<Postgres>) -> Result<Option<User>, AuthError> {
     sqlx::query_as!(
         User,
         r#"
@@ -394,7 +418,35 @@ pub async fn get_user(email: &str, db: &Pool<Postgres>) -> Result<Option<User>, 
     .await
     .map_err(|err| {
         error!(%err, "Error getting user by email.");
-        AuthError::InternalServerError(None)
+        AuthError::DatabaseError
+    })
+}
+
+/// Gets a user from the database by id
+#[instrument(skip(db))]
+pub async fn get_user_by_id(id: &Uuid, db: &Pool<Postgres>) -> Result<Option<User>, AuthError> {
+    sqlx::query_as!(
+        User,
+        r#"
+        SELECT 
+            id, 
+            email, 
+            first_name,
+            last_name,
+            roles as "roles: Json<Vec<Roles>>",
+            password, 
+            created_at,
+            updated_at
+        FROM users
+        WHERE id = $1
+        "#,
+        id
+    )
+    .fetch_optional(db)
+    .await
+    .map_err(|err| {
+        error!(%err, "Error getting user by id.");
+        AuthError::DatabaseError
     })
 }
 
@@ -437,6 +489,7 @@ pub async fn search_for_users(
     })
 }
 
+#[instrument(skip(data))]
 async fn login_user(
     user: User,
     data: &Arc<AppState>,
@@ -447,8 +500,9 @@ async fn login_user(
         data.auth_config.access_token_max_age,
         data.auth_config.access_token_private_key.clone(),
     )
-    .map_err(|e: jsonwebtoken::errors::Error| {
-        AuthError::InternalServerError(Some(format!("JWT error: {e}")))
+    .map_err(|err| {
+        error!(%err, "Error generating jwt token");
+        AuthError::FatalInternalServerError
     })?;
 
     let refresh_token_details = generate_jwt_token(
@@ -456,8 +510,9 @@ async fn login_user(
         data.auth_config.refresh_token_max_age,
         data.auth_config.refresh_token_private_key.clone(),
     )
-    .map_err(|e: jsonwebtoken::errors::Error| {
-        AuthError::InternalServerError(Some(format!("JWT error: {e}")))
+    .map_err(|err| {
+        error!(%err, "Error generating jwt token");
+        AuthError::FatalInternalServerError
     })?;
 
     save_token_data_to_redis(
@@ -466,7 +521,10 @@ async fn login_user(
         data.auth_config.access_token_max_age,
     )
     .await
-    .map_err(|e: RedisError| AuthError::InternalServerError(Some(format!("Redis error: {e}"))))?;
+    .map_err(|err| {
+        error!(%err, "Error while saving token to redis database.");
+        AuthError::FatalInternalServerError
+    })?;
 
     save_token_data_to_redis(
         data,
@@ -474,7 +532,10 @@ async fn login_user(
         data.auth_config.refresh_token_max_age,
     )
     .await
-    .map_err(|e: RedisError| AuthError::InternalServerError(Some(format!("Redis error: {e}"))))?;
+    .map_err(|err| {
+        error!(%err, "Error while saving token to redis database.");
+        AuthError::FatalInternalServerError
+    })?;
 
     let access_cookie = Cookie::build((
         "access_token",

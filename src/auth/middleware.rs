@@ -15,7 +15,7 @@ use redis::AsyncCommands;
 use serde::{Deserialize, Serialize};
 use sqlx::types::Json;
 use std::sync::Arc;
-use tracing::{debug, instrument};
+use tracing::{debug, error, instrument};
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct AuthorizedUser {
@@ -57,8 +57,9 @@ pub async fn check_auth_utility(
         data.auth_config.access_token_public_key.clone(),
         &access_token,
     )
-    .map_err(|e| {
-        AuthError::InternalServerError(Some(format!("{e:?} You should try logging in again.")))
+    .map_err(|err| {
+        error!(%err, "Error verifying jwt token.");
+        AuthError::InternalServerError(format!("You should try logging in again."))
     })?;
 
     let access_token_uuid = uuid::Uuid::parse_str(&access_token_details.token_uuid.to_string())
@@ -68,7 +69,10 @@ pub async fn check_auth_utility(
         .redis_client
         .get_multiplexed_async_connection()
         .await
-        .map_err(|e| AuthError::InternalServerError(Some(format!("Redis error (this shouldn't happen, try again or contact the server administrator): {e}"))))?;
+        .map_err(|err| {
+            error!(%err, "Error getting redis client.");
+            AuthError::FatalInternalServerError
+        })?;
 
     let redis_token_user_id = redis_client
         .get::<_, String>(access_token_uuid.clone().to_string())
@@ -97,7 +101,10 @@ pub async fn check_auth_utility(
     )
         .fetch_optional(&data.db)
         .await
-        .map_err(|e| AuthError::InternalServerError(Some(format!("Error fetching user from database (this shouldn't happen, try again or contact the server administrator): {e}"))))?;
+        .map_err(|err| {
+            error!(%err, "Error fetching user from database.");
+            AuthError::FatalInternalServerError
+        })?;
 
     let user = user.ok_or(AuthError::InvalidUser)?;
 

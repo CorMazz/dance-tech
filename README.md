@@ -127,6 +127,7 @@ Ensure you are launching the server from the root of this repository. File paths
 
 - Change password via email link
 - Exam Queue
+    - Allow users to leave the queue
 - User Exam Dashboard
     - Explanation of exams
     - Signed in users can view past exam results
@@ -138,7 +139,6 @@ Ensure you are launching the server from the root of this repository. File paths
     - Exam search by user, exam name, proctor, etc.
     - Export exam data
 - Exams
-    - Link exams to users by email
     - Fix styling on exam page
     - Email users
     - Have exams apply roles to users
@@ -165,4 +165,5 @@ Ensure you are launching the server from the root of this repository. File paths
 7/7/2025: 4 hrs
 7/8/2025: 2 hrs
 7/17/2025: 8 hrs
-Total: 67.5 hrs
+7/24/2025: 4 hrs
+Total: 71.5 hrs

@@ -1,3 +1,4 @@
+use std::fmt;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use sqlx::types::Json;
@@ -40,7 +41,7 @@ impl From<&str> for Roles {
 /// avoid passing the user's password around everytime I need the other info
 /// Can use `#[sqlx(flatten)]` for this.
 #[allow(non_snake_case)]
-#[derive(Debug, Deserialize, sqlx::FromRow, Serialize, Clone)]
+#[derive(Deserialize, sqlx::FromRow, Serialize, Clone)]
 pub struct User {
     pub id: Uuid,
     pub first_name: String,
@@ -76,6 +77,18 @@ impl User {
     /// Check if the user is an Admin or a Proctor
     pub fn is_superuser(&self) -> bool {
         self.is_admin() || self.is_proctor()
+    }
+}
+
+impl fmt::Debug for User {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("User")
+            .field("id", &self.id)
+            .field("first_name", &self.first_name)
+            .field("last_name", &self.last_name)
+            .field("email", &self.email)
+            .field("roles", &self.roles)
+            .finish()
     }
 }
 

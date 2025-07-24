@@ -1,7 +1,7 @@
+use crate::auth::handlers::get_user_by_id;
 use crate::auth::handlers::search_for_users;
 use std::collections::HashMap;
 use std::sync::Arc;
-
 use super::errors::ExamError;
 use super::handlers::live_grade_handler;
 use super::handlers::load_graded_test_from_db;
@@ -9,10 +9,9 @@ use super::handlers::post_test_form_handler;
 use super::handlers::queue::add_user_to_test_queue;
 use super::handlers::queue::remove_user_from_test_queue;
 use super::handlers::queue::retrieve_test_queue;
-use super::models::PrefilledTestData;
 use super::models::QueueEntry;
 use super::models::TestGrade;
-use crate::auth::handlers::get_user;
+use crate::auth::handlers::get_user_by_email;
 use crate::auth::models::User;
 use crate::AppState;
 use crate::app::utils::ErrorTemplate;
@@ -48,7 +47,17 @@ pub struct AdministerExamTemplate {
     is_demo_mode: bool,
     /// If `true`, adds a checkbox that will trigger emailing test results the testee.
     email_functionality_active: bool,
+    /// Prefills the user on the test page
+    testee_email: String,
     rts: Routes,
+}
+
+/// Used to assign a test to a specific user when proctoring
+#[derive(Deserialize, Debug)]
+pub struct UserEmailForm {
+    /// If not specified, just use a blank string
+    #[serde(default)]
+    pub email: String
 }
 
 #[instrument(skip(data, headers))]
@@ -56,7 +65,7 @@ pub async fn get_test_page(
     State(data): State<Arc<AppState>>,
     Path(test_index): Path<usize>,
     headers: axum::http::HeaderMap,
-    Query(prefilled_user_info): Query<PrefilledTestData>,
+    Query(testee_email): Query<UserEmailForm>,
 ) -> impl IntoResponse {
     data.exam_config.tests.get(test_index).map_or_else(
         || {
@@ -77,6 +86,7 @@ pub async fn get_test_page(
                 test_index,
                 is_demo_mode: data.app_config.is_demo_mode,
                 email_functionality_active: data.smtp_config.is_some(),
+                testee_email: testee_email.email,
                 rts: ROUTES,
             };
 
@@ -410,6 +420,7 @@ pub async fn post_queue_widget(
 pub async fn delete_queue_widget(
     State(data): State<Arc<AppState>>,
     Extension(auth_status): Extension<AuthStatus>,
+    headers: axum::http::HeaderMap,
     Query(form): Query<QueueQueryParameters>,
 ) -> impl IntoResponse {
     let Some(authorized_user) = (match auth_status {
@@ -440,9 +451,22 @@ pub async fn delete_queue_widget(
     )
     .await;
 
+    let is_administer_test_request = headers.get("HX-Trigger").is_some_and(|val| val == "administer-test-button");
+
     match queue_result {
-        Ok(..) => StatusCode::OK.into_response(),
-        Err(..) => (
+        Ok(..) => {
+            if is_administer_test_request {
+                if let Ok(Some(user)) = get_user_by_id(&user_id, &data.db).await {
+                    return Redirect::to(&ROUTES.administer_exam_for_user(&form.test_index, &user.email)).into_response();
+                } 
+                return (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    "Failed to get user by id."
+                    ).into_response()
+            }
+            StatusCode::OK.into_response()
+        }
+        Err(..) => (  // The error is logged within the remove_user_from_test_queue function
             StatusCode::INTERNAL_SERVER_ERROR,
             "Failed to remove user from queue.".into_response(),
         )
@@ -450,11 +474,6 @@ pub async fn delete_queue_widget(
     }
 }
 
-/// Used to assign a test to a specific user when proctoring
-#[derive(Deserialize)]
-pub struct UserEmailForm {
-    pub email: String
-}
 
 #[derive(Template)]
 #[template(path = "./exam_templates/user_info_widget.html")]
@@ -475,7 +494,7 @@ pub async fn get_user_info_widget(
         return Redirect::to(ROUTES.login).into_response();
     };
 
-    let user = get_user(
+    let user = get_user_by_email(
         &form.email,
         &data.db,
     )
