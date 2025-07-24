@@ -6,10 +6,11 @@ services:
     env_file:
       - ../.env_prod
     volumes:
-      - ../..:/workspaces:cached
+      - ../:/workspaces:cached
       - ${HOME}/.config/nvim:/root/.config/nvim:rw  # If using neovim, uncomment these three lines
       - ${HOME}/.local/share/nvim:/root/.local/share/nvim:rw
       - ${HOME}/.cache/nvim:/root/.cache/nvim:rw
+      - cargo-home:/usr/local/cargo:rw  # Caches your cargo crate downloads
     command: sleep infinity
     ports:
       - "8000:8000"
@@ -46,3 +47,4 @@ services:
 volumes:
   postgres-data:
   redis-data:
+  cargo-home:
