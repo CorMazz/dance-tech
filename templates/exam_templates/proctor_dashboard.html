@@ -22,7 +22,9 @@
     </div>
   </div>
   
-  <div class="my-card" hx-get={{ rts.queue_widget }} hx-trigger="load">
+  <div class="my-card" hx-get={{ rts.queue_widget }} hx-trigger="load"></div>
+
+  <div id="search-tests-container" hx-get="{{ rts.search_exam_widget }}" hx-trigger="load"></div>
 
 </div>
 

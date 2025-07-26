@@ -7,8 +7,12 @@ use thiserror::Error;
 
 #[derive(Debug, Clone, Error)]
 pub enum ExamError {
-    #[error("An internal server error occurred: {0:?}")]
-    InternalServerError(Option<String>),
+    #[error("An internal server error occurred. Please contact the site administrator.")]
+    FatalInternalServerError,
+
+    /// Display a message to the user to tell them how to possibly fix the error.
+    #[error("{0:?}")]
+    InternalServerError(String),
 
     #[error("There was an error with the Redis database. Please contact the site administrator.")]
     RedisError,
@@ -36,6 +40,9 @@ pub enum ExamError {
 
     #[error("The requested test does not exist. Please contact the site administrator.")]
     TestIndexError,
+
+    #[error("The given user was not found. Ensure that the dropdown displays user details before submitting a test.")]
+    UserNotFound,
 }
 
 impl ExamError {

@@ -25,10 +25,11 @@ create table
     );
 
 CREATE INDEX users_email_idx ON users (email);
-
-CREATE INDEX users_email_trgm_idx
-ON users
-USING GIN (email gin_trgm_ops);
+CREATE INDEX IF NOT EXISTS idx_users_first_name_trgm ON users USING gin (first_name gin_trgm_ops);
+CREATE INDEX IF NOT EXISTS idx_users_last_name_trgm  ON users USING gin (last_name gin_trgm_ops);
+CREATE INDEX IF NOT EXISTS idx_users_email_trgm      ON users USING gin (email gin_trgm_ops);
+CREATE INDEX IF NOT EXISTS idx_users_full_name_trgm
+ON users USING gin ((first_name || ' ' || last_name) gin_trgm_ops);
 
 create table
     "graded_exams" (
@@ -49,3 +50,9 @@ create table
             time zone default now(),
         unique(user_id, test_index)
       );
+
+CREATE INDEX idx_testee_id ON graded_exams ((test_data->>'testee_id'));
+CREATE INDEX idx_proctor_id ON graded_exams ((test_data->>'proctor_id'));
+CREATE INDEX idx_is_passing ON graded_exams ((test_data->'grade'->>'is_passing'));
+CREATE INDEX idx_test_name ON graded_exams ((test_data->'test'->'metadata'->>'test_name'));
+CREATE INDEX idx_test_name_trgm ON graded_exams USING gin ((test_data->'test'->'metadata'->>'test_name') gin_trgm_ops);

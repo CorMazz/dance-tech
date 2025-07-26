@@ -1,18 +1,20 @@
 use csv::ReaderBuilder;
 use serde_json::{from_value, to_value};
-use sqlx::{Pool, Postgres};
+use sqlx::{Execute, Pool, Postgres, QueryBuilder};
 use std::collections::{BTreeMap, HashMap};
 use std::sync::Arc;
 use tracing::{debug, error, instrument};
 use uuid::Uuid;
-use axum::Json;
-use crate::auth::models::{User, Roles};
+use sqlx::Row;
+use crate::auth::handlers::{get_user_by_email, search_for_users};
+use crate::auth::models::User;
 use crate::AppState;
-use crate::exam::models::{CsvTestTable, HtmlTestTable, RadioButton, RadioOption, TestRow};
+use crate::exam::models::{CsvTestTable, ExamStatus, HtmlTestTable, RadioButton, RadioOption, TestRow};
 use crate::exam::models::{RadioName, RadioValue, ScoringCategory};
 
 use super::errors::ExamError;
-use super::models::{GradedTest, QueueEntry};
+use super::models::{GradedExamFilter, GradedTest, QueueEntry};
+use super::views::SearchTestFilters;
 
 /// Take a `DataFrame` and convert it into a nested `TestTable` structure
 ///
@@ -134,10 +136,10 @@ pub fn convert_df_to_test_table(
 #[instrument(skip(form))]
 pub fn parse_test_form(
     form: HashMap<String, String>,
-) -> Result<(Vec<(RadioName, RadioValue)>, Vec<usize>), ExamError> {
+) -> Result<(Vec<(RadioName, RadioValue)>, Vec<usize>, String), ExamError> {
     let mut competencies: Vec<(RadioName, RadioValue)> = Vec::new();
     let mut bonus_indices: Vec<usize> = Vec::new();
-    let mut email: String;
+    let mut email = String::new();
 
     for (key, value) in form {
         if let Some(json_str) = key.strip_prefix("competency") {
@@ -164,7 +166,7 @@ pub fn parse_test_form(
             return Err(ExamError::ParseError);
         }
     }
-    Ok((competencies, bonus_indices))
+    Ok((competencies, bonus_indices, email))
 }
 
 /// I already dealt with the headache of trying to store a graded test as something fancy in the
@@ -176,7 +178,11 @@ pub async fn save_graded_test_to_db(
     db: &Pool<Postgres>,
 ) -> Result<(), ExamError> {
     let test_id = test.id;
-    let json_value = to_value(&test).expect("GradedTest should serialize to JSON");
+    let json_value = to_value(&test)
+        .map_err(|err| {
+            error!(%err, "Unable to serialize the graded test to JSONB.");
+            ExamError::FatalInternalServerError
+        })?;
 
     sqlx::query!(
         r#"
@@ -190,7 +196,7 @@ pub async fn save_graded_test_to_db(
     .await
     .map_err(|err| {
             error!(%err, %test_id, "Unable to save test to the database.");
-            ExamError::InternalServerError(Some("Unable to save the test to the database. Try again later or contact the site administrator.".to_string()))
+            ExamError::DatabaseError
     })?;
 
     debug!(%test_id, "Saved graded test to database.");
@@ -217,9 +223,7 @@ pub async fn load_graded_test_from_db(
     .await
     .map_err(|err| {
         error!(%err, "Database error while fetching graded test.");
-        ExamError::InternalServerError(Some(
-            "Unable to fetch the test. Please try again.".to_string(),
-        ))
+        ExamError::FatalInternalServerError
     })?;
 
     let row = row.ok_or_else(|| {
@@ -229,9 +233,7 @@ pub async fn load_graded_test_from_db(
 
     let graded_test: GradedTest = from_value(row.test_data).map_err(|err| {
         error!(%err, "Deserialization error while loading GradedTest.");
-        ExamError::InternalServerError(Some(
-            "Test data could not be processed. Please contact the site administrator.".to_string(),
-        ))
+        ExamError::FatalInternalServerError
     })?;
     debug!(%graded_test.id, "Loaded graded test from the database.");
     Ok(graded_test)
@@ -239,14 +241,14 @@ pub async fn load_graded_test_from_db(
 
 /// Used to return a `Grade` object to the live grading endpoint. 
 #[instrument(skip(form, data, test_index))]
-pub fn live_grade_handler(
+pub async fn live_grade_handler(
     data: Arc<AppState>,
     test_index: usize,
     form: HashMap<String, String>,
     proctor_id: Uuid,
 ) -> Result<GradedTest, ExamError> {
     debug!("Received raw test form {:#?}", form);
-    let (competencies, bonus_indices) = parse_test_form(form)?;
+    let (competencies, bonus_indices, email) = parse_test_form(form)?;
     debug!(
         "Parsed form into competencies: {competencies:#?} and bonus_indices: {bonus_indices:#?}."
     );
@@ -260,7 +262,12 @@ pub fn live_grade_handler(
         })?
         .clone();
 
-    let graded_test = test.grade(competencies, bonus_indices, proctor_id)?;
+    let testee = get_user_by_email(&email, &data.db)
+        .await
+        .map_err(|_| ExamError::DatabaseError)?
+        .ok_or(ExamError::UserNotFound)?;
+
+    let graded_test = test.grade(competencies, bonus_indices, proctor_id, testee.id)?;
     debug!("Successfully graded test.");
     Ok(graded_test)
 }
@@ -273,7 +280,7 @@ pub async fn post_test_form_handler(
     form: HashMap<String, String>,
     proctor_id: Uuid,
 ) -> Result<(), ExamError> {
-    let graded_test = live_grade_handler(data.clone(), test_index, form, proctor_id)?;
+    let graded_test = live_grade_handler(data.clone(), test_index, form, proctor_id).await?;
     save_graded_test_to_db(graded_test, &data.db).await?;
     Ok(())
 }
@@ -303,6 +310,68 @@ pub fn parse_csv(csv_data: &str) -> CsvTestTable {
     }
 
     CsvTestTable { rows: all_rows }
+}
+
+
+/// Searches for exams given a series of filter parameters
+/// Querying user is used to only display the user's own test results
+/// for non-admin users.
+#[instrument(skip(db))]
+pub async fn search_exam_widget_handler(filter: &SearchTestFilters, querying_user: &User, db: &Pool<Postgres>) -> Result<(Vec<FilteredExamResult>, bool), ExamError> {
+
+    let testee_ids = if querying_user.is_superuser() {
+        match &filter.testee_query {
+            Some(query) if !query.is_empty() => {
+                let users = search_for_users(query.clone(), db)
+                    .await
+                    .map_err(|_| ExamError::DatabaseError)?;
+
+                Some(users.into_iter().map(|user| user.id).collect::<Vec<_>>())
+            }
+            _ => None,
+        }
+    } else {
+        Some(vec![querying_user.id])
+    };
+    
+    let proctor_ids = match &filter.proctor_query {
+        Some(query) if !query.is_empty() => {
+            Some(
+                search_for_users(query.clone(), db)
+                    .await
+                    .map_err(|_| ExamError::DatabaseError)?
+                    .into_iter()
+                    .map(|user| user.id)
+                    .collect::<Vec<_>>()
+            )
+        }
+        _ => None,
+    };
+
+    let test_name = match &filter.test_name {
+        Some(s) if !s.trim().is_empty() => Some(s.clone()),
+        _ => None,
+    };
+
+    let query_input = GradedExamFilter {
+        testee_ids,
+        proctor_ids,
+        pass_or_fail: filter.pass_or_fail.clone(),
+        test_name,
+        page: filter.page,
+        per_page: filter.per_page + 1,
+    };
+
+    debug!("Graded Exam Filter: {:#?}", query_input);
+
+    let mut exams = query_filtered_exams(query_input, db).await?;
+
+    let has_next_page = exams.len() > filter.per_page;
+    if has_next_page {
+        exams.truncate(filter.per_page);
+    }
+
+    Ok((exams, has_next_page))
 }
 
 pub mod queue {
@@ -362,42 +431,6 @@ pub mod queue {
             }
         }
     }
-
-    // /// Remove and return the first user in the test queue.
-    // #[instrument(skip(db))]
-    // pub async fn pop_user_from_test_queue(
-    //     db: &PgPool,
-    // ) -> Result<Option<QueueEntry>, ExamError> {
-    //     let mut tx = db.begin().await.map_err(|e| ExamError::DatabaseError(e.to_string()))?;
-    //
-    //     if let Some(entry) = sqlx::query_as!(
-    //         QueueEntry,
-    //         r#"
-    //         SELECT * FROM exam_queue
-    //         ORDER BY inserted_at
-    //         FOR UPDATE SKIP LOCKED
-    //         LIMIT 1
-    //         "#
-    //     )
-    //     .fetch_optional(&mut *tx)
-    //     .await
-    //     .map_err(|e| ExamError::DatabaseError(e.to_string()))?
-    //     {
-    //         sqlx::query!(
-    //             "DELETE FROM exam_queue WHERE id = $1",
-    //             entry.id
-    //         )
-    //         .execute(&mut *tx)
-    //         .await
-    //         .map_err(|e| ExamError::DatabaseError(e.to_string()))?;
-    //
-    //         tx.commit().await.map_err(|e| ExamError::DatabaseError(e.to_string()))?;
-    //         Ok(Some(entry))
-    //     } else {
-    //         tx.rollback().await.ok();
-    //         Ok(None)
-    //     }
-    // }
 
     /// Remove a specific user from the test queue based on their `user_id` and `test_index`.
     /// Returns a boolean indicating if a user was removed or not.
@@ -485,6 +518,136 @@ pub mod queue {
             .collect::<Result<Vec<_>, ExamError>>()?;        
         Ok(entries)
     }
+}
+
+/// A struct to contain the items necessary to explain a `GradedTest`.
+/// The test is linked to the user by ID, which isn't useful for displaying,
+/// so we want to grab the users by ID so that we can display their info on 
+/// the info page.
+pub struct FilteredExamResult {
+    pub test: GradedTest,
+    pub testee: User,
+    pub proctor: User,
+}
+
+/// Retrieve all tests that fit the parameters included in the filter
+/// Returns the (Test, Testee, Proctor)
+#[instrument(skip(db))]
+pub async fn query_filtered_exams(
+    filter: GradedExamFilter,
+    db: &Pool<Postgres>,
+) -> Result<Vec<FilteredExamResult>, ExamError> {
+    let mut builder = QueryBuilder::new(
+        r"SELECT 
+          graded_exams.test_data, 
+          row_to_json(testee_user.*) AS testee_user, 
+          row_to_json(proctor_user.*) AS proctor_user
+        FROM graded_exams 
+        JOIN users AS testee_user ON testee_user.id = (graded_exams.test_data->>'testee_id')::uuid 
+        JOIN users AS proctor_user ON proctor_user.id = (graded_exams.test_data->>'proctor_id')::uuid"
+    );
+
+    if let Some(pass_or_fail) = filter.pass_or_fail {
+        match pass_or_fail {
+            ExamStatus::Passing => {
+                builder
+                    .push(" AND test_data->'grade'->>'is_passing' = ")
+                    .push_bind("true");
+            }
+            ExamStatus::Failing => {
+                builder
+                    .push(" AND test_data->'grade'->>'is_passing' = ")
+                    .push_bind("false");
+            }
+            ExamStatus::Both => {
+                // No filter needed; include both passing and failing exams
+            }
+        }
+    }
+
+    if let Some(testee_ids) = &filter.testee_ids {
+        if !testee_ids.is_empty() {
+            builder
+                .push(" AND test_data->>'testee_id' IN (")
+                .push_values(
+                    // the iterator that yields each bind value
+                    testee_ids.iter(),
+                    // how to bind each element
+                    |mut b, id| { b.push_bind(id.to_string()); },
+                )
+                .push(")");
+        }
+    }
+
+    if let Some(proctor_ids) = &filter.proctor_ids {
+        if !proctor_ids.is_empty() {
+            builder
+                .push(" AND test_data->>'proctor_id' IN (")
+                .push_values(
+                    proctor_ids.iter(),
+                    |mut b, id| { b.push_bind(id.to_string()); },
+                )
+                .push(")");
+        }
+    }
+
+    if let Some(test_name) = &filter.test_name {
+        debug!("Test Name: {test_name}");
+        builder
+            .push(" AND (test_data->'test'->'metadata'->>'test_name') % ")
+            .push_bind(test_name);
+    }
+
+    builder.push(" LIMIT ");
+    builder.push_bind(filter.per_page as i64);
+    let offset = (filter.page.saturating_sub(1)) * filter.per_page;
+    builder.push(" OFFSET ");
+    builder.push_bind(offset as i64);
+
+    let query = builder.build();
+    debug!(sql = %query.sql());
+
+    let rows = query.fetch_all(db).await.map_err(|err| {
+        error!(%err, "Error retrieving test data from database.");
+        ExamError::DatabaseError
+    })?;
+
+    let mut results = Vec::new();
+    for row in rows {
+        let json_value: serde_json::Value = row.try_get("test_data").map_err(|err| {
+            error!(%err, "Error retrieving test data from row.");
+            ExamError::DatabaseError
+        })?;
+        let graded_test: GradedTest = serde_json::from_value(json_value).map_err(|err| {
+            error!(%err, "Error deserializing graded test.");
+            ExamError::FatalInternalServerError
+        })?;
+
+        debug!("Row: {row:#?}");
+        
+        let json_value: serde_json::Value = row.try_get("testee_user").map_err(|err| {
+            error!(%err, "Error retrieving testee data from row.");
+            ExamError::DatabaseError
+        })?;
+
+        let testee: User = serde_json::from_value(json_value).map_err(|err| {
+            error!(%err, "Error deserializing testee.");
+            ExamError::FatalInternalServerError
+        })?;
+        
+        let json_value: serde_json::Value = row.try_get("proctor_user").map_err(|err| {
+            error!(%err, "Error retrieving proctor data from row.");
+            ExamError::DatabaseError
+        })?;
+
+        let proctor: User = serde_json::from_value(json_value).map_err(|err| {
+            error!(%err, "Error deserializing proctor.");
+            ExamError::FatalInternalServerError
+        })?;
+        results.push(FilteredExamResult {test: graded_test, testee, proctor});
+    }
+
+    Ok(results)
 }
 
 

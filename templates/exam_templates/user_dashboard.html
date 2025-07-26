@@ -17,26 +17,19 @@
     </div>
   </div>
 
-  <div 
-    {% let id = "join-queue-container" %}
-    id={{ id }}
-    hx-get="{{ rts.join_queue_widget }}" 
-    hx-trigger="load" 
-    hx-target=#{{ id }}
-  >
-  </div>
+  <div id="join-queue-container" hx-get="{{ rts.join_queue_widget }}" hx-trigger="load"></div>
 
   <div 
     {# If you change this id, also change it in `join_queue.html`. #}
-    {% let id = "queue-container" %}
-    id={{ id }}
+    id="queue-container"
     class="my-card" 
     hx-get="{{ rts.queue_widget }}" 
     {# `refresh-queue` is defined in `join_queue.html`. #}
     hx-trigger="load, refresh-queue" 
-    hx-target=#{{ id }}
   >
   </div>
+
+  <div id="search-exams-container" hx-get="{{ rts.search_exam_widget }}" hx-trigger="load"></div>
 
 </div>
 {% endblock %}

@@ -9,6 +9,10 @@ use super::handlers::post_test_form_handler;
 use super::handlers::queue::add_user_to_test_queue;
 use super::handlers::queue::remove_user_from_test_queue;
 use super::handlers::queue::retrieve_test_queue;
+use super::handlers::search_exam_widget_handler;
+use super::handlers::FilteredExamResult;
+use super::models::ExamStatus;
+use super::models::GradedTest;
 use super::models::QueueEntry;
 use super::models::TestGrade;
 use crate::auth::handlers::get_user_by_email;
@@ -223,7 +227,7 @@ pub async fn post_live_grading(
         }
         AuthStatus::Unauthorized(err) => return err.into_response(&headers),
     };
-    match live_grade_handler(data, test_index, raw_form, proctor_id) {
+    match live_grade_handler(data, test_index, raw_form, proctor_id).await {
         Ok(graded_test) => {
             let template = TestGradeTemplate { grade: graded_test.grade };
             return (StatusCode::OK, Html(render(template))).into_response()
@@ -560,5 +564,77 @@ pub async fn get_user_autocomplete(
             "Failed to get user info. Please try again later.".into_response(),
         )
             .into_response(),
+    }
+}
+
+
+#[derive(Template)]
+#[template(path = "./exam_templates/search_tests_widget.html", blocks = ["content", "table"])]
+pub struct SearchTestsWidgetTemplate {
+    rts: Routes,
+    filter: SearchTestFilters,
+    filtered_exam_info: Vec<FilteredExamResult>,
+    has_next_page: bool,
+    /// Used to hide the `testee` search box from non-superusers
+    is_superuser: bool,
+
+}
+
+#[derive(Debug, Deserialize, Default)]
+pub struct SearchTestFilters {
+    /// The search string to match on testee first name, last name, or email
+    pub testee_query: Option<String>,
+    /// The search string to match on proctor first name, last name, or email
+    pub proctor_query: Option<String>,
+    pub test_name: Option<String>,
+    pub pass_or_fail: Option<ExamStatus>,
+
+    #[serde(default = "default_page")]
+    pub page: usize,
+
+    #[serde(default = "default_per_page")]
+    pub per_page: usize,
+}
+const fn default_page() -> usize { 1 }
+const fn default_per_page() -> usize { 10 }
+
+/// Search for tests and display information about them (name, date taken, etc.)
+/// Admin users can search by testee name and see any test results. Non-admin
+/// users can only see their own test results.
+pub async fn get_search_tests_widget(
+    State(data): State<Arc<AppState>>,
+    headers: axum::http::HeaderMap,
+    Extension(auth_status): Extension<AuthStatus>,
+    Query(filter): Query<SearchTestFilters>
+) -> impl IntoResponse {
+    
+    let Some(user) = (match auth_status {
+        AuthStatus::Authorized(user) => Some(user.user),
+        AuthStatus::Unauthorized(_) => None,
+    }) else {
+        return (StatusCode::OK, Html("<h1 class=my-paragraph>Sign in to see test results</h1>")).into_response();
+    };
+
+    let (graded_tests, has_next_page) = match search_exam_widget_handler(&filter, &user, &data.db).await {
+        Ok(res) => res,
+        Err(e) => return e.into_response(&headers),
+    };
+
+    let template = SearchTestsWidgetTemplate {
+        rts: ROUTES,
+        filtered_exam_info: graded_tests,
+        filter,
+        has_next_page,
+        is_superuser: user.is_superuser(),
+    };
+
+    if let Some(div_id) = headers.get("HX-Trigger") {
+        if div_id == "search-tests-form" {
+            (StatusCode::OK, Html(render(template.as_table()))).into_response()
+        } else {
+            (StatusCode::OK, Html(render(template.as_content()))).into_response()
+        }
+    } else {
+        (StatusCode::OK, Html(render(template))).into_response()
     }
 }

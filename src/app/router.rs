@@ -9,7 +9,7 @@ use crate::{
         get_check_in_page, get_successful_checkout_session, post_create_check_out_session,
         post_update_available_products,
     }, exam::views::{
-        delete_queue_widget, get_graded_test_page, get_join_queue_widget, get_proctor_dashboard_page, get_queue_widget, get_test_page, get_user_autocomplete, get_user_dashboard_page, get_user_info_widget, post_live_grading, post_queue_widget, post_test_form
+        delete_queue_widget, get_graded_test_page, get_join_queue_widget, get_proctor_dashboard_page, get_queue_widget, get_search_tests_widget, get_test_page, get_user_autocomplete, get_user_dashboard_page, get_user_info_widget, post_live_grading, post_queue_widget, post_test_form
     }, AppState
 };
 use axum::{
@@ -48,6 +48,7 @@ pub struct Routes {
     pub join_queue_widget: &'static str,
     /// The div that displays a user's name and info when proctoring a test.
     pub user_info_widget: &'static str,
+    pub search_exam_widget: &'static str,
 
     // Misc Routes
     pub user_dropdown: &'static str,
@@ -107,6 +108,7 @@ pub const ROUTES: Routes = Routes {
     queue_widget: "/widgets/queue",
     join_queue_widget: "/widgets/join-queue",
     user_info_widget: "/widgets/user-info",
+    search_exam_widget: "/widgets/search-exam",
 
     // Misc Routes
     user_dropdown: "/widgets/user-dropdown",
@@ -140,6 +142,7 @@ pub fn create_router(app_state: Arc<AppState>) -> Router {
         .route(ROUTES.user_dashboard, get(get_user_dashboard_page))
         .route(ROUTES.queue_widget, get(get_queue_widget).post(post_queue_widget).delete(delete_queue_widget))
         .route(ROUTES.join_queue_widget, get(get_join_queue_widget))
+        .route(ROUTES.search_exam_widget, get(get_search_tests_widget))
         .route(
             ROUTES.create_checkout_session,
             post(post_create_check_out_session),

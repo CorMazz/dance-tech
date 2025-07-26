@@ -26,6 +26,7 @@ impl Test {
         competencies: Vec<(RadioName, RadioValue)>,
         bonus_indices: Vec<usize>,
         proctor_id: Uuid,
+        testee_id: Uuid,
     ) -> Result<GradedTest, ExamError> {
         let mut failure_explanations: Vec<FailureExplanation> = Vec::new();
         let mut score = 0;
@@ -166,7 +167,7 @@ impl Test {
             test: self,
             grade,
             proctor_id,
-            testee_id: Uuid::new_v4(),
+            testee_id,
         })
     }
 }
@@ -471,3 +472,25 @@ pub struct QueueEntry {
     pub test_index: i32,
     pub test_name: String,
 }
+
+/// Used to filter exams when searching through prior results
+#[derive(Deserialize, Debug, Clone, PartialEq)]
+#[serde(rename_all = "lowercase")]
+pub enum ExamStatus {
+    Passing,
+    Failing,
+    Both
+}
+
+/// Parameters used to filter out exams when viewing the graded tests
+/// Only show exams which meet these filter parameters
+#[derive(Debug, Deserialize)]
+pub struct GradedExamFilter {
+    pub pass_or_fail: Option<ExamStatus>,
+    pub testee_ids: Option<Vec<Uuid>>,
+    pub proctor_ids: Option<Vec<Uuid>>,
+    pub test_name: Option<String>,
+    pub page: usize,
+    pub per_page: usize,
+}
+

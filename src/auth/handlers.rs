@@ -473,10 +473,14 @@ pub async fn search_for_users(
         WHERE first_name % $1
            OR last_name % $1
            OR email % $1
+           OR (first_name || ' ' || last_name) % $1
         ORDER BY
-           GREATEST(similarity(first_name, $1),
-                    similarity(last_name, $1),
-                    similarity(email, $1)) DESC
+           GREATEST(
+               similarity(first_name || ' ' || last_name, $1),
+               similarity(first_name, $1),
+               similarity(last_name, $1),
+               similarity(email, $1)
+           ) DESC
         LIMIT 5
         "#,
         query

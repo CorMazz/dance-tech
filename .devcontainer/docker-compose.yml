@@ -3,6 +3,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+    container_name: "devenv"
     env_file:
       - ../.env_prod
     volumes:
