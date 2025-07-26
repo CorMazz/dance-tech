@@ -38,14 +38,14 @@
 
 {% when None %}
     <div class="flex items-center">
-            <a href={{ rts.login }} hx-boost="true" hx-target="#primary-content" hx-swap="innerHTML">
+      <a href={{ rts.login }} hx-boost="true" hx-target="#primary-content" hx-swap="innerHTML show:none">
 
-            <!-- For really tiny screens, just say login so that it fits in the navbar -->
-            <button type="button" class="sm:hidden text-white bg-secondary-400 hover:bg-secondary-500 focus:ring-4 focus:outline-none focus:ring-secondary-400 font-medium rounded-lg text-sm px-4 py-2 text-center">Login</button>
-            
-            <!-- Otherwise say sign in/sign up  -->
-            <button type="button" class="hidden sm:block text-white bg-secondary-400 hover:bg-secondary-500 focus:ring-4 focus:outline-none focus:ring-secondary-400 font-medium rounded-lg text-sm px-4 py-2 text-center">Sign In/Sign Up</button>
-        </a>    
+      <!-- For really tiny screens, just say login so that it fits in the navbar -->
+      <button type="button" class="sm:hidden text-white bg-secondary-400 hover:bg-secondary-500 focus:ring-4 focus:outline-none focus:ring-secondary-400 font-medium rounded-lg text-sm px-4 py-2 text-center">Login</button>
+      
+      <!-- Otherwise say sign in/sign up  -->
+      <button type="button" class="hidden sm:block text-white bg-secondary-400 hover:bg-secondary-500 focus:ring-4 focus:outline-none focus:ring-secondary-400 font-medium rounded-lg text-sm px-4 py-2 text-center">Sign In/Sign Up</button>
+      </a>    
     </div>
 
 {% endmatch %}

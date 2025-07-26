@@ -5,7 +5,6 @@
 {% block title %}{{ test.metadata.test_name }}{% endblock %}
 
 {% block content %}
-
 <div class="mx-auto p-4">
   <h2 class="text-4xl font-bold mb-4 text-center">{{ test.metadata.test_name }}</h2>
   <form id="dancer-test" method="post" class="bg-white p-6 rounded shadow-md">
@@ -45,7 +44,6 @@
           hx-target="#email-datalist" 
           hx-swap="innerHTML">
         </div>
-
       </div>
     {% endif %}
 
@@ -75,8 +73,8 @@
             type="submit" 
             value={% if is_demo_mode %}"Submission Disabled for Demo"{% else %}Submit Test{% endif %}
             class="{% if is_demo_mode %}bg-gray-300 text-gray-900{% else %}bg-blue-500 hover:bg-blue-700 text-white{% endif %} w-full font-bold py-2 px-4 mb-4 rounded" {% if is_demo_mode %}disabled{% else %}{% endif %}
-            hx-post={{ rts.administer_exam(test_index) }} hx-select="#primary-content" hx-target="#primary-content" hx-swap="outerHTML" hx-push-url="true" hx-confirm="Confirm submission"
-          >  
+            hx-post={{ rts.administer_exam(test_index) }} hx-target="#primary-content" hx-swap="innerHTML" hx-push-url="true" hx-confirm="Confirm submission"
+          />  
         {% endif %}
       </div>
     </div>

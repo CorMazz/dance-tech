@@ -166,4 +166,6 @@ Ensure you are launching the server from the root of this repository. File paths
 7/8/2025: 2 hrs
 7/17/2025: 8 hrs
 7/24/2025: 4 hrs
-Total: 71.5 hrs
+7/25/2025: 2 hrs
+7/26/2025: 5 hrs
+Total: 78.5 hrs

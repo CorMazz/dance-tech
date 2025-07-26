@@ -12,7 +12,7 @@
       {% for test_name in test_names %}
         <a 
           href={{ rts.administer_exam(loop.index0) }} 
-          hx-boost="true" hx-select="#primary-content" hx-target="#primary-content" hx-swap="outerHTML"
+          hx-boost="true" hx-target="#primary-content" hx-swap="innerHTML show:none"
           class="my-card w-full max-w-sm"
         >
           <h5 class="my-title">{{ test_name }}</h5>
