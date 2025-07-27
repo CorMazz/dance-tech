@@ -105,7 +105,7 @@ pub async fn verify_successful_checkout_session(
     Ok(session.payment_status == "paid")
 }
 
-/// Ping the ProductManager actor and request the list of products.
+/// Ping the `ProductManager` actor and request the list of products.
 pub async fn get_products_from_actor(data: &AppState) -> Result<Vec<Product>, CheckInError> {
     let (product_tx, product_rx) = tokio::sync::oneshot::channel();
 

@@ -44,11 +44,22 @@ pub struct CheckInTemplate {
 pub async fn get_check_in_page(
     State(data): State<Arc<AppState>>,
     headers: axum::http::HeaderMap,
+    Extension(auth_status): Extension<AuthStatus>,
 ) -> impl IntoResponse {
+    let user = match auth_status {
+        AuthStatus::Authorized(authorized_user) => Some(authorized_user.user),
+        AuthStatus::Unauthorized(_) => None,
+    };
+
+    let roles: Vec<Roles> = user.map_or_else(Vec::new, |u| u.roles.0);
+
     let products = match get_products_from_actor(&data).await {
         Ok(products) => products,
         Err(err) => return err.into_response(&headers),
     };
+
+
+
     let template = CheckInTemplate {
         products,
         rts: ROUTES,
@@ -65,7 +76,7 @@ pub async fn get_check_in_page(
 // Create Checkout Session
 // #######################################################################################################################################################
 
-/// Get the product_id and price_id from the button click on the check-in page
+/// Get the `product_id` and `price_id` from the button click on the check-in page
 #[derive(Deserialize, Debug)]
 pub struct CheckoutSessionForm {
     pub product_id: String,

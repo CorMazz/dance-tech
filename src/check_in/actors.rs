@@ -3,6 +3,7 @@
 //! potential for lock contention, and it is a shiny new thing that I just learned.
 //! Resume-driven-development ftw!
 
+use crate::auth::models::Roles;
 use crate::AppState;
 use crate::check_in::errors::CheckInError;
 use crate::check_in::models::Product;
@@ -83,7 +84,10 @@ pub async fn product_manager_actor_runtime(
 }
 
 /// Use the Stripe search API to get all products that are active and have a metadata key of
-/// `"show-on-dancetech":"true"`. See the Stripe Dashboard for setting metadata.
+/// `"show-on-dancetech":"true"`.
+/// Will also grab the metadata key "requires-roles":"["advanced-leader", etc...]"
+///
+/// See the Stripe Dashboard for setting metadata.
 #[tracing::instrument(skip(client, secret_key))]
 pub async fn get_stripe_products(
     client: &reqwest::Client,
@@ -116,12 +120,23 @@ pub async fn get_stripe_products(
                 None => return None,
             };
 
+            let requires_roles = p.metadata.get("requires-roles")
+                .and_then(|v| v.as_array())
+                .map(|arr| {
+                    arr.iter()
+                        .filter_map(|v| v.as_str()) // ensure each element is a string
+                        .map(Roles::new)
+                        .collect()
+                })
+                .unwrap_or_default();
+
             Some(Product {
                 name: p.name,
                 id: p.id,
                 description: p.description.unwrap_or_default(),
                 price: formatted_price,
                 price_id,
+                requires_roles,
             })
         })
         .collect();

@@ -1,4 +1,9 @@
+use std::collections::HashMap;
+
 use serde::{Deserialize, Serialize};
+use serde_json::Value;
+
+use crate::auth::models::Roles;
 
 /// The Product item to be used for this application
 ///
@@ -16,6 +21,9 @@ pub struct Product {
     pub price: String,
     /// Price ID from Stripe
     pub price_id: String,
+    /// The roles a user must have to view this item on the `check-in` page.
+    pub requires_roles: Vec<Roles>
+
 }
 
 /// The response from the Stripe Checkout Session API.
@@ -265,6 +273,7 @@ pub struct StripeProduct {
     pub name: String,
     pub description: Option<String>,
     pub default_price: Option<String>,
+    pub metadata: HashMap<String, Value>,
 }
 
 /// A struct to deserialize Stripe's search API response when looking for what
