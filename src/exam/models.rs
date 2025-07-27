@@ -1,10 +1,10 @@
-use std::collections::{HashMap, HashSet};
+use std::collections::HashSet;
 
 use serde::{Deserialize, Serialize};
 use tracing::{error, instrument};
 use uuid::Uuid;
 
-use crate::auth::models::User;
+use crate::auth::models::{Roles, User};
 
 use super::errors::ExamError;
 
@@ -192,7 +192,7 @@ pub struct BonusItem {
 #[serde(deny_unknown_fields)]
 pub struct Metadata {
     pub test_name: String,
-    /// 100 = 100%
+    /// 100 = 100% 
     pub minimum_percent: f32,
     pub max_score: usize,
     pub config: TestConfig,
@@ -202,8 +202,22 @@ pub struct Metadata {
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(deny_unknown_fields)]
 pub struct TestConfig {
+    /// Display the grade live as the test is being proctored
     pub live_grading: bool,
+    /// Show point values while the test is being proctored
     pub show_point_values: bool,
+    /// Passing this test grants the following roles to the testee
+    #[serde(default)]
+    pub grants_roles: Vec<String>,
+}
+
+impl TestConfig {
+    pub fn get_granted_roles(&self) -> Vec<Roles> {
+        self.grants_roles
+            .iter()
+            .map(|role| Roles::new(role))
+            .collect()
+    }
 }
 
 /// A table is a collection of sections (groups) of questions/competencies on a test.
@@ -363,7 +377,7 @@ pub mod deserialize {
     //! A series of structs used to deserialize a test from YAML.
     use std::{fs, path::Path};
 
-    use crate::exam::handlers::{convert_df_to_test_table, parse_csv};
+    use crate::exam::utils::{convert_df_to_test_table, parse_csv};
 
     use super::*;
     

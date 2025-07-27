@@ -1,6 +1,5 @@
 use glob::glob;
 use tracing::{error, info};
-use crate::app::utils::get_env_var;
 use crate::exam::models::Test;
 use crate::exam::models::deserialize::TestYaml;
 

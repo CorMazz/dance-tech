@@ -1,7 +1,7 @@
 use crate::auth::models::Roles;
 use crate::{
     AppState,
-    auth::{errors::AuthError, handlers, models::User},
+    auth::{errors::AuthError, utils, models::User},
 };
 use axum::{
     body::Body,
@@ -53,7 +53,7 @@ pub async fn check_auth_utility(
 
     let access_token = access_token.ok_or(AuthError::NotLoggedIn)?;
 
-    let access_token_details = handlers::verify_jwt_token(
+    let access_token_details = utils::verify_jwt_token(
         data.auth_config.access_token_public_key.clone(),
         &access_token,
     )

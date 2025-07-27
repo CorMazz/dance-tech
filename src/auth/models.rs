@@ -88,7 +88,7 @@ impl fmt::Debug for User {
             .field("last_name", &self.last_name)
             .field("email", &self.email)
             .field("roles", &self.roles)
-            .finish()
+            .finish_non_exhaustive()
     }
 }
 
