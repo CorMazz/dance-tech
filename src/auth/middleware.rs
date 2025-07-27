@@ -1,4 +1,5 @@
 use crate::auth::models::Roles;
+use crate::auth::utils::get_user_by_id;
 use crate::{
     AppState,
     auth::{errors::AuthError, utils, models::User},
@@ -79,36 +80,12 @@ pub async fn check_auth_utility(
         .await
         .map_err(|_| AuthError::ExpiredSession)?;
 
-    let user_id_uuid =
+    let user_id =
         uuid::Uuid::parse_str(&redis_token_user_id).map_err(|_| AuthError::ExpiredSession)?;
 
-    let user = sqlx::query_as!(
-        User,
-        r#"
-        SELECT 
-            id, 
-            email, 
-            first_name,
-            last_name,
-            roles as "roles: Json<Vec<Roles>>",
-            password, 
-            created_at,
-            updated_at
-        FROM users
-        WHERE id = $1
-        "#,
-        user_id_uuid
-    )
-        .fetch_optional(&data.db)
-        .await
-        .map_err(|err| {
-            error!(%err, "Error fetching user from database.");
-            AuthError::FatalInternalServerError
-        })?;
+    let user = get_user_by_id(&user_id, &data.db).await?.ok_or(AuthError::InvalidUser)?;
 
-    let user = user.ok_or(AuthError::InvalidUser)?;
-
-    debug!(%user.id, %user.email, %user.first_name, %user.last_name, ?user.roles);
+    debug!("Middleware identified user: {user:#?}");
 
     Ok(AuthorizedUser {
         user,

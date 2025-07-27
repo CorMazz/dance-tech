@@ -12,6 +12,7 @@ use crate::check_in::models::StripePriceList;
 use crate::check_in::models::StripeProduct;
 use crate::check_in::models::StripeProductSearchResponse;
 use std::collections::HashMap;
+use std::collections::HashSet;
 use std::sync::Arc;
 use tokio::{
     sync::{mpsc, oneshot},
@@ -86,6 +87,7 @@ pub async fn product_manager_actor_runtime(
 /// Use the Stripe search API to get all products that are active and have a metadata key of
 /// `"show-on-dancetech":"true"`.
 /// Will also grab the metadata key "requires-roles":"["advanced-leader", etc...]"
+/// Will also grab the metadata key "show-preview": "true"
 ///
 /// See the Stripe Dashboard for setting metadata.
 #[tracing::instrument(skip(client, secret_key))]
@@ -120,15 +122,20 @@ pub async fn get_stripe_products(
                 None => return None,
             };
 
-            let requires_roles = p.metadata.get("requires-roles")
-                .and_then(|v| v.as_array())
-                .map(|arr| {
-                    arr.iter()
-                        .filter_map(|v| v.as_str()) // ensure each element is a string
+            let requires_roles: HashSet<Roles> = p.metadata.get("requires-roles")
+                .map(|csv| {
+                    csv.split(',')
+                        .map(str::trim)
+                        .filter(|s| !s.is_empty())
                         .map(Roles::new)
                         .collect()
                 })
                 .unwrap_or_default();
+
+            let show_preview = p.metadata.get("show-preview")
+                // I don't know if the value will be kept as a string or a bool, so account for
+                // both
+                .is_some_and(|val| val == "true");
 
             Some(Product {
                 name: p.name,
@@ -137,6 +144,7 @@ pub async fn get_stripe_products(
                 price: formatted_price,
                 price_id,
                 requires_roles,
+                show_preview,
             })
         })
         .collect();

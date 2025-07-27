@@ -69,7 +69,7 @@ The dev container will attempt to load the environment variables from a `.env_pr
 The `tailwindcss` executable is too large for GitHub. The following commands will download and move the `tailwindcss` executable to where it should be for this project. Update the version if you want.
 
 ```bash
-curl -sLO https://github.com/tailwindlabs/tailwindcss/releases/download/v4.1.5/tailwindcss-linux-x64
+curl -LO https://github.com/tailwindlabs/tailwindcss/releases/download/v4.1.5/tailwindcss-linux-x64
 chmod +x tailwindcss-linux-x64 
 mv tailwindcss-linux-x64 tailwind/tailwindcss
 ```
@@ -130,22 +130,16 @@ Ensure you are launching the server from the root of this repository. File paths
     - Allow users to leave the queue
 - User Exam Dashboard
     - Explanation of exams
-    - Signed in users can view past exam results
     - Export exam data
 - Admin Dashboard
     - Let admins add/remove roles from users
     - Trigger product update
 - Proctor Exam Dashboard
-    - Exam search by user, exam name, proctor, etc.
     - Export exam data
 - Exams
     - Fix styling on exam page
     - Email users
-    - Have exams apply roles to users
-- Check-In
-    - Parse role requirements from Stripe API
 - Make primary colorscheme look less dumb
-- Modify check-in page to only show check-in options based on user roles
 
 ## Time Spent
 
@@ -168,4 +162,5 @@ Ensure you are launching the server from the root of this repository. File paths
 7/24/2025: 4 hrs
 7/25/2025: 2 hrs
 7/26/2025: 5 hrs
-Total: 78.5 hrs
+7/27/2025: 6 hrs
+Total: 84.5 hrs

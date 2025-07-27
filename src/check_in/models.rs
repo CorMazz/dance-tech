@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -22,7 +22,10 @@ pub struct Product {
     /// Price ID from Stripe
     pub price_id: String,
     /// The roles a user must have to view this item on the `check-in` page.
-    pub requires_roles: Vec<Roles>
+    pub requires_roles: HashSet<Roles>,
+    /// Show a greyed out preview of the product to people who don't yet have
+    /// the requisite roles. The default is `false`.
+    pub show_preview: bool
 
 }
 
@@ -273,7 +276,7 @@ pub struct StripeProduct {
     pub name: String,
     pub description: Option<String>,
     pub default_price: Option<String>,
-    pub metadata: HashMap<String, Value>,
+    pub metadata: HashMap<String, String>,
 }
 
 /// A struct to deserialize Stripe's search API response when looking for what

@@ -207,14 +207,18 @@ pub struct TestConfig {
     /// Show point values while the test is being proctored
     pub show_point_values: bool,
     /// Passing this test grants the following roles to the testee
+    /// I could've made this natively a `HashSet`, but that'd be a PITA
     #[serde(default)]
     pub grants_roles: Vec<String>,
 }
 
 impl TestConfig {
-    pub fn get_granted_roles(&self) -> Vec<Roles> {
+    /// This was easier than creating a custom deserializer to make the `grants_roles` field
+    /// natively a `HashSet`.
+    pub fn get_granted_roles(&self) -> HashSet<Roles> {
         self.grants_roles
             .iter()
+            .filter(|role| !role.trim().is_empty())
             .map(|role| Roles::new(role))
             .collect()
     }

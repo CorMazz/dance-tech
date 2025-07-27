@@ -1,4 +1,4 @@
-use crate::auth::utils::{get_user_by_email, verify_jwt_token, get_user_by_id, search_for_users, login_user};
+use crate::auth::utils::{get_user_by_email, verify_jwt_token, login_user};
 use argon2::{
     Argon2, PasswordHash, PasswordHasher, PasswordVerifier,
     password_hash::{SaltString, rand_core::OsRng},

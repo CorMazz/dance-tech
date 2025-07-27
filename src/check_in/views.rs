@@ -19,6 +19,9 @@ use axum::{
     response::{Html, IntoResponse},
 };
 use serde::Deserialize;
+use tracing::debug;
+use tracing::instrument;
+use std::collections::HashSet;
 use std::sync::Arc;
 use tracing::error;
 
@@ -33,14 +36,21 @@ use crate::check_in::handlers::get_products_from_actor;
 pub struct CheckInTemplate {
     rts: Routes,
     products: Vec<Product>,
+    /// If the current user is an admin or not. Admins can see all products
+    is_admin: bool,
+    /// The roles that the current user has, used to filter out products
+    roles: HashSet<Roles>
 }
 
 /// Serve the check in page template.
 ///
 /// Show different check-in options (beginner lesson, social dance only, etc) depending on if the
 /// user is signed in and if they have access to a certain level of instruction.
+/// Admin users can see all products
+/// The template itself does the filtering.
 ///
 /// If the request is an HTMX request, it will return just the content block.
+#[instrument(skip(data, headers))]
 pub async fn get_check_in_page(
     State(data): State<Arc<AppState>>,
     headers: axum::http::HeaderMap,
@@ -51,18 +61,23 @@ pub async fn get_check_in_page(
         AuthStatus::Unauthorized(_) => None,
     };
 
-    let roles: Vec<Roles> = user.map_or_else(Vec::new, |u| u.roles.0);
+    let (is_admin, roles): (bool, HashSet<Roles>) = match user {
+        Some(user) => (user.is_admin(), user.roles.0),
+        None => (false, HashSet::new()),
+    };
 
     let products = match get_products_from_actor(&data).await {
         Ok(products) => products,
         Err(err) => return err.into_response(&headers),
     };
 
-
+    debug!("Products: {products:#?}\nUser Roles: {roles:#?}\nIs Admin?: {is_admin:#?}");
 
     let template = CheckInTemplate {
         products,
         rts: ROUTES,
+        is_admin,
+        roles,
     };
 
     if is_htmx_request(&headers) {

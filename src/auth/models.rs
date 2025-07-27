@@ -1,4 +1,4 @@
-use std::fmt;
+use std::{collections::HashSet, fmt};
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use sqlx::types::Json;
@@ -48,9 +48,7 @@ pub struct User {
     pub last_name: String,
     pub email: String,
     pub password: String,
-    /// Currently is Json because that's the only way I could get the damn thing to compile
-    /// as opposed to just an Array in Postgres
-    pub roles: Json<Vec<Roles>>,
+    pub roles: Json<HashSet<Roles>>,
     #[serde(rename = "createdAt")]
     pub created_at: Option<DateTime<Utc>>,
     #[serde(rename = "updatedAt")]

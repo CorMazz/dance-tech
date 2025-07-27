@@ -1,5 +1,6 @@
 //! For functions that are used within the handlers.
 
+use std::collections::HashSet;
 use tracing::warn;
 use sqlx::PgPool;
 use sqlx::types::Json;
@@ -357,7 +358,7 @@ pub async fn retrieve_test_queue(
             u.last_name,
             u.email,
             u.password,
-            u.roles as "roles: Json<Vec<Roles>>",
+            u.roles as "roles: Json<HashSet<Roles>>",
             u.created_at,
             u.updated_at,
             q.test_index

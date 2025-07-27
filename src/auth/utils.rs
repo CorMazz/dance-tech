@@ -1,5 +1,6 @@
 //! For functions that are used inside of handlers.
 
+use std::collections::HashSet;
 use crate::auth::models::Roles;
 use axum_extra::extract::{
     CookieJar,
@@ -53,7 +54,7 @@ pub async fn get_user_by_email(email: &str, db: &Pool<Postgres>) -> Result<Optio
             email, 
             first_name,
             last_name,
-            roles as "roles: Json<Vec<Roles>>",
+            roles as "roles: Json<HashSet<Roles>>",
             password, 
             created_at,
             updated_at
@@ -81,7 +82,7 @@ pub async fn get_user_by_id(id: &Uuid, db: &Pool<Postgres>) -> Result<Option<Use
             email, 
             first_name,
             last_name,
-            roles as "roles: Json<Vec<Roles>>",
+            roles as "roles: Json<HashSet<Roles>>",
             password, 
             created_at,
             updated_at
@@ -102,21 +103,16 @@ pub async fn get_user_by_id(id: &Uuid, db: &Pool<Postgres>) -> Result<Option<Use
 #[instrument(skip(db))]
 pub async fn grant_roles(
     user: User,
-    roles_to_add: Vec<Roles>,
+    roles_to_add: HashSet<Roles>,
     db: &Pool<Postgres>,
 ) -> Result<(), AuthError> {
-    let mut current_roles = user.roles;
+    let mut current_roles = user.roles.0;
 
-    let mut changed = false;
-    // Merge roles: only add if not already present
-    for role in roles_to_add {
-        if !current_roles.contains(&role) {
-            current_roles.push(role);
-            changed = true;
-        }
-    }
+    let original_len = current_roles.len();
+
+    current_roles.extend(roles_to_add);
     
-    if !changed {
+    if current_roles.len() == original_len {
         return Ok(())
     }
 
@@ -153,7 +149,7 @@ pub async fn search_for_users(
             email, 
             first_name,
             last_name,
-            roles as "roles: Json<Vec<Roles>>",
+            roles as "roles: Json<HashSet<Roles>>",
             password, 
             created_at,
             updated_at
