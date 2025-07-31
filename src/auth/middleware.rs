@@ -1,4 +1,4 @@
-use crate::auth::models::Roles;
+use crate::app::router::ROUTES;
 use crate::auth::utils::get_user_by_id;
 use crate::{
     AppState,
@@ -13,31 +13,42 @@ use axum::{
 };
 use axum_extra::extract::cookie::CookieJar;
 use redis::AsyncCommands;
-use serde::{Deserialize, Serialize};
-use sqlx::types::Json;
+use uuid::Uuid;
 use std::sync::Arc;
 use tracing::{debug, error, instrument};
-
-#[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct AuthorizedUser {
-    pub user: User,
-    pub access_token_uuid: uuid::Uuid,
-}
 
 #[allow(dead_code)]
 #[derive(Debug, Clone)]
 pub enum AuthStatus {
-    Authorized(AuthorizedUser),
+    Authorized(User),
     Unauthorized(AuthError),
+}
+
+impl AuthStatus {
+    /// Return Some(user) or None, discarding the error value.
+    pub fn ok(self) -> Option<User> {
+        match self {
+            AuthStatus::Authorized(user) => Some(user),
+            AuthStatus::Unauthorized(_) => None,
+        }
+    }
+
+    /// Return the `User` or redirect the user to the login page.
+    pub fn require_auth(self) -> Result<User, axum::http::Response<axum::body::Body>> {
+        match self {
+            AuthStatus::Authorized(user) => Ok(user),
+            AuthStatus::Unauthorized(_) => Err(Redirect::to(ROUTES.login).into_response()),
+        }
+    }
 }
 
 /// This function checks if the user is authorized. This is not to be used directly as middleware.
 #[instrument(skip(data, cookie_jar, request_headers))]
 pub async fn check_auth_utility(
-    cookie_jar: CookieJar,
+    cookie_jar: &CookieJar,
     data: Arc<AppState>,
     request_headers: &HeaderMap,
-) -> Result<AuthorizedUser, AuthError> {
+) -> Result<(User, Uuid), AuthError> {
     let access_token = cookie_jar
         .get("access_token")
         .map(|cookie| cookie.value().to_string())
@@ -87,10 +98,7 @@ pub async fn check_auth_utility(
 
     debug!("Middleware identified user: {user:#?}");
 
-    Ok(AuthorizedUser {
-        user,
-        access_token_uuid,
-    })
+    Ok((user, access_token_uuid))
 }
 
 /// Inserts the auth status into the request but does not require auth
@@ -101,10 +109,10 @@ pub async fn check_auth_middleware(
     mut req: Request<Body>,
     next: Next,
 ) -> impl IntoResponse {
-    match check_auth_utility(cookie_jar, data, req.headers()).await {
+    match check_auth_utility(&cookie_jar, data, req.headers()).await {
         Ok(auth_data) => {
             req.extensions_mut()
-                .insert(AuthStatus::Authorized(auth_data));
+                .insert(AuthStatus::Authorized(auth_data.0));
         }
         Err(auth_error) => {
             req.extensions_mut()
@@ -122,10 +130,10 @@ pub async fn require_auth_middleware(
     mut req: Request<Body>,
     next: Next,
 ) -> impl IntoResponse {
-    match check_auth_utility(cookie_jar, data, req.headers()).await {
+    match check_auth_utility(&cookie_jar, data, req.headers()).await {
         Ok(auth_data) => {
             req.extensions_mut()
-                .insert(AuthStatus::Authorized(auth_data));
+                .insert(AuthStatus::Authorized(auth_data.0));
             next.run(req).await
         }
         Err(e) => match e {

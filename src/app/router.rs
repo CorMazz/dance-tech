@@ -119,7 +119,6 @@ pub const ROUTES: Routes = Routes {
 pub fn create_router(app_state: Arc<AppState>) -> Router {
     // Anything in here will redirect to the login page if the user is not logged in
     let auth_required = Router::new()
-        .route(ROUTES.logout, get(get_logout_page))
         .route(ROUTES.update_products, post(post_update_available_products))
         .route(ROUTES.proctor_dashboard, get(get_proctor_dashboard_page))
         .route(ROUTES.user_info_widget, get(get_user_info_widget))
@@ -157,7 +156,8 @@ pub fn create_router(app_state: Arc<AppState>) -> Router {
     let no_auth = Router::new()
         .route(ROUTES.google_oauth_init, get(get_google_oauth_init_flow))
         .route(ROUTES.google_oauth_callback, get(get_google_oauth_callback))
-        .route(&ROUTES.graded_exam("{test_id}"), get(get_graded_test_page));
+        .route(&ROUTES.graded_exam("{test_id}"), get(get_graded_test_page))
+        .route(ROUTES.logout, get(get_logout_page));
 
     // DO NOT EDIT BELOW THIS LINE UNLESS YOU KNOW WHAT YOU'RE DOING
 

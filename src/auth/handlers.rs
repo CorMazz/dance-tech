@@ -22,11 +22,12 @@ use crate::{
     AppState,
     auth::{
         errors::AuthError,
-        middleware::AuthorizedUser,
     },
 };
 
 use redis::AsyncCommands;
+
+use super::{middleware::check_auth_utility, models::User};
 
 // #######################################################################################################################################################
 // Sign Up
@@ -292,9 +293,11 @@ pub async fn google_oauth_callback_handler(
 #[instrument(skip(data))]
 pub async fn logout_handler(
     cookie_jar: CookieJar,
-    authorized_user: AuthorizedUser,
+    headers: &axum::http::HeaderMap,
     data: Arc<AppState>,
 ) -> Result<impl IntoResponse, AuthError> {
+    let (_user, access_token_uuid) = check_auth_utility(&cookie_jar, data.clone(), headers).await?;
+
     let refresh_token = cookie_jar
         .get("refresh_token")
         .map(|cookie| cookie.value().to_string())
@@ -321,7 +324,7 @@ pub async fn logout_handler(
     redis_client
         .del::<_, ()>(&[
             refresh_token_details.token_uuid.to_string(),
-            authorized_user.access_token_uuid.to_string(),
+            access_token_uuid.to_string(),
         ])
         .await
         .map_err(|err| {

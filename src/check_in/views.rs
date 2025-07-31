@@ -56,10 +56,7 @@ pub async fn get_check_in_page(
     headers: axum::http::HeaderMap,
     Extension(auth_status): Extension<AuthStatus>,
 ) -> impl IntoResponse {
-    let user = match auth_status {
-        AuthStatus::Authorized(authorized_user) => Some(authorized_user.user),
-        AuthStatus::Unauthorized(_) => None,
-    };
+    let user = auth_status.ok();
 
     let (is_admin, roles): (bool, HashSet<Roles>) = match user {
         Some(user) => (user.is_admin(), user.roles.0),
@@ -172,18 +169,15 @@ pub async fn post_update_available_products(
     State(data): State<Arc<AppState>>,
     Extension(auth_status): Extension<AuthStatus>,
 ) -> impl IntoResponse {
-    match auth_status {
-        AuthStatus::Authorized(user) => {
-            if !user.user.is_admin() {
-                return Redirect::to(ROUTES.login);
-            }
-        }
-        AuthStatus::Unauthorized(_) => return Redirect::to(ROUTES.login),
+    if matches!(auth_status, AuthStatus::Unauthorized(..)) ||
+       matches!(auth_status, AuthStatus::Authorized(user) if !user.is_admin()) 
+    {
+        return Redirect::to(ROUTES.login).into_response();
     }
 
     if let Err(err) = data.check_in_config.trigger_update_tx.send(()).await {
         error!(%err, "Unable to trigger an update of the products.");
     }
 
-    Redirect::to(ROUTES.check_in)
+    Redirect::to(ROUTES.check_in).into_response()
 }

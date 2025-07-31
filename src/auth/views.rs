@@ -32,11 +32,7 @@ pub struct UserDropdownTemplate {
 }
 
 pub async fn get_user_dropdown(Extension(auth_status): Extension<AuthStatus>) -> impl IntoResponse {
-    let user = match auth_status {
-        AuthStatus::Authorized(authorized_user) => Some(authorized_user.user),
-        AuthStatus::Unauthorized(_) => None,
-    };
-
+    let user = auth_status.ok();
     let is_proctor = user.as_ref().is_some_and(|u| u.is_proctor());
     let is_admin = user.as_ref().is_some_and(|u| u.is_admin());
 
@@ -192,18 +188,8 @@ pub async fn get_logout_page(
     cookie_jar: CookieJar,
     headers: axum::http::HeaderMap,
     State(data): State<Arc<AppState>>,
-    Extension(auth_status): Extension<AuthStatus>,
 ) -> impl IntoResponse {
-    // To get to this page requires auth so we can expect an authorized user variant of auth status instaed of autherror
-    let authorized_user = match auth_status {
-        AuthStatus::Authorized(user) => user,
-        AuthStatus::Unauthorized(_) => {
-            panic!("If this happens, check your auth middleware application.") // TODO: Make this
-            // not panic
-        }
-    };
-
-    match logout_handler(cookie_jar, authorized_user, data).await {
+    match logout_handler(cookie_jar, &headers, data).await {
         Ok(response) => response.into_response(),
         Err(e) => match e {
             AuthError::NotLoggedIn => Redirect::to("/").into_response(),

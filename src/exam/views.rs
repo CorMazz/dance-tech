@@ -108,7 +108,7 @@ pub async fn post_test_form(
 ) -> impl IntoResponse {
     let proctor_id = match auth_status {
         AuthStatus::Authorized(proctor) => {
-            proctor.user.id
+            proctor.id
         }
         AuthStatus::Unauthorized(err) => return err.into_response(&headers),
     };
@@ -216,7 +216,7 @@ pub async fn post_live_grading(
 ) -> impl IntoResponse {
     let proctor_id = match auth_status {
         AuthStatus::Authorized(proctor) => {
-            proctor.user.id
+            proctor.id
         }
         AuthStatus::Unauthorized(err) => return err.into_response(&headers),
     };
@@ -265,7 +265,6 @@ pub struct UserDashboardTemplate {
 }
 
 pub async fn get_user_dashboard_page(
-    State(data): State<Arc<AppState>>,
     headers: axum::http::HeaderMap,
 ) -> impl IntoResponse {
 
@@ -299,11 +298,7 @@ pub async fn get_queue_widget(
     headers: axum::http::HeaderMap,
     Extension(auth_status): Extension<AuthStatus>,
 ) -> impl IntoResponse {
-    let user = match auth_status {
-        AuthStatus::Authorized(authorized_user) => Some(authorized_user.user),
-        AuthStatus::Unauthorized(_) => None,
-    };
-
+    let user = auth_status.ok();
     let is_superuser = user.as_ref().is_some_and(crate::auth::models::User::is_superuser);
 
     match retrieve_test_queue(&data.db, data.exam_config.test_names.clone()).await {
@@ -314,9 +309,9 @@ pub async fn get_queue_widget(
                 is_demo_mode: data.app_config.is_demo_mode,
                 queue,
             };
-            return (StatusCode::OK, Html(render(template))).into_response()
+            (StatusCode::OK, render(template)).into_response()
         }
-        Err(e) => return e.into_response(&headers)
+        Err(e) => e.into_response(&headers)
     }
 }
 
@@ -333,11 +328,7 @@ pub async fn get_join_queue_widget(
     State(data): State<Arc<AppState>>,
     Extension(auth_status): Extension<AuthStatus>,
 ) -> impl IntoResponse {
-    let user = match auth_status {
-        AuthStatus::Authorized(authorized_user) => Some(authorized_user.user),
-        AuthStatus::Unauthorized(_) => None,
-    };
-
+    let user = auth_status.ok();
     let is_signed_in = user.is_some();
 
     let template = JoinQueueTemplate {
@@ -365,15 +356,13 @@ pub async fn post_queue_widget(
     Extension(auth_status): Extension<AuthStatus>,
     Query(form): Query<QueueQueryParameters>,
 ) -> impl IntoResponse {
-    let Some(authorized_user) = (match auth_status {
-        AuthStatus::Authorized(user) => Some(user.user),
-        AuthStatus::Unauthorized(_) => None,
-    }) else {
-        return Redirect::to(ROUTES.login).into_response();
+    let user = match auth_status.require_auth() {
+        Ok(user) => user,
+        Err(e) => return e
     };
 
     let user_id = match form.user_id.to_lowercase().as_str() {
-        "self" => authorized_user.id,
+        "self" => user.id,
         other => match Uuid::parse_str(other) {
             Ok(uuid) => uuid,
             Err(_) => {
@@ -420,15 +409,13 @@ pub async fn delete_queue_widget(
     headers: axum::http::HeaderMap,
     Query(form): Query<QueueQueryParameters>,
 ) -> impl IntoResponse {
-    let Some(authorized_user) = (match auth_status {
-        AuthStatus::Authorized(user) => Some(user.user),
-        AuthStatus::Unauthorized(_) => None,
-    }) else {
-        return Redirect::to(ROUTES.login).into_response();
+    let user = match auth_status.require_auth() {
+        Ok(user) => user,
+        Err(e) => return e
     };
 
     let user_id = match form.user_id.to_lowercase().as_str() {
-        "self" => authorized_user.id,
+        "self" => user.id,
         other => match Uuid::parse_str(other) {
             Ok(uuid) => uuid,
             Err(_) => {
@@ -484,12 +471,8 @@ pub async fn get_user_info_widget(
     Extension(auth_status): Extension<AuthStatus>,
     Query(form): Query<UserEmailForm>,
 ) -> impl IntoResponse {
-    let Some(_) = (match auth_status {
-        AuthStatus::Authorized(user) => Some(user.user),
-        AuthStatus::Unauthorized(_) => None,
-    }) else {
-        return Redirect::to(ROUTES.login).into_response();
-    };
+    // I tried returning a result type from the function, but it was a PITA
+    if let Err(e) = auth_status.require_auth() {return e}
 
     let user = get_user_by_email(
         &form.email,
@@ -504,11 +487,10 @@ pub async fn get_user_info_widget(
             };
             (StatusCode::OK, render(template)).into_response()
         } 
-        Err(..) => (
+        Err(..) => (  
             StatusCode::INTERNAL_SERVER_ERROR,
-            "Failed to get user info. Please try again later.".into_response(),
-        )
-            .into_response(),
+            Html("Failed to get user info. Please try again later.".to_string()),
+        ).into_response(),
     }
 }
 
@@ -532,12 +514,7 @@ pub async fn get_user_autocomplete(
     Extension(auth_status): Extension<AuthStatus>,
     Query(form): Query<UserEmailForm>,
 ) -> impl IntoResponse {
-    let Some(_) = (match auth_status {
-        AuthStatus::Authorized(user) => Some(user.user),
-        AuthStatus::Unauthorized(_) => None,
-    }) else {
-        return Redirect::to(ROUTES.login).into_response();
-    };
+    if let Err(e) = auth_status.require_auth() {return e}
 
     let users = search_for_users(
         form.email,
@@ -601,10 +578,7 @@ pub async fn get_search_tests_widget(
     Query(filter): Query<SearchTestFilters>
 ) -> impl IntoResponse {
     
-    let Some(user) = (match auth_status {
-        AuthStatus::Authorized(user) => Some(user.user),
-        AuthStatus::Unauthorized(_) => None,
-    }) else {
+    let Some(user) = auth_status.ok() else {
         return (StatusCode::OK, Html("<h1 class=my-paragraph>Sign in to see test results</h1>")).into_response();
     };
 
