@@ -28,16 +28,16 @@ impl AuthStatus {
     /// Return Some(user) or None, discarding the error value.
     pub fn ok(self) -> Option<User> {
         match self {
-            AuthStatus::Authorized(user) => Some(user),
-            AuthStatus::Unauthorized(_) => None,
+            Self::Authorized(user) => Some(user),
+            Self::Unauthorized(_) => None,
         }
     }
 
     /// Return the `User` or redirect the user to the login page.
     pub fn require_auth(self) -> Result<User, axum::http::Response<axum::body::Body>> {
         match self {
-            AuthStatus::Authorized(user) => Ok(user),
-            AuthStatus::Unauthorized(_) => Err(Redirect::to(ROUTES.login).into_response()),
+            Self::Authorized(user) => Ok(user),
+            Self::Unauthorized(_) => Err(Redirect::to(ROUTES.login).into_response()),
         }
     }
 }
@@ -71,7 +71,7 @@ pub async fn check_auth_utility(
     )
     .map_err(|err| {
         error!(%err, "Error verifying jwt token.");
-        AuthError::InternalServerError(format!("You should try logging in again."))
+        AuthError::InternalServerError("You should try logging in again.".to_string())
     })?;
 
     let access_token_uuid = uuid::Uuid::parse_str(&access_token_details.token_uuid.to_string())

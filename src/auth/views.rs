@@ -33,8 +33,8 @@ pub struct UserDropdownTemplate {
 
 pub async fn get_user_dropdown(Extension(auth_status): Extension<AuthStatus>) -> impl IntoResponse {
     let user = auth_status.ok();
-    let is_proctor = user.as_ref().is_some_and(|u| u.is_proctor());
-    let is_admin = user.as_ref().is_some_and(|u| u.is_admin());
+    let is_proctor = user.as_ref().is_some_and(super::models::User::is_proctor);
+    let is_admin = user.as_ref().is_some_and(super::models::User::is_admin);
 
     let template = UserDropdownTemplate {
         rts: ROUTES,

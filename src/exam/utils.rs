@@ -138,6 +138,7 @@ pub fn convert_df_to_test_table(
 
 /// Given a raw submitted test form, parse it into the metadata, competencies, and bonus indices.
 #[instrument(skip(form))]
+#[allow(clippy::type_complexity)]
 pub fn parse_test_form(
     form: HashMap<String, String>,
 ) -> Result<(Vec<(RadioName, RadioValue)>, Vec<usize>, String), ExamError> {
@@ -285,10 +286,12 @@ pub async fn add_user_to_test_queue(
         })?
         .unwrap_or(0);
 
+    #[allow(clippy::cast_possible_wrap)]
     if count >= max_length as i64 {
         return Err(ExamError::QueueFull);
     }
 
+    #[allow(clippy::cast_possible_wrap, clippy::cast_possible_truncation)]
     if test_index > (n_tests as i32 - 1) {
         error!("Invalid test index.");
         return Err(ExamError::DatabaseError);
@@ -375,6 +378,7 @@ pub async fn retrieve_test_queue(
     let entries = rows
         .into_iter()
         .map(|r| {
+            #[allow(clippy::cast_sign_loss)]
             let test_name = test_names.get(r.test_index as usize).ok_or_else(|| {
                 error!("Invalid test index {} in queue row. This shouldn't happen. Try restarting the app which will clear the queue.", r.test_index);
                 ExamError::DatabaseError
@@ -480,9 +484,11 @@ pub async fn query_filtered_exams(
     }
 
     builder.push(" LIMIT ");
+    #[allow(clippy::cast_possible_wrap)]
     builder.push_bind(filter.per_page as i64);
     let offset = (filter.page.saturating_sub(1)) * filter.per_page;
     builder.push(" OFFSET ");
+    #[allow(clippy::cast_possible_wrap)]
     builder.push_bind(offset as i64);
 
     let query = builder.build();

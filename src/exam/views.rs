@@ -366,10 +366,13 @@ pub async fn post_queue_widget(
         },
     };
 
+    #[allow(clippy::cast_possible_truncation, clippy::cast_possible_wrap)]
+    let test_index = form.test_index as i32;
+
     let queue_result = add_user_to_test_queue(
         &data.db,
         user_id,
-        form.test_index as i32,
+        test_index,
         data.exam_config.test_names.len(),
         data.exam_config.queue_length,
     )
@@ -413,7 +416,9 @@ pub async fn delete_queue_widget(
         },
     };
 
-    let queue_result = remove_user_from_test_queue(&data.db, user_id, form.test_index as i32).await;
+    #[allow(clippy::cast_possible_truncation, clippy::cast_possible_wrap)]
+    let test_index = form.test_index as i32;
+    let queue_result = remove_user_from_test_queue(&data.db, user_id, test_index).await;
 
     let is_administer_test_request = headers
         .get("HX-Trigger")

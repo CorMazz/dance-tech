@@ -382,7 +382,7 @@ pub mod deserialize {
 
     use crate::exam::utils::{convert_df_to_test_table, parse_csv};
 
-    use super::*;
+    use super::{BonusItem, Deserialize, ExamError, Metadata, Test, TestConfig, TestContainer};
 
     #[derive(Deserialize)]
     pub struct TestYaml {
@@ -501,7 +501,7 @@ pub struct QueueEntry {
 }
 
 /// Used to filter exams when searching through prior results
-#[derive(Deserialize, Debug, Clone, PartialEq)]
+#[derive(Deserialize, Debug, Clone, PartialEq, Eq)]
 #[serde(rename_all = "lowercase")]
 pub enum ExamStatus {
     Passing,

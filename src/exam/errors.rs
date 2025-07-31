@@ -10,12 +10,9 @@ pub enum ExamError {
     #[error("An internal server error occurred. Please contact the site administrator.")]
     FatalInternalServerError,
 
-    /// Display a message to the user to tell them how to possibly fix the error.
-    #[error("{0:?}")]
-    InternalServerError(String),
-
-    #[error("There was an error with the Redis database. Please contact the site administrator.")]
-    RedisError,
+    // /// Display a message to the user to tell them how to possibly fix the error.
+    // #[error("{0:?}")]
+    // InternalServerError(String),
 
     #[error("There was an error with the database. Please contact the site administrator.")]
     DatabaseError,
@@ -31,12 +28,6 @@ pub enum ExamError {
 
     #[error("The queue is full. Please try again later.")]
     QueueFull,
-
-    #[error("There was an error with the queue. Please contact the site administrator: {0:?}")]
-    QueueError(String),
-
-    #[error("This user is already in the queue for this test.")]
-    AlreadyInQueue,
 
     #[error("The requested test does not exist. Please contact the site administrator.")]
     TestIndexError,

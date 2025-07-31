@@ -6,7 +6,6 @@ use crate::AppState;
 use crate::auth::models::User;
 use crate::auth::utils::{get_user_by_email, grant_roles, search_for_users};
 use crate::exam::utils::{parse_test_form, query_filtered_exams};
-use sqlx::Row;
 use sqlx::{Pool, Postgres};
 use std::collections::HashMap;
 use std::sync::Arc;

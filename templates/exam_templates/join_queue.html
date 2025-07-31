@@ -3,17 +3,21 @@
   <h1 class="py-4 text-3xl font-bold text-gray-800">Join the Queue</h1>
 
   <div class="my-flexbox">
-    {% for test_name in test_names %}
-      <button
-        hx-post={{ rts.queue_query("self", loop.index0) }}
-        hx-swap="none"
-        hx-push-url="false"
-        hx-on::after-request="document.querySelector('#queue-container')?.dispatchEvent(new CustomEvent('refresh-queue', { bubbles: true }))"
-        class="my-card"
-      >
-        <h5 class="my-title">{{ test_name }}</h5>
-        <p class="my-paragraph">Take this test.</p>
-      </button>
-    {% endfor %}
+    {% if is_signed_in %}
+      {% for test_name in test_names %}
+        <button
+          hx-post={{ rts.queue_query("self", loop.index0) }}
+          hx-swap="none"
+          hx-push-url="false"
+          hx-on::after-request="document.querySelector('#queue-container')?.dispatchEvent(new CustomEvent('refresh-queue', { bubbles: true }))"
+          class="my-card"
+        >
+          <h5 class="my-title">{{ test_name }}</h5>
+          <p class="my-paragraph">Take this test.</p>
+        </button>
+      {% endfor %}
+    {% else %}
+     <p class="my-paragraph">Sign in to join the test queue.</p>
+    {% endif %}
   </div>
 </div>

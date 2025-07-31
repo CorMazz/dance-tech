@@ -154,7 +154,7 @@ async fn main() {
 
     let actor_app_state = app_state.clone();
     tokio::spawn(async move {
-        product_manager_actor_runtime(product_request_rx, trigger_update_rx, actor_app_state).await
+        product_manager_actor_runtime(product_request_rx, trigger_update_rx, actor_app_state).await;
     });
 
     let app = create_router(app_state)

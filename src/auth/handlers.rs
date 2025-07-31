@@ -22,7 +22,7 @@ use tracing::{error, instrument};
 
 use redis::AsyncCommands;
 
-use super::{middleware::check_auth_utility, models::User};
+use super::middleware::check_auth_utility;
 
 // #######################################################################################################################################################
 // Sign Up
