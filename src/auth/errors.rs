@@ -10,7 +10,9 @@ pub enum AuthError {
     #[error("This email address is already in use.")]
     DuplicateEmail,
 
-    #[error("There was an issue interacting with the database. Please contact the site administrator")]
+    #[error(
+        "There was an issue interacting with the database. Please contact the site administrator"
+    )]
     DatabaseError,
 
     #[error("Invalid email or password.")]

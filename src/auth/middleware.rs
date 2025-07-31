@@ -2,7 +2,7 @@ use crate::app::router::ROUTES;
 use crate::auth::utils::get_user_by_id;
 use crate::{
     AppState,
-    auth::{errors::AuthError, utils, models::User},
+    auth::{errors::AuthError, models::User, utils},
 };
 use axum::{
     body::Body,
@@ -13,9 +13,9 @@ use axum::{
 };
 use axum_extra::extract::cookie::CookieJar;
 use redis::AsyncCommands;
-use uuid::Uuid;
 use std::sync::Arc;
 use tracing::{debug, error, instrument};
+use uuid::Uuid;
 
 #[allow(dead_code)]
 #[derive(Debug, Clone)]
@@ -94,7 +94,9 @@ pub async fn check_auth_utility(
     let user_id =
         uuid::Uuid::parse_str(&redis_token_user_id).map_err(|_| AuthError::ExpiredSession)?;
 
-    let user = get_user_by_id(&user_id, &data.db).await?.ok_or(AuthError::InvalidUser)?;
+    let user = get_user_by_id(&user_id, &data.db)
+        .await?
+        .ok_or(AuthError::InvalidUser)?;
 
     debug!("Middleware identified user: {user:#?}");
 

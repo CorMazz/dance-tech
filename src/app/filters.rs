@@ -1,2 +1,1 @@
 //! Filters for Askama templates
-

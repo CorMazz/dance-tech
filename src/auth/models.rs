@@ -1,7 +1,7 @@
-use std::{collections::HashSet, fmt};
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use sqlx::types::Json;
+use std::{collections::HashSet, fmt};
 use uuid::Uuid;
 
 #[derive(Debug, Deserialize, Serialize, Clone, Hash, Eq, PartialEq)]
@@ -61,7 +61,7 @@ impl DisplayRoles for HashSet<Roles> {
     }
 }
 
-/// Possibly refactor this into a `UserInfo` and `UserPrivate` set of structs to 
+/// Possibly refactor this into a `UserInfo` and `UserPrivate` set of structs to
 /// avoid passing the user's password around everytime I need the other info
 /// Can use `#[sqlx(flatten)]` for this.
 #[allow(non_snake_case)]
@@ -95,7 +95,7 @@ impl User {
     pub fn is_proctor(&self) -> bool {
         self.has_role(Roles::Proctor)
     }
-   
+
     /// Check if the user is an Admin or a Proctor
     pub fn is_superuser(&self) -> bool {
         self.is_admin() || self.is_proctor()

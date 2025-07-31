@@ -19,11 +19,11 @@ use axum::{
     response::{Html, IntoResponse},
 };
 use serde::Deserialize;
-use tracing::debug;
-use tracing::instrument;
 use std::collections::HashSet;
 use std::sync::Arc;
+use tracing::debug;
 use tracing::error;
+use tracing::instrument;
 
 use crate::check_in::handlers::get_products_from_actor;
 
@@ -39,7 +39,7 @@ pub struct CheckInTemplate {
     /// If the current user is an admin or not. Admins can see all products
     is_admin: bool,
     /// The roles that the current user has, used to filter out products
-    roles: HashSet<Roles>
+    roles: HashSet<Roles>,
 }
 
 /// Serve the check in page template.
@@ -169,8 +169,8 @@ pub async fn post_update_available_products(
     State(data): State<Arc<AppState>>,
     Extension(auth_status): Extension<AuthStatus>,
 ) -> impl IntoResponse {
-    if matches!(auth_status, AuthStatus::Unauthorized(..)) ||
-       matches!(auth_status, AuthStatus::Authorized(user) if !user.is_admin()) 
+    if matches!(auth_status, AuthStatus::Unauthorized(..))
+        || matches!(auth_status, AuthStatus::Authorized(user) if !user.is_admin())
     {
         return Redirect::to(ROUTES.login).into_response();
     }

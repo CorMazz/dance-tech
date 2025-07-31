@@ -1,22 +1,24 @@
 //! For functions that are used within the handlers.
 
-use std::collections::HashSet;
-use tracing::warn;
-use sqlx::PgPool;
-use sqlx::types::Json;
-use crate::auth::models::Roles;
-use csv::ReaderBuilder;
-use serde_json::{from_value, to_value};
-use sqlx::{Execute, Pool, Postgres, QueryBuilder};
-use std::collections::{BTreeMap, HashMap};
-use tracing::{debug, error, instrument};
-use uuid::Uuid;
-use sqlx::Row;
-use crate::auth::models::User;
-use crate::exam::models::{CsvTestTable, ExamStatus, HtmlTestTable, RadioButton, RadioOption, TestRow};
-use crate::exam::models::{RadioName, RadioValue, ScoringCategory};
 use super::errors::ExamError;
 use super::models::{GradedExamFilter, GradedTest, QueueEntry};
+use crate::auth::models::Roles;
+use crate::auth::models::User;
+use crate::exam::models::{
+    CsvTestTable, ExamStatus, HtmlTestTable, RadioButton, RadioOption, TestRow,
+};
+use crate::exam::models::{RadioName, RadioValue, ScoringCategory};
+use csv::ReaderBuilder;
+use serde_json::{from_value, to_value};
+use sqlx::PgPool;
+use sqlx::Row;
+use sqlx::types::Json;
+use sqlx::{Execute, Pool, Postgres, QueryBuilder};
+use std::collections::HashSet;
+use std::collections::{BTreeMap, HashMap};
+use tracing::warn;
+use tracing::{debug, error, instrument};
+use uuid::Uuid;
 
 /// Take a `DataFrame` and convert it into a nested `TestTable` structure
 ///
@@ -180,11 +182,10 @@ pub async fn save_graded_test_to_db(
     db: &Pool<Postgres>,
 ) -> Result<(), ExamError> {
     let test_id = test.id;
-    let json_value = to_value(&test)
-        .map_err(|err| {
-            error!(%err, "Unable to serialize the graded test to JSONB.");
-            ExamError::FatalInternalServerError
-        })?;
+    let json_value = to_value(&test).map_err(|err| {
+        error!(%err, "Unable to serialize the graded test to JSONB.");
+        ExamError::FatalInternalServerError
+    })?;
 
     sqlx::query!(
         r#"
@@ -197,8 +198,8 @@ pub async fn save_graded_test_to_db(
     .execute(db)
     .await
     .map_err(|err| {
-            error!(%err, %test_id, "Unable to save test to the database.");
-            ExamError::DatabaseError
+        error!(%err, %test_id, "Unable to save test to the database.");
+        ExamError::DatabaseError
     })?;
 
     debug!(%test_id, "Saved graded test to database.");
@@ -267,7 +268,6 @@ pub fn parse_csv(csv_data: &str) -> CsvTestTable {
     CsvTestTable { rows: all_rows }
 }
 
-
 #[instrument(skip(db))]
 pub async fn add_user_to_test_queue(
     db: &PgPool,
@@ -276,24 +276,22 @@ pub async fn add_user_to_test_queue(
     n_tests: usize,
     max_length: usize,
 ) -> Result<(), ExamError> {
-    let count = sqlx::query_scalar!(
-        "SELECT COUNT(*) FROM exam_queue"
-    )
-    .fetch_one(db)
-    .await
-    .map_err(|e| {
-        error!("Error adding user to queue: {e}");
-        ExamError::DatabaseError
-    })?
-    .unwrap_or(0);
+    let count = sqlx::query_scalar!("SELECT COUNT(*) FROM exam_queue")
+        .fetch_one(db)
+        .await
+        .map_err(|e| {
+            error!("Error adding user to queue: {e}");
+            ExamError::DatabaseError
+        })?
+        .unwrap_or(0);
 
     if count >= max_length as i64 {
         return Err(ExamError::QueueFull);
     }
 
-    if test_index > (n_tests as i32 - 1)  {
+    if test_index > (n_tests as i32 - 1) {
         error!("Invalid test index.");
-        return Err(ExamError::DatabaseError)
+        return Err(ExamError::DatabaseError);
     }
 
     let result = sqlx::query!(
@@ -308,7 +306,7 @@ pub async fn add_user_to_test_queue(
 
     match result {
         Ok(_) => Ok(()),
-        Err(e) => { 
+        Err(e) => {
             error!("Error adding user to queue: {e}");
             Err(ExamError::DatabaseError)
         }
@@ -398,13 +396,13 @@ pub async fn retrieve_test_queue(
                 test_name,
             })
         })
-        .collect::<Result<Vec<_>, ExamError>>()?;        
+        .collect::<Result<Vec<_>, ExamError>>()?;
     Ok(entries)
 }
 
 /// A struct to contain the items necessary to explain a `GradedTest`.
 /// The test is linked to the user by ID, which isn't useful for displaying,
-/// so we want to grab the users by ID so that we can display their info on 
+/// so we want to grab the users by ID so that we can display their info on
 /// the info page.
 pub struct FilteredExamResult {
     pub test: GradedTest,
@@ -426,7 +424,7 @@ pub async fn query_filtered_exams(
           row_to_json(proctor_user.*) AS proctor_user
         FROM graded_exams 
         JOIN users AS testee_user ON testee_user.id = (graded_exams.test_data->>'testee_id')::uuid 
-        JOIN users AS proctor_user ON proctor_user.id = (graded_exams.test_data->>'proctor_id')::uuid"
+        JOIN users AS proctor_user ON proctor_user.id = (graded_exams.test_data->>'proctor_id')::uuid",
     );
 
     if let Some(pass_or_fail) = filter.pass_or_fail {
@@ -455,7 +453,9 @@ pub async fn query_filtered_exams(
                     // the iterator that yields each bind value
                     testee_ids.iter(),
                     // how to bind each element
-                    |mut b, id| { b.push_bind(id.to_string()); },
+                    |mut b, id| {
+                        b.push_bind(id.to_string());
+                    },
                 )
                 .push(")");
         }
@@ -465,10 +465,9 @@ pub async fn query_filtered_exams(
         if !proctor_ids.is_empty() {
             builder
                 .push(" AND test_data->>'proctor_id' IN (")
-                .push_values(
-                    proctor_ids.iter(),
-                    |mut b, id| { b.push_bind(id.to_string()); },
-                )
+                .push_values(proctor_ids.iter(), |mut b, id| {
+                    b.push_bind(id.to_string());
+                })
                 .push(")");
         }
     }
@@ -506,7 +505,7 @@ pub async fn query_filtered_exams(
         })?;
 
         debug!("Row: {row:#?}");
-        
+
         let json_value: serde_json::Value = row.try_get("testee_user").map_err(|err| {
             error!(%err, "Error retrieving testee data from row.");
             ExamError::DatabaseError
@@ -516,7 +515,7 @@ pub async fn query_filtered_exams(
             error!(%err, "Error deserializing testee.");
             ExamError::FatalInternalServerError
         })?;
-        
+
         let json_value: serde_json::Value = row.try_get("proctor_user").map_err(|err| {
             error!(%err, "Error retrieving proctor data from row.");
             ExamError::DatabaseError
@@ -526,7 +525,11 @@ pub async fn query_filtered_exams(
             error!(%err, "Error deserializing proctor.");
             ExamError::FatalInternalServerError
         })?;
-        results.push(FilteredExamResult {test: graded_test, testee, proctor});
+        results.push(FilteredExamResult {
+            test: graded_test,
+            testee,
+            proctor,
+        });
     }
 
     Ok(results)

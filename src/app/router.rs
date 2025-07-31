@@ -1,16 +1,23 @@
 use crate::{
-    app::views::{error_404_page, get_home_page}, auth::{
+    AppState,
+    app::views::{error_404_page, get_home_page},
+    auth::{
         middleware::{check_auth_middleware, require_auth_middleware},
         views::{
             get_google_oauth_callback, get_google_oauth_init_flow, get_login_page, get_logout_page,
             get_signup_page, get_user_dropdown, post_login_form, post_signup_form,
         },
-    }, check_in::views::{
+    },
+    check_in::views::{
         get_check_in_page, get_successful_checkout_session, post_create_check_out_session,
         post_update_available_products,
-    }, exam::views::{
-        delete_queue_widget, get_graded_test_page, get_join_queue_widget, get_proctor_dashboard_page, get_queue_widget, get_search_tests_widget, get_test_page, get_user_autocomplete, get_user_dashboard_page, get_user_info_widget, post_live_grading, post_queue_widget, post_test_form
-    }, AppState
+    },
+    exam::views::{
+        delete_queue_widget, get_graded_test_page, get_join_queue_widget,
+        get_proctor_dashboard_page, get_queue_widget, get_search_tests_widget, get_test_page,
+        get_user_autocomplete, get_user_dashboard_page, get_user_info_widget, post_live_grading,
+        post_queue_widget, post_test_form,
+    },
 };
 use axum::{
     Router, middleware,
@@ -64,23 +71,40 @@ impl Routes {
     pub fn administer_exam(&self, exam_id: &(impl ToString + ?Sized)) -> String {
         format!("{}/{}", self.administer_exam_root, exam_id.to_string())
     }
-    
+
     /// Prefill the user info for the test
-    pub fn administer_exam_for_user(&self, exam_id: &(impl ToString + ?Sized), user_email: &impl ToString) -> String {
-        format!("{}?email={}", self.administer_exam(exam_id), user_email.to_string())
+    pub fn administer_exam_for_user(
+        &self,
+        exam_id: &(impl ToString + ?Sized),
+        user_email: &impl ToString,
+    ) -> String {
+        format!(
+            "{}?email={}",
+            self.administer_exam(exam_id),
+            user_email.to_string()
+        )
     }
 
     pub fn graded_exam(&self, exam_id: &(impl ToString + ?Sized)) -> String {
         format!("{}/{}", self.graded_exam_root, exam_id.to_string())
     }
-    
+
     pub fn live_grading(&self, exam_id: &(impl ToString + ?Sized)) -> String {
         format!("{}/{}", self.live_grading_root, exam_id.to_string())
     }
 
     /// Used for post and delete methods on the queue.
-    pub fn queue_query(&self, user_id: &(impl ToString + ?Sized), test_id: &(impl ToString + ?Sized)) -> String {
-        format!("{}?user_id={}&test_index={}", self.queue_widget, user_id.to_string(), test_id.to_string())
+    pub fn queue_query(
+        &self,
+        user_id: &(impl ToString + ?Sized),
+        test_id: &(impl ToString + ?Sized),
+    ) -> String {
+        format!(
+            "{}?user_id={}&test_index={}",
+            self.queue_widget,
+            user_id.to_string(),
+            test_id.to_string()
+        )
     }
 }
 
@@ -115,7 +139,7 @@ pub const ROUTES: Routes = Routes {
     // Misc Routes
     user_dropdown: "/widgets/user-dropdown",
     admin_dashboard: "/admin-dashboard",
-    search_users: "/widgets/search-users"
+    search_users: "/widgets/search-users",
 };
 
 pub fn create_router(app_state: Arc<AppState>) -> Router {
@@ -132,7 +156,7 @@ pub fn create_router(app_state: Arc<AppState>) -> Router {
         )
         .route(
             &ROUTES.live_grading("{test_index}"),
-            post(post_live_grading)
+            post(post_live_grading),
         );
 
     // Anything in here will check if the user is signed in and add that info to the request
@@ -142,7 +166,12 @@ pub fn create_router(app_state: Arc<AppState>) -> Router {
         .route(ROUTES.login, get(get_login_page).post(post_login_form))
         .route(ROUTES.check_in, get(get_check_in_page))
         .route(ROUTES.user_dashboard, get(get_user_dashboard_page))
-        .route(ROUTES.queue_widget, get(get_queue_widget).post(post_queue_widget).delete(delete_queue_widget))
+        .route(
+            ROUTES.queue_widget,
+            get(get_queue_widget)
+                .post(post_queue_widget)
+                .delete(delete_queue_widget),
+        )
         .route(ROUTES.join_queue_widget, get(get_join_queue_widget))
         .route(ROUTES.search_exam_widget, get(get_search_tests_widget))
         .route(

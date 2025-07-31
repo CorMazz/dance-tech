@@ -1,7 +1,7 @@
-use glob::glob;
-use tracing::{error, info};
 use crate::exam::models::Test;
 use crate::exam::models::deserialize::TestYaml;
+use glob::glob;
+use tracing::{error, info};
 
 pub struct ExamConfig {
     pub tests: Vec<Test>,
@@ -16,29 +16,28 @@ impl ExamConfig {
     #[allow(clippy::cognitive_complexity)]
     pub fn init() -> Self {
         let mut tests: Vec<Test> = Vec::new();
-        let patterns =  ["test_definitions/**/*.yaml", "test_definitions/**/*.yml"];
+        let patterns = ["test_definitions/**/*.yaml", "test_definitions/**/*.yml"];
 
         for pattern in patterns {
             for entry in glob(pattern).expect("Failed to read glob pattern") {
                 match entry {
-                    Ok(path) => {
-                        match std::fs::canonicalize(&path) {
-                            Ok(abs_path) => {
-                                info!("Found test definition: {path:?}");
-                                let test_yaml = TestYaml::load(&abs_path).expect("Unable to load or parse test");
-                                let test = test_yaml.into_test(); 
-                                info!("Successfully validated test definition: {path:?}");
-                                tests.push(test);
-                            }
-                            Err(e) => {
-                                error!(
-                                    "Found file matching pattern but couldn't resolve absolute path: {}\nError: {}",
-                                    path.display(),
-                                    e
-                                );
-                            }
+                    Ok(path) => match std::fs::canonicalize(&path) {
+                        Ok(abs_path) => {
+                            info!("Found test definition: {path:?}");
+                            let test_yaml =
+                                TestYaml::load(&abs_path).expect("Unable to load or parse test");
+                            let test = test_yaml.into_test();
+                            info!("Successfully validated test definition: {path:?}");
+                            tests.push(test);
                         }
-                    }
+                        Err(e) => {
+                            error!(
+                                "Found file matching pattern but couldn't resolve absolute path: {}\nError: {}",
+                                path.display(),
+                                e
+                            );
+                        }
+                    },
                     Err(e) => error!("Glob error: {}", e),
                 }
             }
@@ -57,7 +56,14 @@ impl ExamConfig {
             test_names.push(test.metadata.test_name.clone());
         }
 
-        let queue_length = std::env::var("QUEUE_LENGTH").unwrap_or_else(|_| "15".to_string()).parse::<usize>().unwrap_or(15);
-        Self { tests, test_names, queue_length }
+        let queue_length = std::env::var("QUEUE_LENGTH")
+            .unwrap_or_else(|_| "15".to_string())
+            .parse::<usize>()
+            .unwrap_or(15);
+        Self {
+            tests,
+            test_names,
+            queue_length,
+        }
     }
 }

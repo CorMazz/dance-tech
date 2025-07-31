@@ -3,8 +3,8 @@
 //! potential for lock contention, and it is a shiny new thing that I just learned.
 //! Resume-driven-development ftw!
 
-use crate::auth::models::Roles;
 use crate::AppState;
+use crate::auth::models::Roles;
 use crate::check_in::errors::CheckInError;
 use crate::check_in::models::Product;
 use crate::check_in::models::StripePrice;
@@ -122,7 +122,9 @@ pub async fn get_stripe_products(
                 None => return None,
             };
 
-            let requires_roles: HashSet<Roles> = p.metadata.get("requires-roles")
+            let requires_roles: HashSet<Roles> = p
+                .metadata
+                .get("requires-roles")
                 .map(|csv| {
                     csv.split(',')
                         .map(str::trim)
@@ -132,7 +134,9 @@ pub async fn get_stripe_products(
                 })
                 .unwrap_or_default();
 
-            let show_preview = p.metadata.get("show-preview")
+            let show_preview = p
+                .metadata
+                .get("show-preview")
                 // I don't know if the value will be kept as a string or a bool, so account for
                 // both
                 .is_some_and(|val| val == "true");

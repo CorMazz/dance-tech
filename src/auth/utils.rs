@@ -1,6 +1,5 @@
 //! For functions that are used inside of handlers.
 
-use std::collections::HashSet;
 use crate::auth::models::Roles;
 use axum_extra::extract::{
     CookieJar,
@@ -10,6 +9,7 @@ use base64::{Engine as _, engine::general_purpose};
 use chrono::Utc;
 use sqlx::types::Json;
 use sqlx::{Pool, Postgres};
+use std::collections::HashSet;
 use std::sync::Arc;
 use tracing::{error, instrument};
 use uuid::Uuid;
@@ -45,7 +45,10 @@ pub async fn save_token_data_to_redis(
 
 /// Gets a user from the database by email
 #[instrument(skip(db))]
-pub async fn get_user_by_email(email: &str, db: &Pool<Postgres>) -> Result<Option<User>, AuthError> {
+pub async fn get_user_by_email(
+    email: &str,
+    db: &Pool<Postgres>,
+) -> Result<Option<User>, AuthError> {
     sqlx::query_as!(
         User,
         r#"
@@ -111,36 +114,30 @@ pub async fn grant_roles(
     let original_len = current_roles.len();
 
     current_roles.extend(roles_to_add);
-    
+
     if current_roles.len() == original_len {
-        return Ok(())
+        return Ok(());
     }
 
     // Update in database
-    sqlx::query(
-        "UPDATE users SET roles = $1, updated_at = $2 WHERE id = $3"
-    )
-    .bind(Json(current_roles)) // serialize Vec<Roles> back into Json wrapper
-    .bind(Utc::now())
-    .bind(user.id)
-    .execute(db)
-    .await
-    .map_err(|err|  {
-        error!(%err, "Error updating user roles.");
-        AuthError::DatabaseError
-    })?;
+    sqlx::query("UPDATE users SET roles = $1, updated_at = $2 WHERE id = $3")
+        .bind(Json(current_roles)) // serialize Vec<Roles> back into Json wrapper
+        .bind(Utc::now())
+        .bind(user.id)
+        .execute(db)
+        .await
+        .map_err(|err| {
+            error!(%err, "Error updating user roles.");
+            AuthError::DatabaseError
+        })?;
 
     Ok(())
 }
 
-
-/// Searches for a testee by matching the query string to the first name, last name, or email 
+/// Searches for a testee by matching the query string to the first name, last name, or email
 /// using trigram similarity metrics.
 #[instrument(skip(db))]
-pub async fn search_for_users(
-    query: String,
-    db: &Pool<Postgres>,
-) -> Result<Vec<User>, AuthError> {
+pub async fn search_for_users(query: String, db: &Pool<Postgres>) -> Result<Vec<User>, AuthError> {
     sqlx::query_as!(
         User,
         r#"

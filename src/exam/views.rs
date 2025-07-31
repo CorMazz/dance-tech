@@ -1,20 +1,21 @@
-use crate::auth::utils::{get_user_by_id, search_for_users, get_user_by_email};
-use std::collections::HashMap;
-use std::sync::Arc;
 use super::errors::ExamError;
 use super::handlers::live_grade_handler;
 use super::handlers::post_test_form_handler;
-use super::utils::{add_user_to_test_queue, remove_user_from_test_queue, retrieve_test_queue, load_graded_test_from_db, FilteredExamResult};
 use super::handlers::search_exam_widget_handler;
 use super::models::ExamStatus;
 use super::models::QueueEntry;
 use super::models::TestGrade;
-use crate::auth::models::User;
+use super::utils::{
+    FilteredExamResult, add_user_to_test_queue, load_graded_test_from_db,
+    remove_user_from_test_queue, retrieve_test_queue,
+};
 use crate::AppState;
 use crate::app::utils::ErrorTemplate;
 use crate::app::utils::is_htmx_request;
 use crate::app::utils::render;
 use crate::auth::middleware::AuthStatus;
+use crate::auth::models::User;
+use crate::auth::utils::{get_user_by_email, get_user_by_id, search_for_users};
 use crate::{
     app::router::{ROUTES, Routes},
     exam::models::{FailureExplanation, Test},
@@ -31,6 +32,8 @@ use axum::response::Redirect;
 use axum_extra::extract::Host;
 use reqwest::StatusCode;
 use serde::Deserialize;
+use std::collections::HashMap;
+use std::sync::Arc;
 use tracing::instrument;
 use uuid::Uuid;
 
@@ -54,7 +57,7 @@ pub struct AdministerExamTemplate {
 pub struct UserEmailForm {
     /// If not specified, just use a blank string
     #[serde(default)]
-    pub email: String
+    pub email: String,
 }
 
 #[instrument(skip(data, headers))]
@@ -107,9 +110,7 @@ pub async fn post_test_form(
     Form(raw_form): Form<HashMap<String, String>>,
 ) -> impl IntoResponse {
     let proctor_id = match auth_status {
-        AuthStatus::Authorized(proctor) => {
-            proctor.id
-        }
+        AuthStatus::Authorized(proctor) => proctor.id,
         AuthStatus::Unauthorized(err) => return err.into_response(&headers),
     };
 
@@ -198,9 +199,10 @@ pub async fn get_graded_test_page(
     source = r#"
 {% import "./exam_templates/macros.html" as macros %}
 {% call macros::render_grade(grade) %}
-"#)]
+"#
+)]
 pub struct TestGradeTemplate {
-    grade: TestGrade
+    grade: TestGrade,
 }
 
 /// Let users get feedback on the fly by grading partially completed tests and returning just the
@@ -215,17 +217,17 @@ pub async fn post_live_grading(
     Form(raw_form): Form<HashMap<String, String>>,
 ) -> impl IntoResponse {
     let proctor_id = match auth_status {
-        AuthStatus::Authorized(proctor) => {
-            proctor.id
-        }
+        AuthStatus::Authorized(proctor) => proctor.id,
         AuthStatus::Unauthorized(err) => return err.into_response(&headers),
     };
     match live_grade_handler(data, test_index, raw_form, proctor_id).await {
         Ok(graded_test) => {
-            let template = TestGradeTemplate { grade: graded_test.grade };
-            return (StatusCode::OK, Html(render(template))).into_response()
+            let template = TestGradeTemplate {
+                grade: graded_test.grade,
+            };
+            return (StatusCode::OK, Html(render(template))).into_response();
         }
-        Err(e) => return e.into_response(&headers)
+        Err(e) => return e.into_response(&headers),
     }
 }
 
@@ -240,10 +242,7 @@ pub async fn get_proctor_dashboard_page(
     State(data): State<Arc<AppState>>,
     headers: axum::http::HeaderMap,
 ) -> impl IntoResponse {
-    let test_names = data
-        .exam_config
-        .test_names
-        .clone();
+    let test_names = data.exam_config.test_names.clone();
 
     let template: ProctorDashboardTemplate = ProctorDashboardTemplate {
         rts: ROUTES,
@@ -257,20 +256,14 @@ pub async fn get_proctor_dashboard_page(
     }
 }
 
-
 #[derive(Template)]
 #[template(path = "./exam_templates/user_dashboard.html", blocks = ["content"])]
 pub struct UserDashboardTemplate {
     rts: Routes,
 }
 
-pub async fn get_user_dashboard_page(
-    headers: axum::http::HeaderMap,
-) -> impl IntoResponse {
-
-    let template = UserDashboardTemplate {
-        rts: ROUTES,
-    };
+pub async fn get_user_dashboard_page(headers: axum::http::HeaderMap) -> impl IntoResponse {
+    let template = UserDashboardTemplate { rts: ROUTES };
 
     if is_htmx_request(&headers) {
         (StatusCode::OK, Html(render(template.as_content())))
@@ -299,7 +292,9 @@ pub async fn get_queue_widget(
     Extension(auth_status): Extension<AuthStatus>,
 ) -> impl IntoResponse {
     let user = auth_status.ok();
-    let is_superuser = user.as_ref().is_some_and(crate::auth::models::User::is_superuser);
+    let is_superuser = user
+        .as_ref()
+        .is_some_and(crate::auth::models::User::is_superuser);
 
     match retrieve_test_queue(&data.db, data.exam_config.test_names.clone()).await {
         Ok(queue) => {
@@ -311,7 +306,7 @@ pub async fn get_queue_widget(
             };
             (StatusCode::OK, render(template)).into_response()
         }
-        Err(e) => e.into_response(&headers)
+        Err(e) => e.into_response(&headers),
     }
 }
 
@@ -334,11 +329,10 @@ pub async fn get_join_queue_widget(
     let template = JoinQueueTemplate {
         rts: ROUTES,
         test_names: data.exam_config.test_names.clone(),
-        is_signed_in
+        is_signed_in,
     };
 
     (StatusCode::OK, Html(render(template)))
-
 }
 
 #[derive(Deserialize)]
@@ -358,7 +352,7 @@ pub async fn post_queue_widget(
 ) -> impl IntoResponse {
     let user = match auth_status.require_auth() {
         Ok(user) => user,
-        Err(e) => return e
+        Err(e) => return e,
     };
 
     let user_id = match form.user_id.to_lowercase().as_str() {
@@ -366,10 +360,7 @@ pub async fn post_queue_widget(
         other => match Uuid::parse_str(other) {
             Ok(uuid) => uuid,
             Err(_) => {
-                return (
-                    StatusCode::BAD_REQUEST,
-                    "Invalid user ID".into_response(),
-                )
+                return (StatusCode::BAD_REQUEST, "Invalid user ID".into_response())
                     .into_response();
             }
         },
@@ -386,11 +377,9 @@ pub async fn post_queue_widget(
 
     match queue_result {
         Ok(()) => StatusCode::OK.into_response(),
-        Err(ExamError::QueueFull) => (
-            StatusCode::CONFLICT,
-            "Queue is full".into_response(),
-        )
-            .into_response(),
+        Err(ExamError::QueueFull) => {
+            (StatusCode::CONFLICT, "Queue is full".into_response()).into_response()
+        }
         Err(_) => (
             StatusCode::INTERNAL_SERVER_ERROR,
             "Failed to join queue".into_response(),
@@ -399,8 +388,7 @@ pub async fn post_queue_widget(
     }
 }
 
-
-/// Removes a user from the queue upon receiving a delete request. If called with a request header HX-Trigger equal to 
+/// Removes a user from the queue upon receiving a delete request. If called with a request header HX-Trigger equal to
 /// "administer-test-button", will redirect to the proper administer test page with the query parameters
 /// equal to the queue user's information. If there is no response header, just deletes the user and returns empty html.
 pub async fn delete_queue_widget(
@@ -411,7 +399,7 @@ pub async fn delete_queue_widget(
 ) -> impl IntoResponse {
     let user = match auth_status.require_auth() {
         Ok(user) => user,
-        Err(e) => return e
+        Err(e) => return e,
     };
 
     let user_id = match form.user_id.to_lowercase().as_str() {
@@ -419,38 +407,37 @@ pub async fn delete_queue_widget(
         other => match Uuid::parse_str(other) {
             Ok(uuid) => uuid,
             Err(_) => {
-                return (
-                    StatusCode::BAD_REQUEST,
-                    "Invalid user ID".into_response(),
-                )
+                return (StatusCode::BAD_REQUEST, "Invalid user ID".into_response())
                     .into_response();
             }
         },
     };
 
-    let queue_result = remove_user_from_test_queue(
-        &data.db,
-        user_id,
-        form.test_index as i32,
-    )
-    .await;
+    let queue_result = remove_user_from_test_queue(&data.db, user_id, form.test_index as i32).await;
 
-    let is_administer_test_request = headers.get("HX-Trigger").is_some_and(|val| val == "administer-test-button");
+    let is_administer_test_request = headers
+        .get("HX-Trigger")
+        .is_some_and(|val| val == "administer-test-button");
 
     match queue_result {
         Ok(..) => {
             if is_administer_test_request {
                 if let Ok(Some(user)) = get_user_by_id(&user_id, &data.db).await {
-                    return Redirect::to(&ROUTES.administer_exam_for_user(&form.test_index, &user.email)).into_response();
-                } 
+                    return Redirect::to(
+                        &ROUTES.administer_exam_for_user(&form.test_index, &user.email),
+                    )
+                    .into_response();
+                }
                 return (
                     StatusCode::INTERNAL_SERVER_ERROR,
-                    "Failed to get user by id."
-                    ).into_response()
+                    "Failed to get user by id.",
+                )
+                    .into_response();
             }
             StatusCode::OK.into_response()
         }
-        Err(..) => (  // The error is logged within the remove_user_from_test_queue function
+        Err(..) => (
+            // The error is logged within the remove_user_from_test_queue function
             StatusCode::INTERNAL_SERVER_ERROR,
             "Failed to remove user from queue.".into_response(),
         )
@@ -458,11 +445,10 @@ pub async fn delete_queue_widget(
     }
 }
 
-
 #[derive(Template)]
 #[template(path = "./exam_templates/user_info_widget.html")]
 pub struct UserInfoWidgetTemplate {
-    pub user: Option<User>
+    pub user: Option<User>,
 }
 
 /// Used to display information about the user that we are proctoring a test for.
@@ -472,28 +458,24 @@ pub async fn get_user_info_widget(
     Query(form): Query<UserEmailForm>,
 ) -> impl IntoResponse {
     // I tried returning a result type from the function, but it was a PITA
-    if let Err(e) = auth_status.require_auth() {return e}
+    if let Err(e) = auth_status.require_auth() {
+        return e;
+    }
 
-    let user = get_user_by_email(
-        &form.email,
-        &data.db,
-    )
-    .await;
+    let user = get_user_by_email(&form.email, &data.db).await;
 
     match user {
         Ok(user) => {
-            let template = UserInfoWidgetTemplate {
-                user
-            };
+            let template = UserInfoWidgetTemplate { user };
             (StatusCode::OK, render(template)).into_response()
-        } 
-        Err(..) => (  
+        }
+        Err(..) => (
             StatusCode::INTERNAL_SERVER_ERROR,
             Html("Failed to get user info. Please try again later.".to_string()),
-        ).into_response(),
+        )
+            .into_response(),
     }
 }
-
 
 /// Will be placed inside of a `<datalist>` element
 #[derive(Template)]
@@ -503,9 +485,10 @@ pub async fn get_user_info_widget(
 {% for user in users %}
     <option value={{ user.email }}></option>
 {% endfor %}
-"#)]
+"#
+)]
 pub struct UserEmailAutoCompleteTemplate {
-    pub users: Vec<User>
+    pub users: Vec<User>,
 }
 
 /// Used for autocomplete on the test page when entering user emails
@@ -514,21 +497,17 @@ pub async fn get_user_autocomplete(
     Extension(auth_status): Extension<AuthStatus>,
     Query(form): Query<UserEmailForm>,
 ) -> impl IntoResponse {
-    if let Err(e) = auth_status.require_auth() {return e}
+    if let Err(e) = auth_status.require_auth() {
+        return e;
+    }
 
-    let users = search_for_users(
-        form.email,
-        &data.db,
-    )
-    .await;
+    let users = search_for_users(form.email, &data.db).await;
 
     match users {
         Ok(users) => {
-            let template = UserEmailAutoCompleteTemplate {
-                users
-            };
+            let template = UserEmailAutoCompleteTemplate { users };
             (StatusCode::OK, render(template)).into_response()
-        } 
+        }
         Err(..) => (
             StatusCode::INTERNAL_SERVER_ERROR,
             "Failed to get user info. Please try again later.".into_response(),
@@ -536,7 +515,6 @@ pub async fn get_user_autocomplete(
             .into_response(),
     }
 }
-
 
 #[derive(Template)]
 #[template(path = "./exam_templates/search_tests_widget.html", blocks = ["content", "table"])]
@@ -547,7 +525,6 @@ pub struct SearchTestsWidgetTemplate {
     has_next_page: bool,
     /// Used to hide the `testee` search box from non-superusers
     is_superuser: bool,
-
 }
 
 #[derive(Debug, Deserialize, Default)]
@@ -565,8 +542,12 @@ pub struct SearchTestFilters {
     #[serde(default = "default_per_page")]
     pub per_page: usize,
 }
-const fn default_page() -> usize { 1 }
-const fn default_per_page() -> usize { 10 }
+const fn default_page() -> usize {
+    1
+}
+const fn default_per_page() -> usize {
+    10
+}
 
 /// Search for tests and display information about them (name, date taken, etc.)
 /// Admin users can search by testee name and see any test results. Non-admin
@@ -575,17 +556,21 @@ pub async fn get_search_tests_widget(
     State(data): State<Arc<AppState>>,
     headers: axum::http::HeaderMap,
     Extension(auth_status): Extension<AuthStatus>,
-    Query(filter): Query<SearchTestFilters>
+    Query(filter): Query<SearchTestFilters>,
 ) -> impl IntoResponse {
-    
     let Some(user) = auth_status.ok() else {
-        return (StatusCode::OK, Html("<h1 class=my-paragraph>Sign in to see test results</h1>")).into_response();
+        return (
+            StatusCode::OK,
+            Html("<h1 class=my-paragraph>Sign in to see test results</h1>"),
+        )
+            .into_response();
     };
 
-    let (graded_tests, has_next_page) = match search_exam_widget_handler(&filter, &user, &data.db).await {
-        Ok(res) => res,
-        Err(e) => return e.into_response(&headers),
-    };
+    let (graded_tests, has_next_page) =
+        match search_exam_widget_handler(&filter, &user, &data.db).await {
+            Ok(res) => res,
+            Err(e) => return e.into_response(&headers),
+        };
 
     let template = SearchTestsWidgetTemplate {
         rts: ROUTES,

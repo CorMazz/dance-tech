@@ -1,6 +1,6 @@
-use std::collections::{HashMap, HashSet};
-use serde::{Deserialize, Serialize};
 use crate::auth::models::Roles;
+use serde::{Deserialize, Serialize};
+use std::collections::{HashMap, HashSet};
 
 /// The Product item to be used for this application
 ///
@@ -22,9 +22,8 @@ pub struct Product {
     pub requires_roles: HashSet<Roles>,
     /// Show a greyed out preview of the product to people who don't yet have
     /// the requisite roles. The default is `false`.
-    pub show_preview: bool
+    pub show_preview: bool,
 }
-
 
 /// The response from the Stripe Checkout Session API.
 ///

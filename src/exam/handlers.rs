@@ -1,19 +1,19 @@
+use super::errors::ExamError;
+use super::models::{GradedExamFilter, GradedTest};
+use super::utils::{FilteredExamResult, save_graded_test_to_db};
+use super::views::SearchTestFilters;
+use crate::AppState;
+use crate::auth::models::User;
+use crate::auth::utils::{get_user_by_email, grant_roles, search_for_users};
+use crate::exam::utils::{parse_test_form, query_filtered_exams};
+use sqlx::Row;
 use sqlx::{Pool, Postgres};
 use std::collections::HashMap;
 use std::sync::Arc;
 use tracing::{debug, error, instrument};
 use uuid::Uuid;
-use sqlx::Row;
-use crate::auth::utils::{get_user_by_email, grant_roles, search_for_users};
-use crate::auth::models::User;
-use crate::exam::utils::{parse_test_form, query_filtered_exams};
-use crate::AppState;
-use super::errors::ExamError;
-use super::models::{GradedExamFilter, GradedTest};
-use super::utils::{save_graded_test_to_db, FilteredExamResult};
-use super::views::SearchTestFilters;
 
-/// Used to return a `Grade` object to the live grading endpoint. 
+/// Used to return a `Grade` object to the live grading endpoint.
 #[instrument(skip(form, data, test_index))]
 pub async fn live_grade_handler(
     data: Arc<AppState>,
@@ -82,11 +82,16 @@ pub async fn post_test_form_handler(
     form: HashMap<String, String>,
     proctor_id: Uuid,
 ) -> Result<(), ExamError> {
-    let (graded_test, testee) = final_grade_handler(data.clone(), test_index, form, proctor_id).await?;
+    let (graded_test, testee) =
+        final_grade_handler(data.clone(), test_index, form, proctor_id).await?;
 
-    grant_roles(testee, graded_test.test.metadata.config.get_granted_roles(), &data.db)
-        .await
-        .map_err(|_| ExamError::DatabaseError)?;
+    grant_roles(
+        testee,
+        graded_test.test.metadata.config.get_granted_roles(),
+        &data.db,
+    )
+    .await
+    .map_err(|_| ExamError::DatabaseError)?;
 
     save_graded_test_to_db(graded_test, &data.db).await?;
     Ok(())
@@ -96,8 +101,11 @@ pub async fn post_test_form_handler(
 /// Querying user is used to only display the user's own test results
 /// for non-admin users.
 #[instrument(skip(db))]
-pub async fn search_exam_widget_handler(filter: &SearchTestFilters, querying_user: &User, db: &Pool<Postgres>) -> Result<(Vec<FilteredExamResult>, bool), ExamError> {
-
+pub async fn search_exam_widget_handler(
+    filter: &SearchTestFilters,
+    querying_user: &User,
+    db: &Pool<Postgres>,
+) -> Result<(Vec<FilteredExamResult>, bool), ExamError> {
     let testee_ids = if querying_user.is_superuser() {
         match &filter.testee_query {
             Some(query) if !query.is_empty() => {
@@ -112,18 +120,16 @@ pub async fn search_exam_widget_handler(filter: &SearchTestFilters, querying_use
     } else {
         Some(vec![querying_user.id])
     };
-    
+
     let proctor_ids = match &filter.proctor_query {
-        Some(query) if !query.is_empty() => {
-            Some(
-                search_for_users(query.clone(), db)
-                    .await
-                    .map_err(|_| ExamError::DatabaseError)?
-                    .into_iter()
-                    .map(|user| user.id)
-                    .collect::<Vec<_>>()
-            )
-        }
+        Some(query) if !query.is_empty() => Some(
+            search_for_users(query.clone(), db)
+                .await
+                .map_err(|_| ExamError::DatabaseError)?
+                .into_iter()
+                .map(|user| user.id)
+                .collect::<Vec<_>>(),
+        ),
         _ => None,
     };
 
@@ -152,5 +158,3 @@ pub async fn search_exam_widget_handler(filter: &SearchTestFilters, querying_use
 
     Ok((exams, has_next_page))
 }
-
-

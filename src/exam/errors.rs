@@ -41,7 +41,9 @@ pub enum ExamError {
     #[error("The requested test does not exist. Please contact the site administrator.")]
     TestIndexError,
 
-    #[error("The given user was not found. Ensure that the dropdown displays user details before submitting a test.")]
+    #[error(
+        "The given user was not found. Ensure that the dropdown displays user details before submitting a test."
+    )]
     UserNotFound,
 }
 

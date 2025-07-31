@@ -192,7 +192,7 @@ pub struct BonusItem {
 #[serde(deny_unknown_fields)]
 pub struct Metadata {
     pub test_name: String,
-    /// 100 = 100% 
+    /// 100 = 100%
     pub minimum_percent: f32,
     pub max_score: usize,
     pub config: TestConfig,
@@ -331,7 +331,6 @@ pub struct RadioValue {
     pub fails_test: bool,
 }
 
-
 /// When specific `RadioOptions` fail the test, this struct is created and fed to the HTML to be
 /// rendered. There is no `Display` implementation on this because I want to be able to format it
 /// nicely within the HTML.
@@ -384,7 +383,6 @@ pub mod deserialize {
     use crate::exam::utils::{convert_df_to_test_table, parse_csv};
 
     use super::*;
-    
 
     #[derive(Deserialize)]
     pub struct TestYaml {
@@ -398,7 +396,7 @@ pub mod deserialize {
         pub test_name: String,
         // 100 = 100%
         pub minimum_percent: f32,
-        pub config: TestConfig
+        pub config: TestConfig,
     }
 
     #[derive(Deserialize)]
@@ -412,7 +410,6 @@ pub mod deserialize {
         csv: String,
     }
 
-
     #[derive(Deserialize)]
     struct BonusItemYaml {
         pub name: String,
@@ -422,22 +419,33 @@ pub mod deserialize {
     impl TestYaml {
         /// Load a `TestYaml` from a YAML file at the given path.
         pub fn load<P: AsRef<Path>>(path: P) -> Result<Self, ExamError> {
-            let contents = fs::read_to_string(path).map_err(|err| ExamError::ReadError(err.to_string()))?;
-            let yaml = serde_yaml::from_str::<Self>(&contents).map_err(|err| ExamError::ReadError(err.to_string()))?;
+            let contents =
+                fs::read_to_string(path).map_err(|err| ExamError::ReadError(err.to_string()))?;
+            let yaml = serde_yaml::from_str::<Self>(&contents)
+                .map_err(|err| ExamError::ReadError(err.to_string()))?;
             Ok(yaml)
         }
         /// Convert a `TestYaml` object into a Test object.
         pub fn into_test(self) -> Test {
-            let containers: Vec<TestContainer> = self.containers.iter().enumerate().map(|(i, c)| {
-                let dfs: Vec<_> = c.tables.iter().map(|t| parse_csv(&t.csv)).collect();
-                let tables = dfs.iter().enumerate().map(|(j, df)| convert_df_to_test_table(df, i, j)).collect();
-                TestContainer {
-                    name: c.name.clone(),
-                    tables,
-                    dfs,
-                }
-            }).collect();
-               
+            let containers: Vec<TestContainer> = self
+                .containers
+                .iter()
+                .enumerate()
+                .map(|(i, c)| {
+                    let dfs: Vec<_> = c.tables.iter().map(|t| parse_csv(&t.csv)).collect();
+                    let tables = dfs
+                        .iter()
+                        .enumerate()
+                        .map(|(j, df)| convert_df_to_test_table(df, i, j))
+                        .collect();
+                    TestContainer {
+                        name: c.name.clone(),
+                        tables,
+                        dfs,
+                    }
+                })
+                .collect();
+
             // compute max_score by summing max score per button across all tables
             let max_score: usize = containers
                 .iter()
@@ -455,13 +463,14 @@ pub mod deserialize {
                 .sum();
 
             let metadata = Metadata {
-                test_name: self.metadata.test_name, 
+                test_name: self.metadata.test_name,
                 minimum_percent: self.metadata.minimum_percent,
                 max_score,
                 config: self.metadata.config,
             };
 
-            let bonus_items: Vec<BonusItem> = self.bonus_items
+            let bonus_items: Vec<BonusItem> = self
+                .bonus_items
                 .into_iter()
                 .enumerate()
                 .map(|(i, b)| BonusItem {
@@ -497,7 +506,7 @@ pub struct QueueEntry {
 pub enum ExamStatus {
     Passing,
     Failing,
-    Both
+    Both,
 }
 
 /// Parameters used to filter out exams when viewing the graded tests
@@ -511,4 +520,3 @@ pub struct GradedExamFilter {
     pub page: usize,
     pub per_page: usize,
 }
-

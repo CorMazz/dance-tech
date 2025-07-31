@@ -1,4 +1,5 @@
-use crate::auth::utils::{get_user_by_email, verify_jwt_token, login_user};
+use crate::auth::utils::{get_user_by_email, login_user, verify_jwt_token};
+use crate::{AppState, auth::errors::AuthError};
 use argon2::{
     Argon2, PasswordHash, PasswordHasher, PasswordVerifier,
     password_hash::{SaltString, rand_core::OsRng},
@@ -18,12 +19,6 @@ use oauth2::{
 use serde::Deserialize;
 use std::sync::Arc;
 use tracing::{error, instrument};
-use crate::{
-    AppState,
-    auth::{
-        errors::AuthError,
-    },
-};
 
 use redis::AsyncCommands;
 
@@ -115,7 +110,9 @@ pub async fn google_oauth_init_flow_handler(
 
     data.google_oauth_config.as_ref().map_or_else(
         || {
-            error!("Google OAuth is not configured, unable to continue with the authorization flow.");
+            error!(
+                "Google OAuth is not configured, unable to continue with the authorization flow."
+            );
             Err(AuthError::OAuthError)
         },
         |config| {
@@ -186,12 +183,10 @@ pub async fn google_oauth_callback_handler(
         .get("oauth_csrf")
         .ok_or(AuthError::CSRFTokenMismatch)?;
 
-    let pkce_cookie = cookie_jar
-        .get("oauth_pkce_verifier")
-        .ok_or_else(|| {
-            error!("Unable to get PKCE cookie.");
-            AuthError::OAuthError
-        })?;
+    let pkce_cookie = cookie_jar.get("oauth_pkce_verifier").ok_or_else(|| {
+        error!("Unable to get PKCE cookie.");
+        AuthError::OAuthError
+    })?;
 
     if csrf_cookie.value() != callback_params.state {
         return Err(AuthError::CSRFTokenMismatch);
@@ -270,7 +265,6 @@ pub async fn google_oauth_callback_handler(
             AuthError::OAuthError
         })?;
 
-
     let email = user_info.email.as_ref().ok_or_else(|| {
         error!("Email not found in the user info: {:#?}", user_info);
         AuthError::OAuthError
@@ -304,13 +298,13 @@ pub async fn logout_handler(
         .ok_or(AuthError::NotLoggedIn)?;
 
     let refresh_token_details = verify_jwt_token(
-            data.auth_config.refresh_token_public_key.clone(),
-            &refresh_token,
-        )
-        .map_err(|err| {
-            error!(%err, "Error while verifying jwt token.");
-            AuthError::FatalInternalServerError
-        })?;
+        data.auth_config.refresh_token_public_key.clone(),
+        &refresh_token,
+    )
+    .map_err(|err| {
+        error!(%err, "Error while verifying jwt token.");
+        AuthError::FatalInternalServerError
+    })?;
 
     let mut redis_client = data
         .redis_client
@@ -367,4 +361,3 @@ pub async fn logout_handler(
     response.headers_mut().extend(headers);
     Ok(response)
 }
-
