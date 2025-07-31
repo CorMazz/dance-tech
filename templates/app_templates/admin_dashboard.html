@@ -1,0 +1,82 @@
+{% extends "../extensible_templates/main_nav.html" %}
+
+{% block title %}Admin Dashboard{% endblock %}
+
+{% block content %}
+<div class="my-container">
+  <div class="my-section">
+    <h1 class="py-4 text-3xl font-bold text-gray-800">Products</h1>
+
+    <div class="my-grid">
+      {% for product in products %}
+        <div class="my-card">
+          <div class="p-6">
+            <h2 class="my-title">{{ product.name }}</h2>
+            <p class="my-paragraph mb-2">{{ product.description }}</p>
+            <p class="my-paragraph text-sm text-gray-500">
+              {% if !product.requires_roles.is_empty() %}
+                Requires Roles: 
+                  <code>{{ product.requires_roles.display_roles() }}</code>
+              {% else %}
+                No Roles Required
+              {% endif %}
+            </p>
+            <p class="my-paragraph">
+              {% if product.show_preview %}✅{% else %}❌{% endif %} Show Preview
+            </p>
+            <form action={{ rts.create_checkout_session }} method="POST">
+              <input type="hidden" name="product_id" value="{{ product.id }}">
+              <input type="hidden" name="price_id" value="{{ product.price_id }}">
+              <button type="submit" class="my-button">
+                Checkout - {{ product.price }}
+              </button>
+            </form>
+          </div>
+        </div>
+      {% endfor %}
+      <div class="my-card">
+        <div class="p-6">
+          <p class="my-paragraph mb-2">Click this button to query Stripe for the products list. This happens automatically every so often.</p>
+          <button
+            hx-post="{{ rts.update_products }}"
+            hx-swap="none"
+            class="my-button"
+          >
+            Update Products
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="my-section">
+    <h1 class="py-4 text-3xl font-bold text-gray-800">Tests</h1>
+
+    <div class="my-grid">
+      {% for test in tests %}
+        <a 
+          href={{ rts.administer_exam(loop.index0) }}
+          hx-boost="true" hx-target="#primary-content" hx-swap="innerHTML show:none"
+          class="my-card w-full max-w-sm"
+        >
+          <h5 class="my-title">{{ test.metadata.test_name }}</h5>
+          <p class="my-paragraph">Min Score: {{ test.metadata.minimum_percent }}%</p>
+          <p class="my-paragraph">Max Score: {{ test.metadata.max_score }}</p>
+          <p class="my-paragraph">
+            {% if test.metadata.config.live_grading %}✅{% else %}❌{% endif %} Live Grading
+          </p>
+          <p class="my-paragraph">
+            {% if test.metadata.config.show_point_values %}✅{% else %}❌{% endif %} Show Points
+          </p>
+          <p class="my-paragraph text-sm text-gray-500">
+            Grants Roles: 
+            {% for role in test.metadata.config.grants_roles %}
+              <code>{{ role }}</code>
+            {% endfor %}
+          </p>
+        </a>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endblock %}

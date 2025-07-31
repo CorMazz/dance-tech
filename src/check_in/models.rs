@@ -1,8 +1,5 @@
 use std::collections::{HashMap, HashSet};
-
 use serde::{Deserialize, Serialize};
-use serde_json::Value;
-
 use crate::auth::models::Roles;
 
 /// The Product item to be used for this application
@@ -26,8 +23,8 @@ pub struct Product {
     /// Show a greyed out preview of the product to people who don't yet have
     /// the requisite roles. The default is `false`.
     pub show_preview: bool
-
 }
+
 
 /// The response from the Stripe Checkout Session API.
 ///

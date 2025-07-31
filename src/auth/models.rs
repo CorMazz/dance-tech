@@ -37,6 +37,30 @@ impl From<&str> for Roles {
     }
 }
 
+impl fmt::Display for Roles {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Admin => write!(f, "admin"),
+            Self::Proctor => write!(f, "proctor"),
+            Self::Dynamic(s) => write!(f, "{}", s.to_ascii_lowercase()),
+        }
+    }
+}
+
+pub trait DisplayRoles {
+    fn display_roles(&self) -> String;
+}
+
+impl DisplayRoles for HashSet<Roles> {
+    /// Doing this because Askama was a bitch and wouldn't let me easily format my roles
+    /// with ',' between them. It kept telling me that loop.last wasn't valid syntax
+    fn display_roles(&self) -> String {
+        let mut roles: Vec<String> = self.iter().map(std::string::ToString::to_string).collect();
+        roles.sort();
+        roles.join(", ")
+    }
+}
+
 /// Possibly refactor this into a `UserInfo` and `UserPrivate` set of structs to 
 /// avoid passing the user's password around everytime I need the other info
 /// Can use `#[sqlx(flatten)]` for this.

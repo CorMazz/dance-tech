@@ -19,6 +19,8 @@ use axum::{
 use std::sync::Arc;
 use tower_http::services::ServeDir;
 
+use super::views::get_admin_dashboard;
+
 /// A struct containing all routes for the app, to minimize code duplication.
 pub struct Routes {
     pub root: &'static str,
@@ -123,6 +125,7 @@ pub fn create_router(app_state: Arc<AppState>) -> Router {
         .route(ROUTES.proctor_dashboard, get(get_proctor_dashboard_page))
         .route(ROUTES.user_info_widget, get(get_user_info_widget))
         .route(ROUTES.search_users, get(get_user_autocomplete))
+        .route(ROUTES.admin_dashboard, get(get_admin_dashboard))
         .route(
             &ROUTES.administer_exam("{test_index}"),
             get(get_test_page).post(post_test_form),
