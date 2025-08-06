@@ -103,20 +103,21 @@ pub async fn get_user_by_id(id: &Uuid, db: &Pool<Postgres>) -> Result<Option<Use
 }
 
 /// Adds the given roles to the user if they don't already have them.
+/// Returns the modified User struct
 #[instrument(skip(db))]
 pub async fn grant_roles(
-    user: User,
+    user: &mut User,
     roles_to_add: HashSet<Roles>,
     db: &Pool<Postgres>,
 ) -> Result<(), AuthError> {
-    let mut current_roles = user.roles.0;
+    let current_roles = &mut user.roles.0;
 
     let original_len = current_roles.len();
 
     current_roles.extend(roles_to_add);
 
     if current_roles.len() == original_len {
-        return Ok(());
+        return Ok(())
     }
 
     // Update in database
@@ -128,6 +129,40 @@ pub async fn grant_roles(
         .await
         .map_err(|err| {
             error!(%err, "Error updating user roles.");
+            AuthError::DatabaseError
+        })?;
+
+    Ok(())
+}
+
+/// Removes the given roles from the user if they currently have them.
+/// Returns the modified User struct
+#[instrument(skip(db))]
+pub async fn revoke_roles(
+    user: &mut User,
+    roles_to_revoke: HashSet<Roles>,
+    db: &Pool<Postgres>,
+) -> Result<(), AuthError> {
+    let current_roles = &mut user.roles.0;
+
+    let original_len = current_roles.len();
+
+    current_roles.retain(|role| !roles_to_revoke.contains(role));
+
+    if current_roles.len() == original_len {
+        // No change — nothing to do
+        return Ok(())
+    }
+
+    // Update in database
+    sqlx::query("UPDATE users SET roles = $1, updated_at = $2 WHERE id = $3")
+        .bind(Json(current_roles))
+        .bind(Utc::now())
+        .bind(user.id)
+        .execute(db)
+        .await
+        .map_err(|err| {
+            error!(%err, "Error removing user roles.");
             AuthError::DatabaseError
         })?;
 

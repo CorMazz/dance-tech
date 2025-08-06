@@ -1,6 +1,8 @@
 use crate::{
     AppState,
-    app::views::{error_404_page, get_home_page},
+    app::views::{error_404_page, get_home_page, get_admin_dashboard, get_user_roles_widget,
+        delete_user_roles_widget, post_user_roles_widget
+    },
     auth::{
         middleware::{check_auth_middleware, require_auth_middleware},
         views::{
@@ -26,7 +28,6 @@ use axum::{
 use std::sync::Arc;
 use tower_http::services::ServeDir;
 
-use super::views::get_admin_dashboard;
 
 /// A struct containing all routes for the app, to minimize code duplication.
 pub struct Routes {
@@ -63,6 +64,7 @@ pub struct Routes {
     pub user_dropdown: &'static str,
     pub admin_dashboard: &'static str,
     pub search_users: &'static str,
+    pub user_roles: &'static str,
 }
 
 impl Routes {
@@ -140,6 +142,7 @@ pub const ROUTES: Routes = Routes {
     user_dropdown: "/widgets/user-dropdown",
     admin_dashboard: "/admin-dashboard",
     search_users: "/widgets/search-users",
+    user_roles: "/widgets/user-roles",
 };
 
 pub fn create_router(app_state: Arc<AppState>) -> Router {
@@ -150,6 +153,7 @@ pub fn create_router(app_state: Arc<AppState>) -> Router {
         .route(ROUTES.user_info_widget, get(get_user_info_widget))
         .route(ROUTES.search_users, get(get_user_autocomplete))
         .route(ROUTES.admin_dashboard, get(get_admin_dashboard))
+        .route(ROUTES.user_roles, get(get_user_roles_widget).post(post_user_roles_widget).delete(delete_user_roles_widget))
         .route(
             &ROUTES.administer_exam("{test_index}"),
             get(get_test_page).post(post_test_form),

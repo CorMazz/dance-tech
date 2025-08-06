@@ -1,0 +1,90 @@
+{% extends "./extensible_templates/main_nav.html" %}
+
+{% block title %}Modify User Roles{% endblock %}
+
+{% block content %}
+  <div class="my-section">
+    <h1 class="py-4 text-3xl font-bold text-gray-800">Manage User Roles</h1>
+    <form
+      id="{{ ids.user_role_form }}"  
+      hx-get="{{ rts.user_roles }}"
+      hx-target="#{{ ids.user_table_body }}"
+      hx-swap="outerHTML"
+      hx-push-url="false"
+      class="mb-6 grid grid-cols-1 md:grid-cols-3 gap-4"
+    >
+      <input
+        type="text"
+        name="query"
+        placeholder="User name or email"
+        class="my-input"
+      />
+    </form>
+    <div class="overflow-x-auto rounded-lg shadow border border-gray-200">
+      <table class="min-w-full divide-y divide-gray-200 text-sm text-gray-700">
+        <thead class="bg-gray-100 text-left font-semibold">
+          <tr>
+            <th class="px-6 py-3">User</th>
+            <th class="px-6 py-3">Current Roles</th>
+            <th class="px-6 py-3">Add Role</th>
+          </tr>
+        </thead>
+        {% block table_body %}
+        <tbody id="{{ ids.user_table_body }}" class="divide-y divide-gray-200">
+            {% for user in users %}
+            <tr id="id-{{ user.id }}">
+              <td class="px-6 py-4 font-medium text-gray-900">{{ user.email }}</td>
+
+              <td class="px-6 py-4">
+                <ul class="flex flex-wrap gap-2">
+                  {% for role in user.roles.0 %}
+                  <li class="flex items-center gap-2 bg-blue-100 text-blue-800 text-sm px-2 py-1 rounded-full">
+                    {{ role }}
+                    <form
+                      hx-delete="{{ rts.user_roles }}"
+                      hx-vals='{"user_id": "{{ user.id }}", "role": "{{ role }}"}'
+                      hx-target="closest li"
+                      hx-swap="outerHTML"
+                      hx-confirm="Are you sure you wish to remove role '{{ role }}' from '{{ user.email }}'?"
+                    >
+                      <button type="submit" class="text-red-500 hover:text-red-700 text-xs">✕</button>
+                    </form>
+                  </li>
+                  {% endfor %}
+                </ul>
+              </td>
+
+              <td class="px-6 py-4">
+                <form
+                  hx-post="{{ rts.user_roles }}"
+                  hx-target="closest tr"
+                  hx-swap="outerHTML"
+                  hx-select="#id-{{ user.id }}"
+                  method="post"
+                  class="flex items-center gap-2"
+                >
+                  <input type="hidden" name="user_id" value="{{ user.id }}">
+                  <input
+                    type="text"
+                    name="role"
+                    placeholder="e.g. admin"
+                    class="border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring focus:ring-blue-300"
+                    required
+                  >
+                  <button
+                    type="submit"
+                    class="bg-green-500 text-white text-sm px-3 py-1 rounded hover:bg-green-600 transition"
+                  >
+                    Add
+                  </button>
+                </form>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        {% endblock %}
+        </table>
+    </div>
+  </div>
+{% endblock %}
+

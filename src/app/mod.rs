@@ -1,4 +1,5 @@
 pub mod config;
+pub mod handlers;
 pub mod filters;
 pub mod router;
 pub mod utils;

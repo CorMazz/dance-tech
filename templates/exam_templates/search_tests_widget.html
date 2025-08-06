@@ -6,7 +6,7 @@
   <div class="my-section">
     <h1 class="py-4 text-3xl font-bold text-gray-800">Search Graded Exams</h1>
     <form
-      id="search-tests-form"
+      id="{{ ids.test_form }}"
       hx-get="{{ rts.search_exam_widget }}"
       hx-target="#search-results"
       hx-swap="innerHTML"

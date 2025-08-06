@@ -37,6 +37,17 @@ use std::sync::Arc;
 use tracing::instrument;
 use uuid::Uuid;
 
+/// The one absolute truth for html element IDs that are used across multiple templates
+pub struct Ids {
+    /// Used when rendering the `user_roles_widget`. If the request comes with an HX-Trigger
+    /// header with this name, will render only the table and update just that.
+    pub test_form: &'static str,
+}
+
+pub const IDS: Ids = Ids {
+    test_form: "search-tests-form",
+};
+
 /// The same template is used to display graded and ungraded tests, using different structs
 #[derive(Template)]
 #[template(path = "./exam_templates/exam.html", blocks = ["content"])]
@@ -525,6 +536,7 @@ pub async fn get_user_autocomplete(
 #[template(path = "./exam_templates/search_tests_widget.html", blocks = ["content", "table"])]
 pub struct SearchTestsWidgetTemplate {
     rts: Routes,
+    ids: Ids,
     filter: SearchTestFilters,
     filtered_exam_info: Vec<FilteredExamResult>,
     has_next_page: bool,
@@ -532,6 +544,7 @@ pub struct SearchTestsWidgetTemplate {
     is_superuser: bool,
 }
 
+/// Query parameters for the search test widget
 #[derive(Debug, Deserialize, Default)]
 pub struct SearchTestFilters {
     /// The search string to match on testee first name, last name, or email
@@ -579,6 +592,7 @@ pub async fn get_search_tests_widget(
 
     let template = SearchTestsWidgetTemplate {
         rts: ROUTES,
+        ids: IDS,
         filtered_exam_info: graded_tests,
         filter,
         has_next_page,
@@ -586,7 +600,7 @@ pub async fn get_search_tests_widget(
     };
 
     if let Some(div_id) = headers.get("HX-Trigger") {
-        if div_id == "search-tests-form" {
+        if div_id == IDS.test_form {
             (StatusCode::OK, Html(render(template.as_table()))).into_response()
         } else {
             (StatusCode::OK, Html(render(template.as_content()))).into_response()

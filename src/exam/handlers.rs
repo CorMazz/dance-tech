@@ -81,11 +81,11 @@ pub async fn post_test_form_handler(
     form: HashMap<String, String>,
     proctor_id: Uuid,
 ) -> Result<(), ExamError> {
-    let (graded_test, testee) =
+    let (graded_test, mut testee) =
         final_grade_handler(data.clone(), test_index, form, proctor_id).await?;
 
     grant_roles(
-        testee,
+        &mut testee,
         graded_test.test.metadata.config.get_granted_roles(),
         &data.db,
     )

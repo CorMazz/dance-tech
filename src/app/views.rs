@@ -1,3 +1,5 @@
+use crate::auth::models::User;
+use crate::auth::utils::search_for_users;
 use crate::AppState;
 use crate::app::utils::is_htmx_request;
 use crate::app::utils::render;
@@ -7,22 +9,38 @@ use crate::check_in::handlers::get_products_from_actor;
 use crate::check_in::models::Product;
 use crate::exam::models::Test;
 use askama::Template;
+use axum::extract::Query;
 use axum::Extension;
 use axum::extract::State;
 use axum::response::Redirect;
+use axum::Form;
 use axum::{
     http::StatusCode,
     response::{Html, IntoResponse},
 };
+use uuid::Uuid;
 use std::sync::Arc;
 
 use crate::app::router::ROUTES;
 use crate::app::router::Routes;
 use crate::app::utils::ErrorTemplate;
+use super::handlers::delete_user_roles_widget_handler;
+use super::handlers::post_user_roles_widget_handler;
 
-// #######################################################################################################################################################
-// home.html
-// #######################################################################################################################################################
+
+/// The one absolute truth for html element IDs that are used across multiple templates
+pub struct Ids {
+    /// Used when rendering the `user_roles_widget`. If the request comes with an HX-Trigger
+    /// header with this name, will render only the table and update just that.
+    pub user_role_form: &'static str,
+    /// Used to target the body of the user table on the modify roles widget
+    pub user_table_body: &'static str,
+}
+
+pub const IDS: Ids = Ids {
+    user_role_form: "search-users-form",
+    user_table_body: "user-table-body",
+};
 
 #[derive(Template)]
 #[template(path = "./app_templates/home.html", blocks = ["content"])]
@@ -52,6 +70,7 @@ pub struct AdminDashboardTemplate {
 }
 
 /// The admin dashboard lets admins view details about all available products, and
+/// lets administrators add/remove roles from users
 pub async fn get_admin_dashboard(
     State(data): State<Arc<AppState>>,
     headers: axum::http::HeaderMap,
@@ -81,9 +100,116 @@ pub async fn get_admin_dashboard(
     }
 }
 
-// #######################################################################################################################################################
-// Error 404 Response
-// #######################################################################################################################################################
+#[derive(Template)]
+#[template(path = "./app_templates/user_roles_widget.html", blocks = ["content", "table_body"])]
+pub struct UserRolesTemplate {
+    rts: Routes,
+    ids: Ids,
+    users: Vec<User>,
+}
+
+#[derive(serde::Deserialize)]
+pub struct UserQuery {
+    #[serde(default)] 
+    query: Option<String>
+}
+
+/// This widget minimally allows admins to see user roles and add/remove roles from users.
+///
+/// More advanced manipulation can be done directly on the database using `PGAdmin`.
+pub async fn get_user_roles_widget(
+    State(data): State<Arc<AppState>>,
+    headers: axum::http::HeaderMap,
+    Query(user_query): Query<UserQuery>,
+    Extension(auth_status): Extension<AuthStatus>,
+) -> impl IntoResponse {
+    if matches!(auth_status, AuthStatus::Unauthorized(..))
+        || matches!(auth_status, AuthStatus::Authorized(user) if !user.is_admin())
+    {
+        return Redirect::to(ROUTES.login).into_response();
+    }
+
+    let users = match user_query.query {
+        None => Vec::new(),
+        Some(user_query) => match search_for_users(user_query, &data.db).await {
+            Ok(users) => users,
+            Err(err) => return err.into_response(&headers),
+        }
+    };
+
+    let template = UserRolesTemplate {
+        rts: ROUTES,
+        ids: IDS,
+        users
+    };
+
+    if let Some(div_id) = headers.get("HX-Trigger") {
+        if div_id == IDS.user_role_form {
+            (StatusCode::OK, Html(render(template.as_table_body()))).into_response()
+        } else {
+            (StatusCode::OK, Html(render(template.as_content()))).into_response()
+        }
+    } else {
+        (StatusCode::OK, Html(render(template))).into_response()
+    }
+}
+
+/// A struct used to either add or remove roles from a user
+#[derive(serde::Deserialize, Debug)]
+pub struct ModifyUserQuery {
+    pub user_id: Uuid,
+    pub role: String,
+}
+
+/// This widget minimally allows admins to see user roles and add/remove roles from users.
+///
+/// The delete method allows admins to remove roles from certain users. 
+pub async fn delete_user_roles_widget(
+    State(data): State<Arc<AppState>>,
+    headers: axum::http::HeaderMap,
+    Query(query): Query<ModifyUserQuery>,
+    Extension(auth_status): Extension<AuthStatus>,
+) -> impl IntoResponse {
+    if matches!(auth_status, AuthStatus::Unauthorized(..))
+        || matches!(auth_status, AuthStatus::Authorized(user) if !user.is_admin())
+    {
+        return Redirect::to(ROUTES.login).into_response();
+    }
+
+    match delete_user_roles_widget_handler(query, &data.db).await {
+        Ok(..) => StatusCode::OK.into_response(),
+        Err(e) => e.into_response(&headers)
+    }
+}
+
+
+/// This widget minimally allows admins to see user roles and add/remove roles from users.
+///
+/// The post method allows admins to add roles to users
+pub async fn post_user_roles_widget(
+    State(data): State<Arc<AppState>>,
+    headers: axum::http::HeaderMap,
+    Extension(auth_status): Extension<AuthStatus>,
+    Form(query): Form<ModifyUserQuery>,
+) -> impl IntoResponse {
+    if matches!(auth_status, AuthStatus::Unauthorized(..))
+        || matches!(auth_status, AuthStatus::Authorized(user) if !user.is_admin())
+    {
+        return Redirect::to(ROUTES.login).into_response();
+    }
+
+    match post_user_roles_widget_handler(query, &data.db).await {
+        Ok(users) => {
+            let template = UserRolesTemplate {
+                rts: ROUTES,
+                ids: IDS,
+                users,
+            };
+            (StatusCode::OK, Html(render(template.as_table_body()))).into_response()
+        },
+        Err(e) => e.into_response(&headers)
+    }
+}
 
 /// Serve the error 404 not found page
 pub async fn error_404_page() -> impl IntoResponse {
