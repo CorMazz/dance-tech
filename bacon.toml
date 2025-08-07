@@ -11,7 +11,7 @@ env.CARGO_TERM_COLOR = "always"
 [jobs.hotreload]
 command = [
   "sh", "-c",
-  "./tailwind/tailwindcss -i ./static/css/input.css -o ./static/css/output.css -c ./tailwind/tailwind.config.js && cargo sqlx prepare && cargo run"
+  "./tailwind/tailwindcss -i ./static/css/input.css -o ./static/css/output.css -c ./tailwind/tailwind.config.js && cargo run"
 ]
 need_stdout = true
 allow_warnings = true

@@ -1,3 +1,4 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
 @import "tailwindcss";
 
 @theme {
@@ -21,6 +22,9 @@
   --color-accent-300: #89C041;
   --color-accent-400: #6DA523;
   --color-accent-500: #4F830B;
+
+  --font-sans: "Inter", sans-serif;
+
 }
 
 
@@ -29,10 +33,10 @@
   /* Container Classes */
 
   .my-container {
-    @apply container mx-auto p-4;
+    @apply max-w-7xl mx-auto px-6 py-10;
   }
   .my-section {
-    @apply shadow-md rounded-lg border border-accent-100 mb-6 p-4 bg-white hover:bg-gray-50 hover:shadow-lg transition duration-300 text-center;
+    @apply bg-white rounded-2xl p-8 shadow-lg mb-10 transition hover:shadow-xl;
   }
   
   /* A fixed one or two column grid. */
@@ -46,21 +50,33 @@
   }
 
   .my-card {
-    @apply shadow-md rounded-lg border border-accent-300 mb-6 p-4 bg-gray-50 hover:bg-gray-100 hover:shadow-xl transition duration-300;
+    @apply bg-white p-6 rounded-2xl shadow-lg border border-gray-200 hover:shadow-2xl hover:scale-[1.01] transition-all duration-300;
   }
 
   .my-button {
-    @apply bg-secondary-300 text-white px-4 py-2 rounded hover:bg-secondary-400 transition;
+    @apply bg-secondary-300 text-white px-6 py-2 rounded-xl shadow-md hover:scale-105 hover:shadow-xl transition-all duration-300 ease-in-out;
+  }
+
+  .my-button-glass {
+    @apply bg-white/20 backdrop-blur-md border border-white/30 text-white px-6 py-2 rounded-full shadow hover:bg-white/30 transition;
   }
 
   /* Text Classes */
 
   .my-title {
-    @apply text-2xl lg:text-4xl font-semibold text-gray-800 mb-4;
+    @apply text-3xl lg:text-5xl font-bold text-gray-900 tracking-tight mb-6;
+  }
+  .my-paragraph {
+    @apply text-lg text-gray-600 leading-relaxed;
   }
 
-  .my-paragraph {
-    @apply text-gray-600 lg:text-xl;
+  /* Navbar Classes */
+  .my-navbar {
+    @apply bg-white/90 backdrop-blur-md shadow-md sticky top-0 z-50
+  }
+
+  .my-nav-button {
+    @apply block py-2 px-3 text-gray-900 rounded-sm hover:bg-gray-100 md:hover:bg-transparent md:hover:text-secondary-500 md:p-0
   }
 
 }
