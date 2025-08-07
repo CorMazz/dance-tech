@@ -15,7 +15,7 @@ RUN rustup default ${RUST_VERSION}
 RUN rustup component add clippy rust-src rustfmt rust-analyzer
 
 RUN cargo install sqlx-cli
-RUN cargo install cargo-watch
+RUN cargo install --locked bacon
 
 ###############################################################################################################
 # Keep me to use Neovim

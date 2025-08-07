@@ -80,12 +80,9 @@ Tailwind must be rebuilt everytime you make changes to the html classes. That ca
 
 `./tailwind/tailwindcss -i ./static/css/input.css -o ./static/css/output.css -c ./tailwind/tailwind.config.js`
 
-If you want to automagically recompile your Rust executable and rebuild your css everytime you save a file, you can run this command.
+If you want to automagically recompile your Rust executable and rebuild your css everytime you save a file, you can run `bacon` which will watch the appropriate directories and run the proper commands, as specified in the `bacon.toml` file.
 
-`cargo watch -s './tailwind/tailwindcss -i ./static/css/input.css -o ./static/css/output.css -c ./tailwind/tailwind.config.js && cargo sqlx prepare && cargo run' --ignore output.css --ignore flowbite.min.css --ignore .sqlx --ignore main.rs --ignore README.md --why`
-
-For some reason the `cargo sqlx prepare` command changes the permissions on the `main.rs` file, which was causing cargo watch to fire repeatedly. That is why we added `--ignore main.rs`. 
-The `cargo sqlx prepare` command allows sqlx to compile even when the database is offline. 
+> The `cargo sqlx prepare` command allows sqlx to compile even when the database is offline. 
 
 ### Launching Production Containers
 
@@ -126,20 +123,25 @@ Ensure you are launching the server from the root of this repository. File paths
 ## To Do:
 
 - Change password via email link
+- Contact Page
 - Exam Queue
-    - Allow users to leave the queue
+    - Allow users to leave the queue (optional)
 - User Exam Dashboard
     - Explanation of exams
     - Export exam data
-- Admin Dashboard
-    - Let admins add/remove roles from users
-    - Trigger product update
 - Proctor Exam Dashboard
     - Export exam data
 - Exams
     - Fix styling on exam page
-    - Email users
-- Make primary colorscheme look less dumb
+    - Email users upon exam completion
+- Demo Mode
+    - Fix demo mode
+- Cosmetics
+    - Go through page by page and ensure it looks good/fits in page, etc
+    - Make primary colorscheme look less dumb
+    - Standardize styling
+    - DRY out tailwind classes
+
 
 ## Time Spent
 
@@ -164,4 +166,5 @@ Ensure you are launching the server from the root of this repository. File paths
 7/26/2025: 5 hrs
 7/27/2025: 6 hrs
 7/31/2025: 5 hrs
-Total: 89.5 hrs
+8/6/2025: 3 hrs
+Total: 92.5 hrs

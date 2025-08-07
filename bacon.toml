@@ -1,0 +1,25 @@
+# This is a configuration file for the bacon tool
+#
+# Complete help on configuration: https://dystroy.org/bacon/config/
+# 
+# You may check the current default at
+#   https://github.com/Canop/bacon/blob/main/defaults/default-bacon.toml
+
+default_job = "hotreload"
+env.CARGO_TERM_COLOR = "always"
+
+[jobs.hotreload]
+command = [
+  "sh", "-c",
+  "./tailwind/tailwindcss -i ./static/css/input.css -o ./static/css/output.css -c ./tailwind/tailwind.config.js && cargo sqlx prepare && cargo run"
+]
+need_stdout = true
+allow_warnings = true
+background = false
+on_change_strategy = "kill_then_restart"
+watch = ["templates/",  "static/css/input.css"]
+ignore = [ "README.md" ]
+kill = ["pkill", "-TERM", "-P"]
+
+[keybindings]
+r = "job:hotreload" # comment this to have 'c' run clippy on only the default target
