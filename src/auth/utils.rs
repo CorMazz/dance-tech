@@ -1,6 +1,8 @@
 //! For functions that are used inside of handlers.
 
+use argon2::PasswordHasher;
 use crate::auth::models::Roles;
+use argon2::{password_hash::{rand_core::OsRng, SaltString}, Argon2};
 use axum_extra::extract::{
     CookieJar,
     cookie::{Cookie, SameSite},
@@ -11,7 +13,7 @@ use sqlx::types::Json;
 use sqlx::{Pool, Postgres};
 use std::collections::HashSet;
 use std::sync::Arc;
-use tracing::{error, instrument};
+use tracing::{debug, error, instrument};
 use uuid::Uuid;
 
 use crate::{
@@ -23,6 +25,24 @@ use crate::{
 };
 
 use redis::{AsyncCommands, RedisError};
+
+/// Hash a plaintext password using Argon2 with a randomly generated salt.
+/// Returns the encoded hash as a String.
+///
+/// Used to sign-up users and to reset their passwords.
+///
+/// # Errors
+/// Returns `AuthError::FatalInternalServerError` if hashing fails for any reason.
+pub fn hash_password(password: &str) -> Result<String, AuthError> {
+    let salt = SaltString::generate(&mut OsRng);
+    Argon2::default()
+        .hash_password(password.as_bytes(), &salt)
+        .map_err(|err| {
+            error!(%err, "Error while hashing password.");
+            AuthError::FatalInternalServerError
+        })
+        .map(|hash| hash.to_string())
+}
 
 pub async fn save_token_data_to_redis(
     data: &Arc<AppState>,
@@ -351,4 +371,68 @@ pub fn verify_jwt_token(
         user_id,
         expires_in: None,
     })
+}
+
+/// Validates a password reset token by checking Redis for a matching user ID
+/// and confirming that user exists in the database.
+/// 
+/// If `consume` is `true`, the token will be deleted from Redis after validation
+/// to prevent reuse. Returns the matching `User` on success.
+#[instrument(skip(data))]
+pub async fn validate_reset_password_token(
+    token: &str,
+    data: &Arc<AppState>,
+    consume: bool,
+) -> Result<User, AuthError> {
+    let redis_key = format!("password_reset:{token}");
+
+    // Connect to Redis
+    let mut redis_client = data
+        .redis_client
+        .get_multiplexed_async_connection()
+        .await
+        .map_err(|err| {
+            error!(%err, "Error while getting redis client.");
+            AuthError::FatalInternalServerError
+        })?;
+
+    // Get the user_id from Redis
+    let user_id: Option<String> = redis_client
+        .get(&redis_key)
+        .await
+        .map_err(|err| {
+            error!(%err, "Error while fetching password reset token from redis.");
+            AuthError::FatalInternalServerError
+        })?;
+
+    let user_id: Uuid = if let Some(uid) = user_id {
+        uid.parse().map_err(|err| {
+            error!(%err, "Invalid UUID format found in Redis for password reset token.");
+            AuthError::AccountNotFound
+        })?
+    } else {
+        debug!("Password reset token invalid or expired: {token}");
+        return Err(AuthError::InvalidOrExpiredToken);
+    };
+
+    // Retrieve user from DB
+    let user = get_user_by_id(&user_id, &data.db).await?.ok_or_else(|| {
+        error!("No user found matching the ID in Redis when resetting a password.");
+        AuthError::InvalidUser
+    })?;
+
+    debug!("Password reset token validated for {}", user.email);
+
+    // Optionally delete the token
+    if consume {
+        let _: () = redis_client
+            .del(&redis_key)
+            .await
+            .map_err(|err| {
+                error!(%err, "Error while deleting password reset token from redis.");
+                AuthError::FatalInternalServerError
+            })?;
+    }
+
+    Ok(user)
 }

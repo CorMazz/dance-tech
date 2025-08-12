@@ -1,31 +1,25 @@
 use crate::{
-    AppState,
-    app::views::{error_404_page, get_home_page, get_admin_dashboard, get_user_roles_widget,
-        delete_user_roles_widget, post_user_roles_widget, get_contact_page
-    },
-    auth::{
+    app::views::{delete_user_roles_widget, error_404_page, get_admin_dashboard, get_contact_page, get_home_page, get_user_roles_widget, post_user_roles_widget 
+    }, auth::{
         middleware::{check_auth_middleware, require_auth_middleware},
         views::{
-            get_google_oauth_callback, get_google_oauth_init_flow, get_login_page, get_logout_page,
-            get_signup_page, get_user_dropdown, post_login_form, post_signup_form,
+            get_google_oauth_callback, get_google_oauth_init_flow, get_login_page, get_logout_page, get_request_password_reset_page, get_reset_password_page, get_signup_page, get_user_dropdown, post_login_form, post_request_password_reset_page, post_reset_password_page, post_signup_form
         },
-    },
-    check_in::views::{
+    }, check_in::views::{
         get_check_in_page, get_successful_checkout_session, post_create_check_out_session,
         post_update_available_products,
-    },
-    exam::views::{
+    }, exam::views::{
         delete_queue_widget, get_graded_test_page, get_join_queue_widget,
         get_proctor_dashboard_page, get_queue_widget, get_search_tests_widget, get_test_page,
         get_user_autocomplete, get_user_dashboard_page, get_user_info_widget, post_live_grading,
         post_queue_widget, post_test_form,
-    },
+    }, AppState
 };
 use axum::{
     Router, middleware,
     routing::{get, post},
 };
-use std::sync::Arc;
+use std::{net::SocketAddr, sync::Arc};
 use tower_http::services::ServeDir;
 
 
@@ -37,6 +31,8 @@ pub struct Routes {
     pub sign_up: &'static str,
     pub login: &'static str,
     pub logout: &'static str,
+    pub request_password_reset: &'static str,
+    pub reset_password: &'static str,
     pub google_oauth_init: &'static str,
     pub google_oauth_callback: &'static str,
 
@@ -109,6 +105,25 @@ impl Routes {
             test_id.to_string()
         )
     }
+
+    /// Must be a full URL to ensure that users can click on it from their email.
+    pub fn reset_password_query(
+        &self,
+        site_root: &(impl ToString + ?Sized + std::fmt::Display),
+        password_token: &(impl ToString + ?Sized + std::fmt::Display),
+    ) -> String {
+        let mut root = site_root.to_string();
+        let path = self.reset_password.trim_start_matches('/');
+
+        if root.ends_with('/') {
+            root.pop(); // remove trailing slash
+        }
+
+        format!(
+            "{root}/{path}?token={password_token}",
+        )
+    }
+
 }
 
 /// This constant will be shared across the application and is the absolute truth for all routes
@@ -119,6 +134,8 @@ pub const ROUTES: Routes = Routes {
     sign_up: "/sign-up",
     login: "/login",
     logout: "/logout",
+    request_password_reset: "/request-password-reset",
+    reset_password: "/reset-password",
     google_oauth_init: "/auth/google",
     google_oauth_callback: "/auth/google/callback",
 
@@ -167,7 +184,6 @@ pub fn create_router(app_state: Arc<AppState>) -> Router {
 
     // Anything in here will check if the user is signed in and add that info to the request
     let check_auth = Router::new()
-        .route(ROUTES.root, get(get_home_page))
         .route(ROUTES.sign_up, get(get_signup_page).post(post_signup_form))
         .route(ROUTES.login, get(get_login_page).post(post_login_form))
         .route(ROUTES.check_in, get(get_check_in_page))
@@ -196,9 +212,16 @@ pub fn create_router(app_state: Arc<AppState>) -> Router {
         .route(ROUTES.google_oauth_callback, get(get_google_oauth_callback))
         .route(&ROUTES.graded_exam("{test_id}"), get(get_graded_test_page))
         .route(ROUTES.contact, get(get_contact_page))
+        .route(ROUTES.root, get(get_home_page))
+        .route(ROUTES.request_password_reset, get(get_request_password_reset_page).post(post_request_password_reset_page))
+        .route(ROUTES.reset_password, get(get_reset_password_page).post(post_reset_password_page))
         .route(ROUTES.logout, get(get_logout_page));
 
+
+
+    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     // DO NOT EDIT BELOW THIS LINE UNLESS YOU KNOW WHAT YOU'RE DOING
+    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
     let auth_required = auth_required.route_layer(middleware::from_fn_with_state(
         app_state.clone(),

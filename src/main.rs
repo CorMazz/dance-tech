@@ -26,12 +26,11 @@ use axum::http::{
 };
 use check_in::config::CheckInConfig;
 use dotenv::dotenv;
-use lettre::transport::smtp::PoolConfig;
-use lettre::{AsyncSmtpTransport, Tokio1Executor, transport::smtp::authentication::Credentials};
 use oauth2::reqwest;
 use redis::Client;
 use sqlx::{Pool, Postgres, postgres::PgPoolOptions};
-use std::{sync::Arc, time::Duration};
+use std::net::SocketAddr;
+use std::sync::Arc;
 use tokio::sync::mpsc;
 use tower_http::cors::CorsLayer;
 use tower_http::trace::TraceLayer;
@@ -49,8 +48,6 @@ pub struct AppState {
     redis_client: Client,
     /// Configuration for the SMTP mailing. None if email functionality is not required.
     smtp_config: Option<SMTPConfig>,
-    /// The actual SMTP mailer. None if email functionality is not required.
-    smtp_mailer: Option<AsyncSmtpTransport<Tokio1Executor>>,
     /// Configuration for sign-in with Google OAuth. None if Google sign-in is not required.
     google_oauth_config: Option<GoogleOAuthConfig>,
     /// An HTTP client used to make requests to the Stripe API and Google OAuth endpoints.
@@ -83,27 +80,6 @@ async fn main() {
         .expect("Client should build");
 
     let smtp_config = SMTPConfig::init();
-    let smtp_mailer: Option<AsyncSmtpTransport<Tokio1Executor>> =
-        smtp_config.as_ref().and_then(|config| {
-            let creds = Credentials::new(config.user_login.clone(), config.user_password.clone());
-
-            match AsyncSmtpTransport::<Tokio1Executor>::relay(&config.server_host) {
-                Ok(transport) => Some(
-                    transport
-                        .credentials(creds)
-                        .pool_config(
-                            PoolConfig::new()
-                                .max_size(10)
-                                .idle_timeout(Duration::from_secs(60)),
-                        )
-                        .build(),
-                ),
-                Err(e) => {
-                    error!("Error: Unable to connect to email server: {e}");
-                    None
-                }
-            }
-        });
 
     let google_oauth_config = GoogleOAuthConfig::init();
 
@@ -146,7 +122,6 @@ async fn main() {
         check_in_config,
         exam_config,
         smtp_config,
-        smtp_mailer,
         google_oauth_config,
         http_client,
         redis_client,
@@ -169,5 +144,5 @@ async fn main() {
     let listener = tokio::net::TcpListener::bind(format!("0.0.0.0:{}", app_config.server_port))
         .await
         .unwrap();
-    axum::serve(listener, app).await.unwrap();
+    axum::serve(listener, app.into_make_service_with_connect_info::<SocketAddr>()).await.unwrap();
 }

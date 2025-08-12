@@ -1,9 +1,11 @@
-use crate::auth::utils::{get_user_by_email, login_user, verify_jwt_token};
+use lettre::AsyncTransport;
+use crate::app::router::{Routes, ROUTES};
+use crate::auth::utils::{get_user_by_email, hash_password, login_user, validate_reset_password_token, verify_jwt_token};
 use crate::{AppState, auth::errors::AuthError};
 use argon2::{
-    Argon2, PasswordHash, PasswordHasher, PasswordVerifier,
-    password_hash::{SaltString, rand_core::OsRng},
+    Argon2, PasswordHash, PasswordVerifier,
 };
+use askama::Template;
 use axum::{
     http::{HeaderMap, header},
     response::{IntoResponse, Redirect},
@@ -12,17 +14,22 @@ use axum_extra::extract::{
     CookieJar,
     cookie::{Cookie, SameSite},
 };
+use lettre::message::header::ContentType;
+use lettre::Message;
 use oauth2::{
     AuthorizationCode, CsrfToken, PkceCodeChallenge, PkceCodeVerifier, Scope, TokenResponse,
     basic::BasicClient,
 };
+use rand::distr::Alphanumeric;
+use rand::{Rng, SeedableRng};
 use serde::Deserialize;
 use std::sync::Arc;
-use tracing::{error, instrument};
+use tracing::{debug, error, instrument};
 
 use redis::AsyncCommands;
 
 use super::middleware::check_auth_utility;
+use super::views::RequestPasswordResetForm;
 
 // #######################################################################################################################################################
 // Sign Up
@@ -42,14 +49,7 @@ pub async fn register_user_handler(
         return Err(AuthError::DuplicateEmail);
     }
 
-    let salt = SaltString::generate(&mut OsRng);
-    let hashed_password = Argon2::default()
-        .hash_password(password.as_bytes(), &salt)
-        .map_err(|err| {
-            error!(%err, "Error while hashing password.");
-            AuthError::FatalInternalServerError
-        })
-        .map(|hash| hash.to_string())?;
+    let hashed_password = hash_password(&password)?;
 
     sqlx::query!(
         "INSERT INTO users (first_name,last_name,email,password)
@@ -360,4 +360,176 @@ pub async fn logout_handler(
     let mut response = Redirect::to("/").into_response();
     response.headers_mut().extend(headers);
     Ok(response)
+}
+
+
+#[derive(Template)]
+#[template(path = "./auth_templates/reset_password_email.html")] 
+struct EmailTemplate {
+    rts: Routes,
+    site_root: String,
+    token: String,
+}
+
+/// Rate limit requests by email and IP address.
+#[instrument(skip(data))]
+pub async fn post_request_password_reset_handler(
+    form: RequestPasswordResetForm,
+    client_ip: String,
+    data: Arc<AppState>,
+) -> Result<(), AuthError> {
+    let Some(smtp_config) = data.smtp_config.as_ref() else {
+        return Err(AuthError::NoEmailConfig)
+    };
+    let email = form.email.trim().to_lowercase();
+
+    let Some(user) = get_user_by_email(&email, &data.db).await? else {
+        // To prevent user enumeration, return success anyway
+        debug!(%email, "No account with this email found for a password reset request. Returning `Ok(())`.");
+        return Ok(())
+    };
+
+    // Generate secure random token
+    let token: String = rand::rngs::StdRng::from_os_rng()
+        .sample_iter(&Alphanumeric)
+        .take(32)
+        .map(char::from)
+        .collect();
+
+    // Store token in Redis with TTL (15 minutes = 900 seconds)
+    // Key format: "password_reset:{token}"
+    let redis_key = format!("password_reset:{token}");
+
+    let mut redis_client = data
+        .redis_client
+        .get_multiplexed_async_connection()
+        .await
+        .map_err(|err| {
+            error!(%err, "Error while getting redis client.");
+            AuthError::FatalInternalServerError
+        })?;
+
+    // Add rate limiting by email address and IP
+
+    let email_key = format!("password_reset_req:{email}");
+
+    // Can't put unit type into redis, so just use bool and ignore it.
+    let already_requested: Option<bool> = redis_client.get(&email_key).await
+        .map_err(|err| {
+            error!(%err, "Error while checking password reset throttle log in redis.");
+            AuthError::FatalInternalServerError
+        })?;
+
+    if already_requested.is_some() {
+        debug!(%email, "Too many password reset requests. Denying access.");
+        return Err(AuthError::TooManyRequests);
+    }
+
+    // Mark that this email just requested a reset
+    let _: () = redis_client.set_ex(email_key, true, 450).await
+        .map_err(|err| {
+            error!(%err, "Error while setting password reset throttle log in redis.");
+            AuthError::FatalInternalServerError
+        })?;
+
+    let ip_key = format!("password_reset_ip:{client_ip}");
+    let requests: Option<u32> = redis_client.get(&ip_key).await
+        .map_err(|err| {
+            error!(%err, "Error while setting password reset ip throttle log in redis.");
+            AuthError::FatalInternalServerError
+        })?;
+
+    if let Some(count) = requests {
+        if count >= 1 {
+            debug!(%client_ip, "IP exceeded password reset request limit.");
+            return Err(AuthError::TooManyRequests);
+        }
+        let _: () = redis_client.incr(ip_key, 1).await
+            .map_err(|err| {
+                error!(%err, "Error while incrementing password reset ip throttle log in redis.");
+                AuthError::FatalInternalServerError
+            })?;
+    } else {
+        let _: () = redis_client.set_ex(ip_key, 1, 60).await
+            .map_err(|err| {
+                error!(%err, "Error while initializing password reset ip throttle log in redis.");
+                AuthError::FatalInternalServerError
+            })?;
+    }
+
+    let _redis_result: () = redis_client
+        .set_ex(redis_key, user.id.to_string(), 900)
+        .await
+        .map_err(|err| {
+            error!(%err, "Error while setting password reset key in redis.");
+            AuthError::FatalInternalServerError
+        })?;
+
+    let email_body = EmailTemplate {
+        rts: ROUTES,
+        token,
+        site_root: data.app_config.site_url.to_string(),
+    }.render()
+    .map_err(|err| {
+        error!(%err, "Fatal error rendering `EmailTemplate`.");
+        AuthError::FatalInternalServerError
+    })?;
+
+    let email = Message::builder()
+        .from(smtp_config.user_email.clone())
+        .to(user.email.parse().map_err(|err| {
+            error!(%err, %user.email, "Unable to parse user email.");
+            AuthError::InternalServerError(format!("Error: Unable to parse user email \"{}\": {}", user.email, err))
+        })?)
+        .subject("DanceTech Password Reset")
+        .header(ContentType::TEXT_HTML)
+        .body(email_body)
+        .map_err(|err| {
+            error!(%err, "Unable to create email message.");
+            AuthError::InternalServerError(format!("Error: Unable to create email: {err}"))
+        })?;
+
+    smtp_config.mailer.send(email)
+        .await
+        .map_err(|err| {
+            error!(%err, "Unable to send email.");
+            AuthError::FatalInternalServerError
+        })?;
+
+    debug!("Password reset email sent to {}", user.email);
+
+    Ok(())
+}
+
+#[instrument(skip_all)]
+pub async fn post_reset_password_handler(
+    token: String,
+    new_password: String,
+    confirm_password: String,
+    data: Arc<AppState>,
+) -> Result<(), AuthError> {
+    if new_password != confirm_password {
+        return Err(AuthError::PasswordsDoNotMatch);
+    }
+
+    // For POST, consume the token so it can't be reused
+    let user = validate_reset_password_token(&token, &data, true).await?;
+
+    let hashed_password = hash_password(&new_password)?;
+
+    sqlx::query!(
+        "UPDATE users SET password = $1 WHERE id = $2",
+        hashed_password,
+        user.id
+    )
+    .execute(&data.db)
+    .await
+    .map_err(|err| {
+        error!(%err, "Error updating password in DB.");
+        AuthError::FatalInternalServerError
+    })?;
+
+    debug!("Reset a user's password.");
+
+    Ok(())
 }

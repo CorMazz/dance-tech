@@ -11,6 +11,7 @@ SIGNUP_LICENSING_KEY=coryisthebest
 # Set to empty strings after the equal sign if not enabling email functionality
 SMTP_SERVER_HOST=smtp.gmail.com
 SMTP_USER_LOGIN=
+# https://myaccount.google.com/apppasswords
 SMTP_USER_PASSWORD=
 SMTP_USER_EMAIL=
 

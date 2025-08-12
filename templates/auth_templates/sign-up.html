@@ -9,35 +9,21 @@
   <div class="my-card">
     <h1 class="my-title">Sign Up</h1>
     <form method="post" hx-boost="true" hx-target="#primary-content" hx-swap="innerHTML show:none" hx-push-url="true">
-      <input 
-        type="text"
-        class="my-input"
-        name="first_name"
-        placeholder="First Name" />
-    
-      <input 
-        type="text"
-        class="my-input"
-        name="last_name"
-        placeholder="Last Name" />
 
-      <input 
-        type="text"
-        class="my-input"
-        name="email"
-        placeholder="Email" />
+      <input type="text" class="my-input" name="first_name"
+             placeholder="First Name" autocomplete="given-name" required />
 
-      <input 
-        type="password"
-        class="my-input"
-        name="password"
-        placeholder="Password" />
-      
-      <input 
-        type="password"
-        class="my-input"
-        name="confirm_password"
-        placeholder="Confirm Password" />
+      <input type="text" class="my-input" name="last_name"
+             placeholder="Last Name" autocomplete="family-name" required />
+
+      <input type="email" class="my-input" name="email"
+             placeholder="Email" autocomplete="email" required />
+
+      <input type="password" class="my-input" name="password"
+             placeholder="Password" autocomplete="new-password" required minlength="8" />
+
+      <input type="password" class="my-input" name="confirm_password"
+             placeholder="Confirm Password" autocomplete="new-password" required minlength="8" />
 
       <button
         type="submit"
@@ -47,10 +33,10 @@
 
     <div class="my-fineprint text-center mt-4">
       By signing up, you agree to the 
-      <a class="underline" href="#">
+      <a class="underline" href="https://www.youtube.com/watch?v=dQw4w9WgXcQ">
         Terms of Service
       </a> and 
-      <a class="underline" href="#">
+      <a class="underline" href="https://www.youtube.com/watch?v=dQw4w9WgXcQ">
         Privacy Policy
       </a>
     </div>

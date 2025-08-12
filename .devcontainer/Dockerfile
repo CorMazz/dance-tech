@@ -8,13 +8,13 @@ RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
 
 # USER vscode  # If using vscode devcontainer development, uncomment this line
 ENV RUSTFLAGS="-C link-arg=-fuse-ld=lld"
-ARG RUST_VERSION=1.86
+ARG RUST_VERSION=1.89
 
 # Set the specified Rust toolchain as the default
 RUN rustup default ${RUST_VERSION}
 RUN rustup component add clippy rust-src rustfmt rust-analyzer
 
-RUN cargo install sqlx-cli
+RUN cargo install sqlx-cli --no-default-features --features postgres
 RUN cargo install --locked bacon
 
 ###############################################################################################################
@@ -49,4 +49,6 @@ RUN curl -LO https://github.com/BurntSushi/ripgrep/releases/download/14.1.1/ripg
 RUN sudo tar -C /opt -xzf ripgrep-14.1.1-x86_64-unknown-linux-musl.tar.gz 
 RUN rm ripgrep-14.1.1-x86_64-unknown-linux-musl.tar.gz
 RUN echo 'export PATH=$PATH:/opt/ripgrep-14.1.1-x86_64-unknown-linux-musl' >> root/.bashrc
+
+WORKDIR /workspaces
 

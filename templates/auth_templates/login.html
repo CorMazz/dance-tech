@@ -21,12 +21,14 @@
           class="my-input"
           name="email"
           placeholder="{% if is_demo_mode %}demo@demo.com{% else %}Email{% endif %}"
+          autocomplete="email"
           value="{% if is_demo_mode %}demo@demo.com{% else %}{% endif %}" />
 
         <input 
           type="password"
           class="my-input"
           name="password"
+          autocomplete="password"
           placeholder="{% if is_demo_mode %}demo{% else %}Password{% endif %}"
           value="{% if is_demo_mode %}demo{% else %}{% endif %}"/>
 
@@ -40,7 +42,7 @@
       {% if google_oauth_enabled %}
         <a
           href={{ rts.google_oauth_init }}
-          class="w-full flex items-center justify-center gap-2 py-3 px-4 rounded border border-gray-300 shadow-sm hover:bg-gray-50 font-medium"
+          class="w-full flex items-center justify-center gap-2 mt-2 py-3 px-4 rounded-xl border border-gray-300 shadow-sm hover:bg-gray-50 font-medium hover:scale-105 hover:shadow-xl transition-all duration-300 ease-in-out"
         >
           <svg class="w-5 h-5" viewBox="0 0 533.5 544.3" xmlns="http://www.w3.org/2000/svg">
             <path fill="#4285f4" d="M533.5 278.4c0-18.6-1.5-37-4.7-54.9H272v103.9h146.9c-6.4 34.7-25.6 64.1-54.6 83.6v68.9h88.3c51.6-47.5 80.9-117.6 80.9-201.5z"/>
@@ -54,18 +56,24 @@
 
       <div class="my-fineprint mt-4">
         By logging in, you agree to the 
-        <a class="underline" href="#">
+        <a class="underline" href="https://www.youtube.com/watch?v=dQw4w9WgXcQ">
           Terms of Service
         </a> and 
-        <a class="underline" href="#">
+        <a class="underline" href="https://www.youtube.com/watch?v=dQw4w9WgXcQ">
           Privacy Policy
         </a>
       </div>
       <div class="my-fineprint mt-4">
         Don't have an account? 
         <a class="underline" href={{ rts.sign_up }} hx-boost="true" hx-target="#primary-content" hx-swap="innerHTML show:none">
-          Sign Up
-        </a>.
+          Sign Up.
+        </a>
+      </div>
+      <div class="my-fineprint mt-4">
+        Forgot your password?
+        <a class="underline" href={{ rts.request_password_reset }} hx-boost="true" hx-target="#primary-content" hx-swap="innerHTML show:none">
+          Request a Password Reset.
+        </a>
       </div>
     </div>
   </div>

@@ -79,7 +79,7 @@
   }
 
   .my-nav-button {
-    @apply block py-2 px-3 text-gray-900 rounded-sm md:hover:bg-transparent md:hover:text-primary-500 md:p-0;
+    @apply block py-2 px-3 text-gray-900 font-medium rounded-sm md:hover:bg-transparent md:hover:text-primary-500 md:p-0;
   }
 
 

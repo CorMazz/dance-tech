@@ -122,8 +122,6 @@ Ensure you are launching the server from the root of this repository. File paths
 
 ## To Do:
 
-- Change password via email link
-- Contact Page
 - Exam Queue
     - Allow users to leave the queue (optional)
 - User Exam Dashboard
@@ -137,10 +135,7 @@ Ensure you are launching the server from the root of this repository. File paths
 - Demo Mode
     - Fix demo mode
 - Cosmetics
-    - Go through page by page and ensure it looks good/fits in page, etc
-    - Make primary colorscheme look less dumb
     - Standardize styling
-    - DRY out tailwind classes
 
 
 ## Time Spent
@@ -167,4 +162,7 @@ Ensure you are launching the server from the root of this repository. File paths
 7/27/2025: 6 hrs
 7/31/2025: 5 hrs
 8/6/2025: 3 hrs
-Total: 92.5 hrs
+8/12/2025: 6 hrs
+8/14/2025: 4 hrs
+8/15/2025: 2 hrs
+Total: 104.5 hrs

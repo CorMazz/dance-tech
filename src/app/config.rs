@@ -1,6 +1,7 @@
+use std::time::Duration;
 use crate::app::utils::get_env_var;
-use serde::{Deserialize, Serialize};
-use tracing::info;
+use lettre::{message::Mailbox, transport::smtp::{authentication::Credentials, PoolConfig}, AsyncSmtpTransport, Tokio1Executor};
+use tracing::{error, info, warn};
 use url::Url;
 
 #[derive(Debug, Clone)]
@@ -34,12 +35,10 @@ impl AppConfig {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Clone)]
 pub struct SMTPConfig {
-    pub server_host: String,
-    pub user_login: String,
-    pub user_password: String,
-    pub user_email: String,
+    pub user_email: Mailbox,
+    pub mailer: AsyncSmtpTransport<Tokio1Executor>,
 }
 
 impl SMTPConfig {
@@ -79,16 +78,39 @@ impl SMTPConfig {
                 None
             }
             (host, user, password, email) => {
-                info!(
-                    "\nEmail functionality is enabled with the following settings:\n\tServer: {host}\n\tUsername: {user}\n\tEmail: {email}\n"
-                );
+                if let Ok(mailbox) = email.parse() {
+                    info!(
+                        %host, %user, %email,
+                        "Email functionality is enabled"
+                    );
 
-                Some(Self {
-                    server_host: host.to_string(),
-                    user_login: user.to_string(),
-                    user_password: password.to_string(),
-                    user_email: email.to_string(),
-                })
+                    let creds = Credentials::new(user.to_string(), password.to_string());
+                    let mailer: AsyncSmtpTransport<Tokio1Executor> = match AsyncSmtpTransport::<Tokio1Executor>::relay(host) {
+                        Ok(transport) => {
+                            transport
+                                .credentials(creds)
+                                .pool_config(
+                                    PoolConfig::new()
+                                        .max_size(10)
+                                        .idle_timeout(Duration::from_secs(60)),
+                                )
+                                .build()
+                        }
+                        Err(err) => {
+                            error!(%err, "Unable to create SMPT Mailer. Proceeding without SMPT functionality.");
+                            return None
+                        }
+                    };
+
+                    Some(Self {
+                        user_email: mailbox,
+                        mailer,
+                    })
+
+                } else {
+                    warn!("Email functionality disabled. Unable to parse '{email}' into email address.");
+                    None
+                }
             }
         }
     }
