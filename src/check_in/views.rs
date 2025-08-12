@@ -40,6 +40,10 @@ pub struct CheckInTemplate {
     is_admin: bool,
     /// The roles that the current user has, used to filter out products
     roles: HashSet<Roles>,
+    /// Let the template know if it needs to display a "hey you have no products" message
+    /// This is because not all users can see all products, and I don't want to leave an
+    /// unprivileged user with a blank page.
+    something_is_displayed: bool
 }
 
 /// Serve the check in page template.
@@ -68,6 +72,10 @@ pub async fn get_check_in_page(
         Err(err) => return err.into_response(&headers),
     };
 
+    let something_is_displayed = products.iter().any(|product| {
+        is_admin || product.requires_roles.is_subset(&roles) || product.show_preview
+    });
+
     debug!("Products: {products:#?}\nUser Roles: {roles:#?}\nIs Admin?: {is_admin:#?}");
 
     let template = CheckInTemplate {
@@ -75,6 +83,7 @@ pub async fn get_check_in_page(
         rts: ROUTES,
         is_admin,
         roles,
+        something_is_displayed,
     };
 
     if is_htmx_request(&headers) {
