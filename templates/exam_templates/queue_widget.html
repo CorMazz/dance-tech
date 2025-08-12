@@ -1,56 +1,60 @@
-<div id="queue" class="my-section">
-    <h2 class="my-title">Testee Queue</h2>
+<div id="{{ ids.queue_container }}" class="my-section my-dashboard-gradient">
+  <div class="my-section-header">
+    <h2 class="my-section-title">Testee Queue</h2>
+  </div>
     {% if !queue.is_empty() %}
-      <table class="my-table">
-          <thead class="my-table-head">
-              <tr>
-                  <th class="my-table-cell">First Name</th>
-                  <th class="my-table-cell">Last Name</th>
-                  <th class="my-table-cell">Test Name</th>
+      <div class="my-table-container">
+        <table class="my-table">
+            <thead class="my-table-head">
+                <tr>
+                    <th class="my-table-cell">First Name</th>
+                    <th class="my-table-cell">Last Name</th>
+                    <th class="my-table-cell">Test Name</th>
+                    {% if is_superuser %}
+                        <th class="my-table-cell">
+                            <p>Actions</p>
+                            {% if is_demo_mode %}<p class="my-fineprint">Disabled for Demo</p>{% else %}{% endif %}
+                        </th>
+                    {% endif %}
+                </tr>
+            </thead>
+            <tbody class="my-table-body">
+              {% for queue_entry in queue %}
+                {% let testee = queue_entry.user %}
+                <tr class="my-table-row">
+                  <td class="my-table-cell">{{ testee.first_name }}</td>
+                  <td class="my-table-cell">{{ testee.last_name }}</td>
+                  <td class="my-table-cell">{{ queue_entry.test_name }}</td>
+                  
                   {% if is_superuser %}
-                      <th class="my-table-cell">
-                          <p>Actions</p>
-                          {% if is_demo_mode %}<p class="text-sm text-gray-500 font-normal">Disabled for Demo</p>{% else %}{% endif %}
-                      </th>
-                  {% endif %}
-              </tr>
-          </thead>
-          <tbody class="my-table-body">
-            {% for queue_entry in queue %}
-              {% let testee = queue_entry.user %}
-              <tr class="my-table-row">
-                <td class="my-table-cell">{{ testee.first_name }}</td>
-                <td class="my-table-cell">{{ testee.last_name }}</td>
-                <td class="my-table-cell">{{ queue_entry.test_name }}</td>
-                
-                {% if is_superuser %}
-                  <td class="my-table-cell">
-                    <button
-                      {# ID is used in HX-Trigger response header parsing to redirect to test-administration #}
-                      id="administer-test-button"
-                      hx-delete={{ rts.queue_query(testee.id, queue_entry.test_index) }}
-                      hx-swap="innerHTML"
-                      hx-target="#primary-content"
-                      hx-confirm="Administer Test for {{ testee.first_name }} {{testee.last_name}}?"
-                      hx-push-url="true"
-                      class="my-button-primary-sm"
-                      {% if is_demo_mode %}disabled{% else %}{% endif %}
-                    >Administer Test</button> 
+                    <td class="my-table-cell">
+                      <button
+                        {# ID is used in HX-Trigger response header parsing to redirect to test-administration #}
+                        id="administer-test-button"
+                        hx-delete={{ rts.queue_query(testee.id, queue_entry.test_index) }}
+                        hx-swap="innerHTML"
+                        hx-target="#primary-content"
+                        hx-confirm="Administer Test for {{ testee.first_name }} {{testee.last_name}}?"
+                        hx-push-url="true"
+                        class="my-button-primary-sm"
+                        {% if is_demo_mode %}disabled{% else %}{% endif %}
+                      >Administer Test</button> 
 
-                    <button 
-                      hx-delete={{ rts.queue_query(testee.id, queue_entry.test_index) }}
-                      hx-swap="outerHTML"
-                      hx-confirm="Are you sure you want to delete {{ testee.first_name }} {{testee.last_name}} from the queue?"
-                      hx-target="closest tr"
-                      class="my-button-danger-sm"
-                      {% if is_demo_mode %}disabled{% endif %}
-                    >Delete</button>
-                  </td>
-                {% endif %}
-              </tr>
-            {% endfor %}
-          </tbody>
-      </table>
+                      <button 
+                        hx-delete={{ rts.queue_query(testee.id, queue_entry.test_index) }}
+                        hx-swap="outerHTML"
+                        hx-confirm="Are you sure you want to delete {{ testee.first_name }} {{testee.last_name}} from the queue?"
+                        hx-target="closest tr"
+                        class="my-button-danger-sm"
+                        {% if is_demo_mode %}disabled{% endif %}
+                      >Delete</button>
+                    </td>
+                  {% endif %}
+                </tr>
+              {% endfor %}
+            </tbody>
+        </table>
+      </div>
     {% else %}
       <div class="my-fineprint">The queue is empty</div>
     {% endif %}

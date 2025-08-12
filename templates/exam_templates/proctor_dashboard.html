@@ -4,8 +4,11 @@
 
 {% block content %}
 
-  <div class="my-section">
-    <h1 class="py-4 text-3xl font-bold text-gray-800">Test Administration</h1>
+<div class="my-dashboard">
+  <div class="my-section my-dashboard-gradient">
+    <div class="my-section-header">
+      <h1 class="my-section-title">Test Administration</h1>
+    </div>
 
     <div class="my-flexbox">
       {% for test_name in test_names %}
@@ -21,8 +24,9 @@
     </div>
   </div>
 
-  <div hx-get={{ rts.queue_widget }} hx-trigger="load"></div>
+  <div hx-get={{ rts.queue_widget }} hx-swap="outerHTML" hx-trigger="load"></div>
 
-  <div id="search-tests-container" hx-get="{{ rts.search_exam_widget }}" hx-trigger="load"></div>
+  <div id="search-tests-container" hx-get="{{ rts.search_exam_widget }}" hx-swap="outerHTML" hx-trigger="load"></div>
+</div>
 
 {% endblock %}

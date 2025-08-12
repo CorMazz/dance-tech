@@ -5,13 +5,14 @@
 
 {% block content %}
 
-  <div class="my-card ">
-    <div class="p-6">
-      <h2 class="my-title">Welcome to the Advancement Test</h2>
+<div class="my-dashboard">
+  <div class="my-section my-dashboard-gradient">
+    <div class="my-section-header">
+      <h2 class="my-section-title">Welcome to the Advancement Test</h2>
+    </div>
       <p class="my-paragraph">
         The advancement test is intended to allow dancers to move to a higher level of instruction. Sign up for a test, show the proctor how you dance, and if you pass you'll be granted access to the next level class.
       </p>
-    </div>
   </div>
 
   <div hx-get="{{ rts.join_queue_widget }}" hx-swap="outerHTML" hx-trigger="load"></div>
@@ -19,13 +20,21 @@
   {# We want this div to stay so that it can reload the queue everytime the queue changes #}
   <div 
     {# If you change this id, it also changes in `join_queue.html`. #}
-    id="{{ ids.queue_container }}"
+    id="{{ ids.queue_reload_handler }}"
     hx-get="{{ rts.queue_widget }}" 
-    {# `refresh-queue` is defined in `join_queue.html`. #}
+    hx-target="#{{ ids.queue_container }}"
+    hx-swap="outerHTML"
+    {# `refresh-queue` is defined in `join_queue_widget.html`. #}
     hx-trigger="load, {{ ids.refresh_queue_event }}"
   >
   </div>
+  <div id="empty-div-for-parity"></div>
+
+    {# This is a separate div so that the dashboard alternate odd/even gradient styling for sections works properly. Basically, that reload handler watches for the event that the 'join_queue' widget will trigger. When it sees that, it updates the queue in the 'queue_container'#}
+  <div id="{{ ids.queue_container}}"></div>
+
 
   <div hx-get="{{ rts.search_exam_widget }}" hx-swap="outerHTML" hx-trigger="load"></div>
+</div>
 
 {% endblock %}

@@ -50,12 +50,17 @@ pub struct Ids {
     /// Same as above
     pub refresh_queue_event: &'static str,
 
+    /// Same as above. This is the div that launches the hx-get request to populate the
+    /// `queue_container`
+    pub queue_reload_handler: &'static str,
+
 }
 
 pub const IDS: Ids = Ids {
     test_form: "search-tests-form",
     queue_container: "queue-container",
     refresh_queue_event: "refresh-queue",
+    queue_reload_handler: "queue-reload-handler",
 };
 
 /// The same template is used to display graded and ungraded tests, using different structs
@@ -299,6 +304,7 @@ pub async fn get_user_dashboard_page(headers: axum::http::HeaderMap) -> impl Int
 #[template(path = "./exam_templates/queue_widget.html")]
 pub struct QueueTemplate {
     rts: Routes,
+    ids: Ids,
     /// If the current user has the role `Admin` or `Proctor`.
     is_superuser: bool,
     is_demo_mode: bool,
@@ -322,6 +328,7 @@ pub async fn get_queue_widget(
         Ok(queue) => {
             let template = QueueTemplate {
                 rts: ROUTES,
+                ids: IDS,
                 is_superuser,
                 is_demo_mode: data.app_config.is_demo_mode,
                 queue,

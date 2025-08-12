@@ -106,7 +106,7 @@
     @apply min-w-full divide-y divide-gray-200 text-sm text-gray-700;
   }
   .my-table-head {
-    @apply bg-gray-100 text-left font-semibold;
+    @apply bg-gray-100/50 hover:bg-gray-100 text-left font-semibold rounded-t-xl;
   }
   .my-table-cell {
     @apply px-6 py-3;
@@ -143,6 +143,33 @@
   .my-button-danger-sm {
     @apply text-sm px-3 py-1 rounded transition bg-red-500 text-white hover:bg-red-600;
   }
+
+  /* Classes for the Dashboards */
+
+  /* Dashboard page wrapper */
+  .my-dashboard {
+    @apply min-h-[100dvh] rounded-2xl space-y-12 py-8;
+  }
+
+  /* Dashboard section wrapper with subtle tint */
+  .my-dashboard-gradient {
+    @apply odd:bg-gradient-to-br odd:from-primary-100/40 odd:to-secondary-100/20 odd:border-none even:bg-gradient-to-br even:from-secondary-100/15 even:to-primary-100/5 even:border-none;
+  }
+
+  /* Dashboard section header */
+  .my-section-header {
+    @apply flex items-center justify-between mb-6;
+  }
+
+  .my-section-title {
+    @apply text-2xl font-bold text-gray-800 tracking-tight;
+  }
+
+  /* Optional action button in section header */
+  .my-section-action {
+    @apply text-sm px-3 py-1 rounded transition bg-primary-300 text-white hover:bg-primary-400;
+  }
+
 
   /* Misc Classes */
   .my-spinner {

@@ -3,8 +3,10 @@
 {% block title %}Search Exams{% endblock %}
 
 {% block content %}
-  <div class="my-section">
-    <h1 class="my-title">Search Graded Exams</h1>
+  <div class="my-section my-dashboard-gradient">
+    <div class="my-section-header">
+      <h1 class="my-section-title">Search Graded Exams</h1>
+    </div>
     {% if is_signed_in %}
       <form
         id="{{ ids.test_form }}"

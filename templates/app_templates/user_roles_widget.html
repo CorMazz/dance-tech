@@ -3,10 +3,11 @@
 {% block title %}Modify User Roles{% endblock %}
 
 {% block content %}
-  <div class="my-section">
-    <h1 class="my-title">Manage User Roles</h1>
+  <div class="my-section my-dashboard-gradient">
+    <div class="my-section-header">
+      <h1 class="my-section-title">Manage User Roles</h1>
+    </div>
 
-    <!-- Search Form -->
     <form
       id="{{ ids.user_role_form }}"  
       hx-get="{{ rts.user_roles }}"
@@ -24,7 +25,6 @@
       />
     </form>
 
-    <!-- Table -->
     <div class="my-table-container">
       <table class="my-table">
         <thead class="my-table-head">
