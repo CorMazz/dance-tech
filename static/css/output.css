@@ -962,6 +962,9 @@
   .text-green-700 {
     color: var(--color-green-700);
   }
+  .text-primary-400 {
+    color: var(--color-primary-400);
+  }
   .text-red-500 {
     color: var(--color-red-500);
   }
@@ -1140,6 +1143,13 @@
     &:hover {
       @media (hover: hover) {
         color: var(--color-gray-900);
+      }
+    }
+  }
+  .hover\:underline {
+    &:hover {
+      @media (hover: hover) {
+        text-decoration-line: underline;
       }
     }
   }

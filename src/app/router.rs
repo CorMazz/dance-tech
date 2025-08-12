@@ -1,7 +1,7 @@
 use crate::{
     AppState,
     app::views::{error_404_page, get_home_page, get_admin_dashboard, get_user_roles_widget,
-        delete_user_roles_widget, post_user_roles_widget
+        delete_user_roles_widget, post_user_roles_widget, get_contact_page
     },
     auth::{
         middleware::{check_auth_middleware, require_auth_middleware},
@@ -65,6 +65,7 @@ pub struct Routes {
     pub admin_dashboard: &'static str,
     pub search_users: &'static str,
     pub user_roles: &'static str,
+    pub contact: &'static str,
 }
 
 impl Routes {
@@ -143,6 +144,7 @@ pub const ROUTES: Routes = Routes {
     admin_dashboard: "/admin-dashboard",
     search_users: "/widgets/search-users",
     user_roles: "/widgets/user-roles",
+    contact: "/contact",
 };
 
 pub fn create_router(app_state: Arc<AppState>) -> Router {
@@ -193,6 +195,7 @@ pub fn create_router(app_state: Arc<AppState>) -> Router {
         .route(ROUTES.google_oauth_init, get(get_google_oauth_init_flow))
         .route(ROUTES.google_oauth_callback, get(get_google_oauth_callback))
         .route(&ROUTES.graded_exam("{test_id}"), get(get_graded_test_page))
+        .route(ROUTES.contact, get(get_contact_page))
         .route(ROUTES.logout, get(get_logout_page));
 
     // DO NOT EDIT BELOW THIS LINE UNLESS YOU KNOW WHAT YOU'RE DOING

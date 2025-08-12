@@ -143,12 +143,11 @@ pub async fn get_user_roles_widget(
         users
     };
 
-    if let Some(div_id) = headers.get("HX-Trigger") {
-        if div_id == IDS.user_role_form {
-            (StatusCode::OK, Html(render(template.as_table_body()))).into_response()
-        } else {
-            (StatusCode::OK, Html(render(template.as_content()))).into_response()
-        }
+
+    if matches!(headers.get("HX-Trigger"), Some(div_id) if div_id == IDS.user_role_form) {
+        (StatusCode::OK, Html(render(template.as_table_body()))).into_response()
+    } else if is_htmx_request(&headers) {
+        (StatusCode::OK, Html(render(template.as_content()))).into_response()
     } else {
         (StatusCode::OK, Html(render(template))).into_response()
     }
@@ -210,6 +209,25 @@ pub async fn post_user_roles_widget(
         Err(e) => e.into_response(&headers)
     }
 }
+
+#[derive(Template)]
+#[template(path = "./app_templates/contact.html", blocks = ["content"])]
+pub struct ContactTemplate {
+    rts: Routes,
+}
+
+pub async fn get_contact_page(headers: axum::http::HeaderMap) -> impl IntoResponse {
+    let template = ContactTemplate { rts: ROUTES };
+
+    if is_htmx_request(&headers) {
+        (StatusCode::OK, Html(render(template.as_content()))).into_response()
+    } else {
+        (StatusCode::OK, Html(render(template))).into_response()
+    }
+
+}
+
+
 
 /// Serve the error 404 not found page
 pub async fn error_404_page() -> impl IntoResponse {
