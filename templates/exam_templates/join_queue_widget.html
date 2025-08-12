@@ -1,6 +1,6 @@
 
 <div class="my-section">
-  <h1 class="py-4 text-3xl font-bold text-gray-800">Join the Queue</h1>
+  <h1 class="my-title">Join the Queue</h1>
 
   <div class="my-flexbox">
     {% if is_signed_in %}
@@ -17,7 +17,7 @@
         </button>
       {% endfor %}
     {% else %}
-     <p class="my-paragraph">Sign in to join the test queue.</p>
+     <p class="my-fineprint text-left">Sign in to join the test queue.</p>
     {% endif %}
   </div>
 </div>

@@ -555,6 +555,8 @@ pub struct SearchTestsWidgetTemplate {
     has_next_page: bool,
     /// Used to hide the `testee` search box from non-superusers
     is_superuser: bool,
+    /// If not signed in, tells users to sign in to see their results
+    is_signed_in: bool,
 }
 
 /// Query parameters for the search test widget
@@ -590,11 +592,19 @@ pub async fn get_search_tests_widget(
     Query(filter): Query<SearchTestFilters>,
 ) -> impl IntoResponse {
     let Some(user) = auth_status.ok() else {
-        return (
-            StatusCode::OK,
-            Html("<h1 class=my-paragraph>Sign in to see test results</h1>"),
-        )
-            .into_response();
+        let template = SearchTestsWidgetTemplate {
+            rts: ROUTES,
+            ids: IDS,
+            filtered_exam_info: Vec::new(),
+            filter,
+            has_next_page: false,
+            is_superuser: false,
+            is_signed_in: false,
+        };
+        if is_htmx_request(&headers) {
+            return (StatusCode::OK, Html(render(template.as_content()))).into_response()
+        }
+        return (StatusCode::OK, Html(render(template))).into_response()
     };
 
     let (graded_tests, has_next_page) =
@@ -610,6 +620,7 @@ pub async fn get_search_tests_widget(
         filter,
         has_next_page,
         is_superuser: user.is_superuser(),
+        is_signed_in: true,
     };
 
     if matches!(headers.get("HX-Trigger"), Some(div_id) if div_id == IDS.test_form) {
