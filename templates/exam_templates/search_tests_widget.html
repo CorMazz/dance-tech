@@ -44,7 +44,7 @@
       <input type="hidden" name="page" value="1" />
       <input type="hidden" name="per_page" value="{{ filter.per_page }}" />
 
-      <button type="submit" class="my-button col-span-1 md:col-span-3">Search</button>
+      <button type="submit" class="my-button h-12 col-span-1 md:col-span-3">Search</button>
     </form>
     
   {% block table %}
@@ -69,27 +69,27 @@
               {% let proctor = info.proctor %}
               <tr class="hover:bg-gray-50">
                 <td class="px-4 py-2 border border-gray-300">
-                  <a href="{{ rts.graded_exam(exam.id) }}" hx-boost="true" hx-target="#primary-content" hx-swap="outerHTML" class="block w-full h-full">
+                  <a href="{{ rts.graded_exam(exam.id) }}" hx-boost="true" hx-target="#primary-content" class="block w-full h-full">
                     {{ exam.test.metadata.test_name }}
                   </a>
                 </td>
                 <td class="px-4 py-2 border border-gray-300">
-                  <a href="{{ rts.graded_exam(exam.id) }}" hx-boost="true" hx-target="#primary-content" hx-swap="outerHTML" class="block w-full h-full">
+                  <a href="{{ rts.graded_exam(exam.id) }}" hx-boost="true" hx-target="#primary-content" class="block w-full h-full">
                     {{ testee.first_name }} {{ testee.last_name }}
                   </a>
                 </td>
                 <td class="px-4 py-2 border border-gray-300">
-                  <a href="{{ rts.graded_exam(exam.id) }}" hx-boost="true" hx-target="#primary-content" hx-swap="outerHTML" class="block w-full h-full">
+                  <a href="{{ rts.graded_exam(exam.id) }}" hx-boost="true" hx-target="#primary-content" class="block w-full h-full">
                     {{ proctor.first_name }} {{ proctor.last_name }}
                   </a>
                 </td>
                 <td class="px-4 py-2 border border-gray-300">
-                  <a href="{{ rts.graded_exam(exam.id) }}" hx-boost="true" hx-target="#primary-content" hx-swap="outerHTML" class="block w-full h-full">
+                  <a href="{{ rts.graded_exam(exam.id) }}" hx-boost="true" hx-target="#primary-content" class="block w-full h-full">
                     {{ exam.grade.achieved_score }}
                   </a>
                 </td>
                 <td class="px-4 py-2 border border-gray-300">
-                  <a href="{{ rts.graded_exam(exam.id) }}" hx-boost="true" hx-target="#primary-content" hx-swap="outerHTML" class="block w-full h-full">
+                  <a href="{{ rts.graded_exam(exam.id) }}" hx-boost="true" hx-target="#primary-content" class="block w-full h-full">
                     {% if exam.grade.is_passing %}
                       ✅ Passed
                     {% else %}

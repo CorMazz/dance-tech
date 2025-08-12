@@ -4,7 +4,6 @@
 
 {% block content %}
 
-<div class="my-container">
   <div class="my-section">
     <h1 class="py-4 text-3xl font-bold text-gray-800">Test Administration</h1>
 
@@ -21,18 +20,9 @@
       {% endfor %}
     </div>
   </div>
-  
-  <div class="my-card" hx-get={{ rts.queue_widget }} hx-trigger="load"></div>
+
+  <div hx-get={{ rts.queue_widget }} hx-trigger="load"></div>
 
   <div id="search-tests-container" hx-get="{{ rts.search_exam_widget }}" hx-trigger="load"></div>
 
-</div>
-
-{#
-<div hx-get="/queue" hx-select="#queue" hx-trigger="load" class="mt-8 mx-4"></div>
-
-<div hx-get="/broad-test-results" hx-select="#broad-test-results-widget" hx-swap="outerHTML" hx-trigger="load" class="mt-8"></div>
-
-<div hx-get="/search-testee" hx-select="#search-testee-widget" hx-swap="outerHTML" hx-trigger="load" class="mt-8"></div>
-#}
 {% endblock %}

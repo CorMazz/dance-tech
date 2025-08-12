@@ -1,69 +1,65 @@
-
 {% extends "../extensible_templates/main_nav.html" %}
 
-<!-- https://tailwindcomponents.com/components/sign-up-form -->
-<!-- TODO: Add live password match checking with htmx  -->
-
+{# https://tailwindcomponents.com/components/sign-up-form #}
 
 {% block title %}Sign Up{% endblock %}
 
 {% block content %}
-<div class="bg-grey-lighter min-h-screen flex flex-col">
-    <div class="container max-w-sm mx-auto flex-1 flex flex-col items-center justify-center px-2">
-        <div class="bg-white px-6 py-8 rounded shadow-md text-black w-full">
-            <h1 class="mb-8 text-3xl text-center">Sign up</h1>
-            <form method="post" hx-boost="true" hx-target="#primary-content" hx-swap="innerHTML show:none" hx-push-url="true">
-                <input 
-                    type="text"
-                    class="block border border-grey-light w-full p-3 rounded mb-4"
-                    name="first_name"
-                    placeholder="First Name" />
-                
-                <input 
-                    type="text"
-                    class="block border border-grey-light w-full p-3 rounded mb-4"
-                    name="last_name"
-                    placeholder="Last Name" />
+<div class="my-flexbox text-center min-h-[75dvh]">
+  <div class="my-card">
+    <h1 class="my-title">Sign Up</h1>
+    <form method="post" hx-boost="true" hx-target="#primary-content" hx-swap="innerHTML show:none" hx-push-url="true">
+      <input 
+        type="text"
+        class="my-input"
+        name="first_name"
+        placeholder="First Name" />
+    
+      <input 
+        type="text"
+        class="my-input"
+        name="last_name"
+        placeholder="Last Name" />
 
-                <input 
-                    type="text"
-                    class="block border border-grey-light w-full p-3 rounded mb-4"
-                    name="email"
-                    placeholder="Email" />
+      <input 
+        type="text"
+        class="my-input"
+        name="email"
+        placeholder="Email" />
 
-                <input 
-                    type="password"
-                    class="block border border-grey-light w-full p-3 rounded mb-4"
-                    name="password"
-                    placeholder="Password" />
-                <input 
-                    type="password"
-                    class="block border border-grey-light w-full p-3 rounded mb-4"
-                    name="confirm_password"
-                    placeholder="Confirm Password" />
-                <button
-                    type="submit"
-                    class="w-full text-center py-3 rounded bg-green-500 text-white hover:bg-green-700 focus:outline-none my-1"
-                >Create Account</button>
-            </form>
+      <input 
+        type="password"
+        class="my-input"
+        name="password"
+        placeholder="Password" />
+      
+      <input 
+        type="password"
+        class="my-input"
+        name="confirm_password"
+        placeholder="Confirm Password" />
 
-            <div class="text-center text-sm text-grey-dark mt-4">
-                By signing up, you agree to the 
-                <a class="no-underline border-b border-grey-dark text-grey-dark" href="#">
-                    Terms of Service
-                </a> and 
-                <a class="no-underline border-b border-grey-dark text-grey-dark" href="#">
-                    Privacy Policy
-                </a>
-            </div>
-        </div>
+      <button
+        type="submit"
+        class="my-button text-xl w-full h-12"
+      >Create Account</button>
+    </form>
 
-        <div class="text-grey-dark mt-6">
-            Already have an account? 
-            <a class="no-underline border-b border-blue text-blue" href={{ rts.login}} hx-boost="true" hx-target="#primary-content" hx-swap="innerHTML">
-                Log in
-            </a>.
-        </div>
+    <div class="my-fineprint text-center mt-4">
+      By signing up, you agree to the 
+      <a class="underline" href="#">
+        Terms of Service
+      </a> and 
+      <a class="underline" href="#">
+        Privacy Policy
+      </a>
     </div>
+    <div class="my-fineprint text-center mt-4">
+      Already have an account? 
+      <a class="underline" href={{ rts.login}} hx-boost="true" hx-target="#primary-content" hx-swap="innerHTML show:none">
+        Log in
+      </a>.
+    </div>
+  </div>
 </div>
 {% endblock %}

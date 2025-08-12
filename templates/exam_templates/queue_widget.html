@@ -1,4 +1,4 @@
-<div id="queue">
+<div id="queue" class="my-section">
     <h2 class="py-2 text-2xl font-bold">Testee Queue</h2>
     {% if !queue.is_empty() %}
       <table class="min-w-full bg-white">
@@ -30,8 +30,7 @@
                       {# ID is used in HX-Trigger response header parsing to redirect to test-administration #}
                       id="administer-test-button"
                       hx-delete={{ rts.queue_query(testee.id, queue_entry.test_index) }}
-                      hx-swap="outerHTML"
-                      hx-select="#primary-content"
+                      hx-swap="innerHTML"
                       hx-target="#primary-content"
                       hx-confirm="Administer Test for {{ testee.first_name }} {{testee.last_name}}?"
                       hx-push-url="true"

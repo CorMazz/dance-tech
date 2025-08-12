@@ -9,7 +9,7 @@
           hx-post={{ rts.queue_query("self", loop.index0) }}
           hx-swap="none"
           hx-push-url="false"
-          hx-on::after-request="document.querySelector('#queue-container')?.dispatchEvent(new CustomEvent('refresh-queue', { bubbles: true }))"
+          hx-on::after-request="document.querySelector('#{{ ids.queue_container }}')?.dispatchEvent(new CustomEvent('{{ ids.refresh_queue_event }}', { bubbles: true }))"
           class="my-card"
         >
           <h5 class="my-title">{{ test_name }}</h5>

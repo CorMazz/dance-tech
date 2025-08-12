@@ -4,32 +4,28 @@
 {% block title %}User Dashboard{% endblock %}
 
 {% block content %}
-<div class="my-container">
-  <div class="my-grid">
 
-    <div class="my-card ">
-      <div class="p-6">
-        <h2 class="my-title">Welcome to the Advancement Test</h2>
-        <p class="my-paragraph">
-          The advancement test is intended to allow dancers to move to a higher level of instruction. Sign up for a test, show the proctor how you dance, and if you pass you'll be granted access to the next level class.
-        </p>
-      </div>
+  <div class="my-card ">
+    <div class="p-6">
+      <h2 class="my-title">Welcome to the Advancement Test</h2>
+      <p class="my-paragraph">
+        The advancement test is intended to allow dancers to move to a higher level of instruction. Sign up for a test, show the proctor how you dance, and if you pass you'll be granted access to the next level class.
+      </p>
     </div>
   </div>
 
-  <div id="join-queue-container" hx-get="{{ rts.join_queue_widget }}" hx-trigger="load"></div>
+  <div hx-get="{{ rts.join_queue_widget }}" hx-swap="outerHTML" hx-trigger="load"></div>
 
+  {# We want this div to stay so that it can reload the queue everytime the queue changes #}
   <div 
-    {# If you change this id, also change it in `join_queue.html`. #}
-    id="queue-container"
-    class="my-card" 
+    {# If you change this id, it also changes in `join_queue.html`. #}
+    id="{{ ids.queue_container }}"
     hx-get="{{ rts.queue_widget }}" 
     {# `refresh-queue` is defined in `join_queue.html`. #}
-    hx-trigger="load, refresh-queue" 
+    hx-trigger="load, {{ ids.refresh_queue_event }}"
   >
   </div>
 
-  <div id="search-exams-container" hx-get="{{ rts.search_exam_widget }}" hx-trigger="load"></div>
+  <div  hx-get="{{ rts.search_exam_widget }}" hx-swap="outerHTML" hx-trigger="load"></div>
 
-</div>
 {% endblock %}

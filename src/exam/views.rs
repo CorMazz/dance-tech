@@ -42,10 +42,20 @@ pub struct Ids {
     /// Used when rendering the `user_roles_widget`. If the request comes with an HX-Trigger
     /// header with this name, will render only the table and update just that.
     pub test_form: &'static str,
+
+    /// Used on the user dashboard and the queue widget to force the queue to update
+    /// when a user clicks the join queue button.
+    pub queue_container: &'static str,
+
+    /// Same as above
+    pub refresh_queue_event: &'static str,
+
 }
 
 pub const IDS: Ids = Ids {
     test_form: "search-tests-form",
+    queue_container: "queue-container",
+    refresh_queue_event: "refresh-queue",
 };
 
 /// The same template is used to display graded and ungraded tests, using different structs
@@ -271,10 +281,11 @@ pub async fn get_proctor_dashboard_page(
 #[template(path = "./exam_templates/user_dashboard.html", blocks = ["content"])]
 pub struct UserDashboardTemplate {
     rts: Routes,
+    ids: Ids,
 }
 
 pub async fn get_user_dashboard_page(headers: axum::http::HeaderMap) -> impl IntoResponse {
-    let template = UserDashboardTemplate { rts: ROUTES };
+    let template = UserDashboardTemplate { rts: ROUTES, ids: IDS };
 
     if is_htmx_request(&headers) {
         (StatusCode::OK, Html(render(template.as_content())))
@@ -285,7 +296,7 @@ pub async fn get_user_dashboard_page(headers: axum::http::HeaderMap) -> impl Int
 
 /// The queue is only ever intended to be rendered within another page, so it has no content block.
 #[derive(Template)]
-#[template(path = "./exam_templates/queue.html")]
+#[template(path = "./exam_templates/queue_widget.html")]
 pub struct QueueTemplate {
     rts: Routes,
     /// If the current user has the role `Admin` or `Proctor`.
@@ -323,9 +334,10 @@ pub async fn get_queue_widget(
 
 /// Used for live grading, just render the `Grade` struct
 #[derive(Template)]
-#[template(path = "./exam_templates/join_queue.html")]
+#[template(path = "./exam_templates/join_queue_widget.html")]
 pub struct JoinQueueTemplate {
     rts: Routes,
+    ids: Ids,
     test_names: Vec<String>,
     is_signed_in: bool,
 }
@@ -339,6 +351,7 @@ pub async fn get_join_queue_widget(
 
     let template = JoinQueueTemplate {
         rts: ROUTES,
+        ids: IDS,
         test_names: data.exam_config.test_names.clone(),
         is_signed_in,
     };
@@ -599,12 +612,10 @@ pub async fn get_search_tests_widget(
         is_superuser: user.is_superuser(),
     };
 
-    if let Some(div_id) = headers.get("HX-Trigger") {
-        if div_id == IDS.test_form {
-            (StatusCode::OK, Html(render(template.as_table()))).into_response()
-        } else {
-            (StatusCode::OK, Html(render(template.as_content()))).into_response()
-        }
+    if matches!(headers.get("HX-Trigger"), Some(div_id) if div_id == IDS.test_form) {
+        (StatusCode::OK, Html(render(template.as_table()))).into_response()
+    } else if is_htmx_request(&headers) {
+        (StatusCode::OK, Html(render(template.as_content()))).into_response()
     } else {
         (StatusCode::OK, Html(render(template))).into_response()
     }

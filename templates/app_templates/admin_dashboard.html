@@ -3,7 +3,6 @@
 {% block title %}Admin Dashboard{% endblock %}
 
 {% block content %}
-<div class="my-container">
   <div class="my-section">
     <h1 class="py-4 text-3xl font-bold text-gray-800">Products</h1>
 
@@ -78,6 +77,7 @@
       {% endfor %}
     </div>
   </div>
+
   <div id="user-role-widget-container" hx-get="{{ rts.user_roles }}" hx-trigger="load"></div>
-</div>
+
 {% endblock %}

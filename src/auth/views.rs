@@ -51,15 +51,21 @@ pub async fn get_user_dropdown(Extension(auth_status): Extension<AuthStatus>) ->
 // #######################################################################################################################################################
 
 #[derive(Template)]
-#[template(path = "./auth_templates/sign-up.html")]
+#[template(path = "./auth_templates/sign-up.html", blocks = ["content"])]
 pub struct SignUpTemplate {
     rts: Routes,
 }
 
-pub async fn get_signup_page() -> impl IntoResponse {
+pub async fn get_signup_page(
+    headers: axum::http::HeaderMap,
+) ->impl IntoResponse {
     let template = SignUpTemplate { rts: ROUTES };
 
-    (StatusCode::OK, Html(template.render().unwrap()))
+    if is_htmx_request(&headers) {
+        (StatusCode::OK, Html(render(template.as_content())))
+    } else {
+        (StatusCode::OK, Html(render(template)))
+    }
 }
 
 #[derive(Debug, Deserialize)]
