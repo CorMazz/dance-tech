@@ -43,18 +43,29 @@ pub struct UserDropdownTemplate {
     user: Option<User>,
     is_proctor: bool,
     is_admin: bool,
+    /// The URL for the profile picture to display. Can come from Google, or use the default one
+    /// for this application.
+    pfp_url: String,
 }
 
-pub async fn get_user_dropdown(Extension(auth_status): Extension<AuthStatus>) -> impl IntoResponse {
+pub async fn get_user_dropdown(
+    cookie_jar: CookieJar,
+    Extension(auth_status): Extension<AuthStatus>,
+) -> impl IntoResponse {
     let user = auth_status.ok();
     let is_proctor = user.as_ref().is_some_and(super::models::User::is_proctor);
     let is_admin = user.as_ref().is_some_and(super::models::User::is_admin);
+
+    let pfp_url = cookie_jar
+        .get("profile_picture")
+        .map_or_else(|| "static/images/default_pfp.jpg".to_string(), |c| c.value().to_string());
 
     let template = UserDropdownTemplate {
         rts: ROUTES,
         user,
         is_proctor,
         is_admin,
+        pfp_url,
     };
 
     (StatusCode::OK, Html(template.render().unwrap()))

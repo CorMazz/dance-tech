@@ -126,6 +126,17 @@ Ensure you are launching the server from the root of this repository. File paths
 
 ## To Do:
 
+### Likely
+
+- Demo Mode
+    - Fix demo mode
+- Misc
+    - Add pictures to home page
+    - Add information about reserved roles on the Manage User Roles widget
+    - Add information about how Stripe is scraped to the admin dashboard
+
+### Unlikely
+
 - Exam Queue
     - Allow users to leave the queue (optional)
 - User Exam Dashboard
@@ -134,18 +145,8 @@ Ensure you are launching the server from the root of this repository. File paths
 - Proctor Exam Dashboard
     - Export exam data
 - Exams
-    - Fix styling on exam page
     - Email users upon exam completion
     - Add antitheses
-- Demo Mode
-    - Fix demo mode
-- Misc
-    - Add pfps
-    - Add pictures to home page
-    - Round logo edges
-    - Add information about reserved roles on the Manage User Roles widget
-    - Add information about how Stripe is scraped to the admin dashboard
-
 
 ## Time Spent
 
@@ -174,5 +175,5 @@ Ensure you are launching the server from the root of this repository. File paths
 8/12/2025: 6 hrs
 8/14/2025: 4 hrs
 8/15/2025: 4 hrs
-8/16/2025: 3 hrs
-Total: 109.5 hrs
+8/16/2025: 7 hrs
+Total: 113.5 hrs

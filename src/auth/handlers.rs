@@ -278,29 +278,45 @@ pub async fn google_oauth_callback_handler(
         AuthError::OAuthError
     })?;
 
-    let user = get_user_by_email(email, &data.db).await?;
+    let user = match get_user_by_email(email, &data.db).await? {
+        Some(user) => user,
+        None => {
+            // Only register if Google signup is allowed and all fields exist
+            if let (Some(first_name), Some(last_name), Some(email)) =
+                (user_info.given_name, user_info.family_name, user_info.email)
+                && data.auth_config.allow_sign_up_with_google
+            {
+                let password: String = rand::rngs::StdRng::from_os_rng()
+                    .sample_iter(&Alphanumeric)
+                    .take(32)
+                    .map(char::from)
+                    .collect();
 
-    match user {
-        Some(user) => {
-            let jar = login_user(user, &data, cookie_jar).await?;
-            Ok((jar, Redirect::to("/")).into_response())
+                register_user_handler(data.clone(), first_name, last_name, email, password).await?
+            } else {
+                return Err(AuthError::AccountNotFound);
+            }
         }
-        None => if let (Some(first_name), Some(last_name), Some(email)) = (user_info.given_name, user_info.family_name, user_info.email)
-            && data.auth_config.allow_sign_up_with_google
-        {
-            let password: String = rand::rngs::StdRng::from_os_rng()
-                .sample_iter(&Alphanumeric)
-                .take(32)
-                .map(char::from)
-                .collect();
+    };
 
-            let user = register_user_handler(data.clone(), first_name, last_name, email, password).await?;
-            let jar = login_user(user, &data, cookie_jar).await?;
-            Ok((jar, Redirect::to("/")).into_response())
-        } else {
-            Err(AuthError::AccountNotFound)
-        }
+    // Log the user in and get a mutable CookieJar
+    let mut jar = login_user(user, &data, cookie_jar).await?;
+
+    // Add the profile picture cookie if it exists
+    if let Some(picture_url) = user_info.picture {
+        let cookie = Cookie::build(("profile_picture", picture_url))
+            .path("/")
+            .max_age(time::Duration::minutes(
+                data.auth_config.access_token_max_age * 60,
+            ))
+            .http_only(true)
+            .same_site(SameSite::Lax);
+
+        jar = jar.add(cookie);
     }
+
+    // Return response once, no duplication
+    Ok((jar, Redirect::to("/")).into_response())
 }
 // #######################################################################################################################################################
 // Logout
