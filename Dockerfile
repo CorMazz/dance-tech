@@ -26,6 +26,7 @@ ENV SQLX_OFFLINE=true
 # source code into the container. Once built, copy the executable to an
 # output directory before the cache mounted /app/target is unmounted.
 
+# Add the -vv flag to make cargo really verbose
 RUN --mount=type=bind,source=src,target=src \
     --mount=type=bind,source=templates,target=templates \
     --mount=type=bind,source=.sqlx,target=.sqlx \
@@ -35,7 +36,7 @@ RUN --mount=type=bind,source=src,target=src \
     --mount=type=cache,target=/app/target/ \
     --mount=type=cache,target=/usr/local/cargo/git/db \
     --mount=type=cache,target=/usr/local/cargo/registry/ \ 
-    cargo build --locked --release -vv && \
+    cargo build --locked --release && \  
     cp ./target/release/$APP_NAME /bin/server
 
 ################################################################################
