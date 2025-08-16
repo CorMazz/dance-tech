@@ -132,6 +132,7 @@ Ensure you are launching the server from the root of this repository. File paths
     - Fix demo mode
 - Misc
     - Add pictures to home page
+- Check if the success page can be accessed again after a day
 
 ### Unlikely
 
@@ -173,5 +174,5 @@ Ensure you are launching the server from the root of this repository. File paths
 8/12/2025: 6 hrs
 8/14/2025: 4 hrs
 8/15/2025: 4 hrs
-8/16/2025: 7 hrs
-Total: 113.5 hrs
+8/16/2025: 9 hrs
+Total: 115.5 hrs

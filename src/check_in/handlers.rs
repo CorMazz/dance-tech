@@ -66,17 +66,27 @@ pub async fn create_stripe_checkout_session(
     }
 }
 
-/// Using the session_id from Stripe, confirm that a checkout session ended in payment.
+/// Minimal information that we want to return from the `verify_successful_checkout_session` function
+#[derive(Debug)]
+pub struct CheckoutInfo {
+    pub paid: bool,
+    pub description: String,
+    pub price_cents: u64,
+    pub customer_name: String,
+}
+
+/// Using the `session_id` from Stripe, confirm that a checkout session ended in payment.
 #[tracing::instrument(skip(data))]
 pub async fn verify_successful_checkout_session(
     data: &AppState,
     session_id: &str,
-) -> Result<bool, CheckInError> {
+) -> Result<CheckoutInfo, CheckInError> {
     let url = format!("https://api.stripe.com/v1/checkout/sessions/{session_id}");
 
     let client = reqwest::Client::new();
     let res = client
         .get(&url)
+        .query(&[("expand[]", "line_items")])
         .basic_auth(&data.check_in_config.secret_key, Some(""))
         .send()
         .await
@@ -102,7 +112,21 @@ pub async fn verify_successful_checkout_session(
     })?;
     debug!(%status, parsed_response = ?session, full_response = %body, "Stripe Verify Session API Response (Success)");
 
-    Ok(session.payment_status == "paid")
+    // Ensure exactly one line item
+    let line_items = &session.line_items.data;
+    if line_items.len() != 1 {
+        error!(line_items_len = line_items.len(), "Expected exactly one line item in checkout session");
+        return Err(CheckInError::StripeApiError);
+    }
+
+    let item = &line_items[0];
+
+    Ok(CheckoutInfo {
+        paid: session.payment_status == "paid",
+        description: item.description.clone(),
+        price_cents: item.price.unit_amount,
+        customer_name: session.customer_details.name,
+    })
 }
 
 /// Ping the `ProductManager` actor and request the list of products.

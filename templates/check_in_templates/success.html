@@ -5,18 +5,51 @@
 {% block title %}Payment{% endblock %}
 
 {% block content %}
-<div class="my-flexbox min-h-[75dvh]">
+<div class="flex items-center justify-center min-h-[75dvh] p-4">
     {% if payment_successful %}
-        <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-6 rounded relative">
-            <h2 class="text-2xl font-semibold mb-2">Thank you for paying!</h2>
-            <p class="text-lg">Your payment was successful on {{ current_time }}</p>
+        <div class="max-w-xl w-full bg-white border border-green-200 shadow-lg rounded-2xl p-8 animate-fade-in">
+            <div class="flex items-center space-x-4 mb-6">
+                <svg class="w-10 h-10 text-green-500" fill="none" stroke="currentColor" stroke-width="2"
+                     viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                          d="M5 13l4 4L19 7"></path>
+                </svg>
+                <h2 class="text-3xl font-bold text-green-700">Thank you {{ customer_name }} for registering!</h2>
+            </div>
+            <p class="text-lg text-gray-700 mb-4">
+                You’ve successfully purchased <span class="font-semibold text-xl">'{{ product_name }}'</span>
+            </p>
+            <p class="text-lg text-gray-700">
+                Amount paid: <span class="font-semibold text-green-600">${{ price }}</span><br>
+                Date: <span class="font-medium">{{ current_time }}</span>
+            </p>
         </div>
     {% else %}
-        <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-6 rounded relative">
-            <h2 class="text-2xl font-semibold mb-2">Payment Verification Failed</h2>
-            <p class="text-lg">We couldn’t verify your payment with Stripe. Please see the front desk.</p>
+        <div class="max-w-xl w-full bg-white border border-red-200 shadow-lg rounded-2xl p-8 animate-fade-in">
+            <div class="flex items-center space-x-4 mb-6">
+                <svg class="w-10 h-10 text-red-500" fill="none" stroke="currentColor" stroke-width="2"
+                     viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                          d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+                <h2 class="text-3xl font-bold text-red-700">Payment Verification Failed</h2>
+            </div>
+            <p class="text-gray-700 text-lg">
+                We couldn’t verify your payment with Stripe. Please visit the front desk for assistance.
+            </p>
         </div>
     {% endif %}
 </div>
+
+<!-- Optional Tailwind animation -->
+<style>
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-in {
+  animation: fade-in 0.5s ease-out forwards;
+}
+</style>
 {% endblock %}
 

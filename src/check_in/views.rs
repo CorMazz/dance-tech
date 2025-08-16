@@ -1,3 +1,4 @@
+use crate::check_in::handlers::CheckoutInfo;
 use crate::AppState;
 use crate::app::router::ROUTES;
 use crate::app::router::Routes;
@@ -19,6 +20,7 @@ use axum::{
     response::{Html, IntoResponse},
 };
 use serde::Deserialize;
+use tracing::info;
 use std::collections::HashSet;
 use std::sync::Arc;
 use tracing::debug;
@@ -133,6 +135,10 @@ pub async fn post_create_check_out_session(
 pub struct SuccessfulPaymentTemplate {
     rts: Routes,
     payment_successful: bool,
+    product_name: String,
+    customer_name: String,
+    /// Price to be displayed, ie "5.00"
+    price: String,
     current_time: String,
 }
 
@@ -152,11 +158,15 @@ pub async fn get_successful_checkout_session(
     headers: axum::http::HeaderMap,
     Query(params): Query<SuccessfulCheckoutSessionQueryParam>,
 ) -> impl IntoResponse {
+    #[allow(clippy::cast_precision_loss)]
     match verify_successful_checkout_session(&data, &params.session_id).await {
-        Ok(payment_successful) => {
+        Ok(CheckoutInfo{ paid: payment_successful, description: product_name, price_cents, customer_name }) => {
             let current_time = chrono::Utc::now().format("%b %e, %Y").to_string();
             let template = SuccessfulPaymentTemplate {
                 payment_successful,
+                product_name,
+                customer_name,
+                price: format!("{:.2}", price_cents as f64 / 100.0),
                 current_time,
                 rts: ROUTES,
             };
@@ -187,6 +197,8 @@ pub async fn post_update_available_products(
     if let Err(err) = data.check_in_config.trigger_update_tx.send(()).await {
         error!(%err, "Unable to trigger an update of the products.");
     }
+
+    info!("Requesting Stripe Product update.");
 
     Redirect::to(ROUTES.check_in).into_response()
 }
