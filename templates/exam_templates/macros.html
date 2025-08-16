@@ -1,7 +1,7 @@
 
 {% macro render_container(container, show_point_values, freeze_buttons) %}
   <div class="hidden sm:block my-section my-dashboard-gradient" data-comment={{ container.name }}>
-    <h2 class="my-section-title">{{ container.name }}</h2>
+    <h2 class="my-section-title mb-4">{{ container.name }}</h2>
     {% for table in container.tables %}
       {% call render_table(table, show_point_values=show_point_values, freeze_buttons=freeze_buttons) %}
     {% endfor %}
@@ -29,9 +29,12 @@
           </th>
         {% endfor %}
         {# If there is only one scoring category then the item to be graded may have an antithesis. This leaves room for that #}
-        {% if table.scoring_categories.len() == 1 %}
-          <th class="my-table-cell w-[15%]"></th>
-        {% endif %}
+          {# Removing this unless I am specifically asked to add this back, because I'm tired of this grandpa.
+          {# If there is only one scoring category then the item to be graded may have an antithesis. This leaves room for that #}
+          {% if table.scoring_categories.len() == 1 %}
+            <th class="my-table-cell w-[15%]"></th>
+          {% endif %}
+          #}
       </tr>
 
       {# Create the Detailed Scoring Headers #}
@@ -47,10 +50,12 @@
               </th>
             {% endfor %}
           {% endfor %}
+          {# Removing this unless I am specifically asked to add this back, because I'm tired of this grandpa.
           {# If there is only one scoring category then the item to be graded may have an antithesis. This leaves room for that #}
           {% if table.scoring_categories.len() == 1 %}
             <th class="my-table-cell w-[15%]"></th>
           {% endif %}
+          #}
       </tr>
     </thead>
 
