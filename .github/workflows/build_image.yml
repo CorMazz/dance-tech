@@ -1,6 +1,6 @@
 # This workflow builds the application and publishes it to the GitHub Container Registry
 #
-name: CI Docker Build and Publish
+name: "CI Docker Build and Publish"
 
 on:
   push:
