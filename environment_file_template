@@ -18,6 +18,8 @@ SMTP_USER_LOGIN=
 SMTP_USER_PASSWORD=
 SMTP_USER_EMAIL=
 
+# Allow first time users to directly sign up using their Google account
+ALLOW_SIGN_UP_WITH_GOOGLE=true
 # Set to empty strings after the equal sign if not enabling Google OAuth functionality
 GOOGLE_OAUTH_CLIENT_ID=""
 GOOGLE_OAUTH_CLIENT_SECRET=""

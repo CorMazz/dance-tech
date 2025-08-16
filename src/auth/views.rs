@@ -111,7 +111,7 @@ pub async fn post_signup_form(
     .await;
 
     match user_registered {
-        Ok(()) => Redirect::to("/login").into_response(),
+        Ok(..) => Redirect::to("/login").into_response(),
         Err(e) => e.into_response(&headers),
     }
 }

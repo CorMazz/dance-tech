@@ -6,6 +6,8 @@ use url::Url;
 #[allow(dead_code)]
 #[derive(Debug, Clone)]
 pub struct AuthConfig {
+    /// Allow new users to directly sign up using their Google account
+    pub allow_sign_up_with_google: bool,
     pub access_token_private_key: String,
     pub access_token_public_key: String,
     pub access_token_expires_in: String,
@@ -19,6 +21,9 @@ pub struct AuthConfig {
 
 impl AuthConfig {
     pub fn init() -> Self {
+        let allow_sign_up_with_google = get_env_var("ALLOW_SIGN_UP_WITH_GOOGLE")
+            .parse::<bool>()
+            .expect("Environment variable 'ALLOW_SIGN_UP_WITH_GOOGLE' should be a boolean.");
         let access_token_private_key = get_env_var("ACCESS_TOKEN_PRIVATE_KEY");
         let access_token_public_key = get_env_var("ACCESS_TOKEN_PUBLIC_KEY");
         let access_token_expires_in = get_env_var("ACCESS_TOKEN_EXPIRED_IN");
@@ -34,6 +39,7 @@ impl AuthConfig {
             .expect("Refresh token max age (ENV_VAR=REFRESH_TOKEN_MAXAGE) should be an integer.");
 
         Self {
+            allow_sign_up_with_google,
             access_token_private_key,
             access_token_public_key,
             access_token_expires_in,

@@ -1,5 +1,6 @@
 use lettre::AsyncTransport;
 use crate::app::router::{Routes, ROUTES};
+use crate::auth::models::User;
 use crate::auth::utils::{get_user_by_email, hash_password, login_user, validate_reset_password_token, verify_jwt_token};
 use crate::{AppState, auth::errors::AuthError};
 use argon2::{
@@ -38,13 +39,14 @@ use super::views::RequestPasswordResetForm;
 /// Registers a user to the database
 ///
 /// By default, a user has no roles
+#[instrument(skip(password, data))]
 pub async fn register_user_handler(
     data: Arc<AppState>,
     first_name: String,
     last_name: String,
     email: String,
     password: String,
-) -> Result<(), AuthError> {
+) -> Result<User, AuthError> {
     if get_user_by_email(&email, &data.db).await?.is_some() {
         return Err(AuthError::DuplicateEmail);
     }
@@ -66,13 +68,19 @@ pub async fn register_user_handler(
         AuthError::DatabaseError
     })?;
 
-    Ok(())
+    get_user_by_email(&email, &data.db)
+        .await?
+        .ok_or_else(|| {
+            error!("Unable to retrieve user information immediately after registering user. Something isn't right here.");
+            AuthError::DatabaseError
+        })
 }
 
 // #######################################################################################################################################################
 // Login
 // #######################################################################################################################################################
 
+#[instrument(skip(password, data, cookie_jar))]
 pub async fn login_user_handler(
     data: Arc<AppState>,
     cookie_jar: CookieJar,
@@ -277,7 +285,21 @@ pub async fn google_oauth_callback_handler(
             let jar = login_user(user, &data, cookie_jar).await?;
             Ok((jar, Redirect::to("/")).into_response())
         }
-        None => Err(AuthError::AccountNotFound),
+        None => if let (Some(first_name), Some(last_name), Some(email)) = (user_info.given_name, user_info.family_name, user_info.email)
+            && data.auth_config.allow_sign_up_with_google
+        {
+            let password: String = rand::rngs::StdRng::from_os_rng()
+                .sample_iter(&Alphanumeric)
+                .take(32)
+                .map(char::from)
+                .collect();
+
+            let user = register_user_handler(data.clone(), first_name, last_name, email, password).await?;
+            let jar = login_user(user, &data, cookie_jar).await?;
+            Ok((jar, Redirect::to("/")).into_response())
+        } else {
+            Err(AuthError::AccountNotFound)
+        }
     }
 }
 // #######################################################################################################################################################
