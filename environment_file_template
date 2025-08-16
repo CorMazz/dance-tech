@@ -1,3 +1,6 @@
+
+# On startup, look for this user and give them admin permissions
+SET_ADMIN_EMAIL=
 DEMO_MODE=false
 
 # One of error, warn, info, debug, trace. Changes the log level output to stdout

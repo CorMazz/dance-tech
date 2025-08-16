@@ -19,7 +19,7 @@ use axum::{
     Router, middleware,
     routing::{get, post},
 };
-use std::{net::SocketAddr, sync::Arc};
+use std::sync::Arc;
 use tower_http::services::ServeDir;
 
 
@@ -216,8 +216,6 @@ pub fn create_router(app_state: Arc<AppState>) -> Router {
         .route(ROUTES.request_password_reset, get(get_request_password_reset_page).post(post_request_password_reset_page))
         .route(ROUTES.reset_password, get(get_reset_password_page).post(post_reset_password_page))
         .route(ROUTES.logout, get(get_logout_page));
-
-
 
     // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     // DO NOT EDIT BELOW THIS LINE UNLESS YOU KNOW WHAT YOU'RE DOING

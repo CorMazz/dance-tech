@@ -20,22 +20,22 @@ mod exam;
 use app::config::{AppConfig, SMTPConfig};
 use app::router::create_router;
 use auth::config::{AuthConfig, GoogleOAuthConfig};
-use axum::http::{
-    HeaderValue, Method,
-    header::{ACCEPT, AUTHORIZATION, CONTENT_TYPE},
-};
 use check_in::config::CheckInConfig;
 use dotenv::dotenv;
 use oauth2::reqwest;
 use redis::Client;
 use sqlx::{Pool, Postgres, postgres::PgPoolOptions};
+use std::collections::HashSet;
 use std::net::SocketAddr;
 use std::sync::Arc;
 use tokio::sync::mpsc;
-use tower_http::cors::CorsLayer;
 use tower_http::trace::TraceLayer;
 use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::{EnvFilter, fmt};
+
+use crate::auth::errors::AuthError;
+use crate::auth::models::Roles;
+use crate::auth::utils::{get_user_by_email, grant_roles};
 
 /// The global application state shared across features.
 #[allow(dead_code)]
@@ -98,6 +98,10 @@ async fn main() {
         }
     };
 
+    if let Err(err) = grant_admin(&pool).await {
+        error!(%err, "Unable to grant admin permissions to user.");
+    }
+
     sqlx::migrate!("./migrations").run(&pool).await.expect("Unable to perform database migrations");
 
     let redis_client = match Client::open(app_config.redis_url.clone()) {
@@ -140,4 +144,23 @@ async fn main() {
         .await
         .unwrap();
     axum::serve(listener, app.into_make_service_with_connect_info::<SocketAddr>()).await.unwrap();
+}
+
+/// On startup, check to see if the `SET_ADMIN_EMAIL` env var is set, and if it is, search the
+/// database for that user and if they exist, grant them admin roles.
+pub async fn grant_admin(db: &Pool<Postgres>) -> Result<(), AuthError> {
+    if let Ok(admin_email) = std::env::var("SET_ADMIN_EMAIL") {
+        if !admin_email.is_empty() {
+            if let Some(mut user) = get_user_by_email(&admin_email, db).await? {
+                let mut roles_to_add = HashSet::new();
+                roles_to_add.insert(Roles::Admin);
+
+                grant_roles(&mut user, roles_to_add, db).await?;
+                info!("Granted 'Admin' role to '{}'", admin_email);
+            } else {
+                info!("'SET_ADMIN_EMAIL' is set but no user found for '{}'", admin_email);
+            }
+        }
+    }
+    Ok(())
 }
