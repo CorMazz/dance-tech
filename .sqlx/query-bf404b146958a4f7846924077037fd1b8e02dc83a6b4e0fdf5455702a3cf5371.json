@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "\n        SELECT \n            id, \n            email, \n            first_name,\n            last_name,\n            roles as \"roles: Json<Vec<Roles>>\",\n            password, \n            created_at,\n            updated_at\n        FROM users\n        WHERE email = $1\n        ",
+  "query": "\n        SELECT \n            id, \n            email, \n            first_name,\n            last_name,\n            roles as \"roles: Json<HashSet<Roles>>\",\n            password, \n            created_at,\n            updated_at\n        FROM users\n        WHERE email = $1\n        ",
   "describe": {
     "columns": [
       {
@@ -25,7 +25,7 @@
       },
       {
         "ordinal": 4,
-        "name": "roles: Json<Vec<Roles>>",
+        "name": "roles: Json<HashSet<Roles>>",
         "type_info": "Jsonb"
       },
       {
@@ -60,5 +60,5 @@
       true
     ]
   },
-  "hash": "37eee0cffd73c3dbdac201ee7bc4bfbc2b04b8e8ed495c473c07fd965da8ec98"
+  "hash": "bf404b146958a4f7846924077037fd1b8e02dc83a6b4e0fdf5455702a3cf5371"
 }

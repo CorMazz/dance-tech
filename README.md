@@ -84,14 +84,6 @@ If you want to automagically recompile your Rust executable and rebuild your css
 
 > The `cargo sqlx prepare` command allows sqlx to compile even when the database is offline. 
 
-### Launching Production Containers
-
-To build the two environments locally:
-
-`ENV_FILE=.env_prod DOCKER_PORT_MAPPING=7000 SERVER_PORT=8000 PG_ADMIN_DOCKER_PORT_MAPPING=7001 docker-compose -p dancexam-prod up --build`
-
-`ENV_FILE=.env_demo DOCKER_PORT_MAPPING=7002 SERVER_PORT=8000 PG_ADMIN_DOCKER_PORT_MAPPING=7003 docker-compose -p dancexam-demo up --build`
-
 ### Updating Flowbite + HTMX
 
 #### Flowbite
@@ -114,9 +106,21 @@ curl -LO https://unpkg.com/htmx.org@2.0.4/dist/htmx.min.js
 mv htmx.min.js static/js/
 ```
 
-### Odd Errors
+## Building For Production
 
-#### `static/` Not Served Properly (404 Errors on Assets)
+The `Dockerfile` located in the root of this repository is intended to be used to build a functional image containing the server.
+
+### Launching Production Containers
+
+To build the two environments locally:
+
+`ENV_FILE=.env_prod DOCKER_PORT_MAPPING=7000 SERVER_PORT=8000 PG_ADMIN_DOCKER_PORT_MAPPING=7001 docker-compose -p dancexam-prod up --build`
+
+`ENV_FILE=.env_demo DOCKER_PORT_MAPPING=7002 SERVER_PORT=8000 PG_ADMIN_DOCKER_PORT_MAPPING=7003 docker-compose -p dancexam-demo up --build`
+
+## Odd Errors
+
+### `static/` Not Served Properly (404 Errors on Assets)
 
 Ensure you are launching the server from the root of this repository. File paths are relative to the directory that the server is launched from.
 
@@ -164,5 +168,5 @@ Ensure you are launching the server from the root of this repository. File paths
 8/6/2025: 3 hrs
 8/12/2025: 6 hrs
 8/14/2025: 4 hrs
-8/15/2025: 2 hrs
-Total: 104.5 hrs
+8/15/2025: 4 hrs
+Total: 106.5 hrs

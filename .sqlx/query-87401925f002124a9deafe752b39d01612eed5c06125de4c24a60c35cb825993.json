@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "DELETE FROM exam_queue WHERE user_id = $1 AND test_index = $2",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Int4"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "87401925f002124a9deafe752b39d01612eed5c06125de4c24a60c35cb825993"
+}

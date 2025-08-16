@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO exam_queue (user_id, test_index)\n         VALUES ($1, $2)\n         ON CONFLICT (user_id, test_index) DO NOTHING",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Int4"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "05470bfe1487d4954c6cc32c8b9f60bceda760975118d8ef7145ec495137084d"
+}

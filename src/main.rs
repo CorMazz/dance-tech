@@ -98,6 +98,8 @@ async fn main() {
         }
     };
 
+    sqlx::migrate!("./migrations").run(&pool).await.expect("Unable to perform database migrations");
+
     let redis_client = match Client::open(app_config.redis_url.clone()) {
         Ok(client) => {
             info!("✅ Connection to the redis server is successful!");
