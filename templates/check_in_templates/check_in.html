@@ -12,7 +12,7 @@
       {% if has_permission || product.show_preview %}
         <div class="my-card {% if !has_permission %}opacity-60{% endif %} flex flex-col">
           <div class="p-6 flex-grow flex flex-col">
-            <h2 class="my-title">{{ product.name }}</h2>
+            <h2 class="my-section-title">{{ product.name }}</h2>
             <p class="my-paragraph mb-2 flex-grow">
               {{ product.description }}
               {% if !has_permission %}

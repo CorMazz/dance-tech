@@ -8,6 +8,8 @@
       <h1 class="my-section-title">Manage User Roles</h1>
     </div>
 
+    <p class="my-fineprint">Roles 'admin' and 'proctor' are keywords and grant additional privileges. All other roles simply grant access to Stripe Products.</p>
+
     <form
       id="{{ ids.user_role_form }}"  
       hx-get="{{ rts.user_roles }}"
@@ -21,7 +23,7 @@
         type="text"
         name="query"
         placeholder="User name or email"
-        class="my-input"
+        class="my-input mt-4"
       />
     </form>
 

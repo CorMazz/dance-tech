@@ -129,6 +129,7 @@ pub async fn get_stripe_products(
                     csv.split(',')
                         .map(str::trim)
                         .filter(|s| !s.is_empty())
+                        .map(|s| s.trim_matches('"'))
                         .map(Roles::new)
                         .collect()
                 })

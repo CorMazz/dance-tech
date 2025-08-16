@@ -1,7 +1,9 @@
 
 {% macro render_container(container, show_point_values, freeze_buttons) %}
   <div class="hidden sm:block my-section my-dashboard-gradient" data-comment={{ container.name }}>
-    <h2 class="my-section-title mb-4">{{ container.name }}</h2>
+    <div class="my-section-header">
+      <h2 class="my-section-title text-4xl mt-2">{{ container.name }}</h2>
+    </div>
     {% for table in container.tables %}
       {% call render_table(table, show_point_values=show_point_values, freeze_buttons=freeze_buttons) %}
     {% endfor %}
@@ -10,7 +12,7 @@
 
 {% macro render_table(table, show_point_values, freeze_buttons) %}
 
-  <table class="my-table table-fixed w-full">
+  <table class="my-table table-fixed w-full mt-4">
     <col>
     {% for scoring_category in table.scoring_categories %}
       <colgroup span="{{ scoring_category.values.len() }}"></colgroup>
@@ -107,9 +109,11 @@
 {% macro render_bonuses(bonus_items, show_point_values, freeze_buttons) %}
 
   <div class="my-section hidden sm:block my-dashboard-gradient">
-    <h2 class="my-section-title text-center mb-4">Bonus Points</h2>
+    <div class="my-section-header">
+      <h2 class="my-section-title text-4xl text-center">Bonus Points</h2>
+    </div>
 
-    <div class="my-grid">
+    <div class="my-grid mt-4">
       {% for bonus_item in bonus_items %}
         <div class="w-full min-h-12 sm:w-1/2 md:w-1/3 lg:w-1/4">
           <input 
@@ -139,7 +143,9 @@
     <div class="my-section hidden sm:block bg-red-100 hover:bg-red-200 text-center">
   {% endif %}
 
-    <h2 class="my-section-title">Scoring Information</h2>
+    <div class="my-section-header">
+      <h2 class="my-section-title text-4xl">Scoring Information</h2>
+    </div>
     <p class="text-xl"><span class="font-semibold">Score: </span> {{ grade.achieved_score }} / {{ grade.max_score }} = {{ "{:.0}"|format(grade.achieved_percent) }}%</p> 
     <p class="text-xl"><span class="font-semibold">Passing Score: </span>{{ "{:.0}"|format(grade.minimum_percent) }}%</p>
 

@@ -132,8 +132,6 @@ Ensure you are launching the server from the root of this repository. File paths
     - Fix demo mode
 - Misc
     - Add pictures to home page
-    - Add information about reserved roles on the Manage User Roles widget
-    - Add information about how Stripe is scraped to the admin dashboard
 
 ### Unlikely
 

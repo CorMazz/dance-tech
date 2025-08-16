@@ -38,8 +38,13 @@ jobs:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
+          # If you use `./deploy.sh prod restart` the container image doesn't update
           script: |
             echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
             docker pull ${{ env.TAG }}
             cd apps/dance-tech
-            ./deploy.sh prod restart
+            ./deploy.sh prod down
+            ./deploy.sh prod up
+
+
+

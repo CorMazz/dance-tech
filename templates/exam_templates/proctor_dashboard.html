@@ -22,6 +22,7 @@
         </a>
       {% endfor %}
     </div>
+    <p class="my-paragraph mt-4">Click these buttons to be taken to the test administration page for the respective exam. If you administer an exam with these buttons, your testee will need to have created an account, and you will need to enter their email address in the input at the top. Otherwise, you can administer a test directly from a testee waiting in the queue, and it will have the testee information already filled in.</p>
   </div>
 
   <div hx-get={{ rts.queue_widget }} hx-swap="outerHTML" hx-trigger="load"></div>
