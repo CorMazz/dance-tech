@@ -16,7 +16,7 @@ use sqlx::types::Json;
 use sqlx::{Execute, Pool, Postgres, QueryBuilder};
 use std::collections::HashSet;
 use std::collections::{BTreeMap, HashMap};
-use tracing::warn;
+use tracing::{trace, warn};
 use tracing::{debug, error, instrument};
 use uuid::Uuid;
 
@@ -510,7 +510,7 @@ pub async fn query_filtered_exams(
             ExamError::FatalInternalServerError
         })?;
 
-        debug!("Row: {row:#?}");
+        trace!("Row: {row:#?}");
 
         let json_value: serde_json::Value = row.try_get("testee_user").map_err(|err| {
             error!(%err, "Error retrieving testee data from row.");

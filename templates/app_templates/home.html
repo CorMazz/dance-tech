@@ -3,14 +3,33 @@
 {% block title %}Home{% endblock %}
 
 {% block content %}
+  <div class="relative w-full h-64 lg:h-96 bg-cover bg-center rounded-lg mb-8" style="background-image: url('/static/images/dance-hero.jpg');">
+    <div class="absolute inset-0 bg-black bg-opacity-40 flex items-center justify-center">
+      <h1 class="text-4xl lg:text-6xl text-white font-bold text-center">
+        Welcome to DanceTech
+      </h1>
+    </div>
+  </div>
   <div class="my-grid">
     <div class="my-card">
-      <div class="p-6">
-        <h2 class="my-title">Welcome to Dancexam</h2>
-        <p class="my-paragraph">
-          Dancexam was originally built for the Greenville Westies to provide a digital workflow for grading community members as they tried to pass the advancement test to move from the beginner+ lesson to the advanced lesson. Now it is a fully fledged check-in application for the dance.
-        </p>
-      </div>
+      <h2 class="my-title">Welcome</h2>
+      <p class="my-paragraph mb-4">
+        Hello and welcome! DanceTech is your digital companion for keeping track of progress, grading tests, and enhancing the dance experience for the Greenville Westies community.
+      </p>
+    </div>
+
+    <div class="my-card">
+      <h2 class="my-title">Our Purpose</h2>
+      <p class="my-paragraph mb-4">
+        DanceTech was originally built to provide a seamless workflow for community members to navigate our lessons as they progress from beginner+ lessons to advanced levels. It ensures consistency, clarity, and efficiency for both instructors and dancers.
+      </p>
+    </div>
+
+    <div class="my-card">
+      <h2 class="my-title">Mission Statement</h2>
+      <p class="my-paragraph mb-4">
+        Our mission is to foster a welcoming and supportive dance community where everyone can grow, learn, and achieve their goals. Through technology, we make grading, tracking, and celebrating achievements simple and enjoyable.
+      </p>
     </div>
   </div>
 {% endblock %}
