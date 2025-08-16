@@ -3,12 +3,14 @@
 {% match user %}
   {% when None %}
   {% when Some with (info) %}
-    <div class="my-card">
+    <div class="my-card text-center">
+      <h2 class="text-2xl font-bold text-gray-800">Selected User</h2>
       <h2 class="text-xl font-semibold text-gray-800">
         {{ info.first_name }} {{ info.last_name }}
       </h2>
-      <p class="text-sm text-gray-600 mt-1">
+      <p class="my-paragraph">
         {{ info.email }}
       </p>
+      <p class="my-fineprint">The test can now be submitted and will count for this user.</p>
     </div>
 {% endmatch %}

@@ -96,6 +96,16 @@
     @apply bg-white/20 backdrop-blur-md border border-white/30 text-gray-900 px-6 py-2 rounded-full shadow hover:bg-white/30 transition;
   }
 
+  /* These are for the special forms on the exam */
+.my-exam-radio-label {
+  @apply inline-flex items-center justify-center w-full h-12 p-2 text-sm font-semibold text-gray-900
+         bg-white border-2 border-gray-300 rounded-lg cursor-pointer shadow-sm
+         peer-checked:bg-gradient-to-r peer-checked:from-primary-300 peer-checked:to-secondary-300
+         peer-checked:text-white peer-checked:border-transparent 
+         hover:bg-primary-200 hover:text-white hover:shadow-lg hover:scale-105
+         transition-all duration-500 ease-in-out;
+}
+
     /* Table wrapper */
   .my-table-container {
     @apply overflow-x-auto rounded-lg shadow border border-gray-200;

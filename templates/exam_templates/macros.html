@@ -1,7 +1,7 @@
 
 {% macro render_container(container, show_point_values, freeze_buttons) %}
-  <div class="my-card" data-comment={{ container.name }}>
-    <h2 class="my-title">{{ container.name }}</h2>
+  <div class="hidden sm:block my-section my-dashboard-gradient" data-comment={{ container.name }}>
+    <h2 class="my-section-title">{{ container.name }}</h2>
     {% for table in container.tables %}
       {% call render_table(table, show_point_values=show_point_values, freeze_buttons=freeze_buttons) %}
     {% endfor %}
@@ -10,48 +10,46 @@
 
 {% macro render_table(table, show_point_values, freeze_buttons) %}
 
-  <table class="bg-white w-full mx-1 table-fixed">
-
-    {# ------- CREATE THE HEADERS -------- #}
-
+  <table class="my-table table-fixed w-full">
     <col>
     {% for scoring_category in table.scoring_categories %}
       <colgroup span="{{ scoring_category.values.len() }}"></colgroup>
     {% endfor %}
     
     {# Label the Scoring Categories #}
-    <thead class="sticky top-0 bg-white z-10">
+    <thead class="my-table-head text-center sticky top-16 z-10">
       {# Create the Overall Scoring Category Headers #}         
       <tr>
         {# Empty Padding to Align Everything #}
         <th class="w-1/5"></th>
 
         {% for scoring_category in table.scoring_categories %}
-          <th class="lg:text-4xl py-2" colspan="{{ scoring_category.values.len() }}" scope="colgroup">
+          <th class="my-table-cell text-2xl" colspan="{{ scoring_category.values.len() }}" scope="colgroup">
               {{ scoring_category.name }} 
           </th>
         {% endfor %}
         {# If there is only one scoring category then the item to be graded may have an antithesis. This leaves room for that #}
         {% if table.scoring_categories.len() == 1 %}
-          <th class="w-[15%]"></th>
+          <th class="my-table-cell w-[15%]"></th>
         {% endif %}
       </tr>
 
       {# Create the Detailed Scoring Headers #}
       <tr>
         {# Empty Padding to Align Everything #}
-          <th class="w-1/5 border-r"></th>
+          <th class="my-table-cell w-1/5"></th>
 
           {% for scoring_category in table.scoring_categories %}
+            {% let last_scoring_category = loop.last %}
             {% for header in scoring_category.values %}
-              <th class="mt-1 text-gray-600 lg:text-2xl {% if loop.last %}border-r border-gray-300{% endif %}">
+              <th class="my-table-cell text-xl p-1 wrap-break-word {% if !last_scoring_category && loop.last %}border-r border-gray-300 last:border-0{% endif %}">
                 {{ header }}
               </th>
             {% endfor %}
           {% endfor %}
           {# If there is only one scoring category then the item to be graded may have an antithesis. This leaves room for that #}
           {% if table.scoring_categories.len() == 1 %}
-            <th class="w-[15%]"></th>
+            <th class="my-table-cell w-[15%]"></th>
           {% endif %}
       </tr>
     </thead>
@@ -59,17 +57,17 @@
     {# ------- CREATE THE TABLE BODY -------- #}
     <tbody>
       {% for row in table.rows %}
-        <tr>
+        <tr class="my-table-row">
           {# Add the Item Name to the Left Column #}
-          <td class="py-2 px-4 border-b border-r font-bold sm:text-sm md:text-xl lg:text-2xl text-right">
+          <td class="my-table-cell text-right text-xl border-r border-gray-300">
             {{ row.left_label }}
-            {% if row.left_label_subtext != "" %}}<br><span class="text-xs lg:text-base text-gray-400 font-normal">{{ row.left_label_subtext }}</span>{% endif %}
+            {% if row.left_label_subtext != "" %}}<br><span class="my-fineprint">{{ row.left_label_subtext }}</span>{% endif %}
           </td>
 
           {% for radio_button in row.buttons %}
             {% for radio_option in radio_button.options %}
               {# Add a border between scoring categories for comprehension #}
-                <td class="py-2 px-1 w-full border-b text-center {% if loop.last %}border-r border-gray-300 last:border-0{% else %}{% endif %}">
+                <td class="my-table-cell p-1 w-full {% if loop.last %}border-r border-gray-300 last:border-0{% endif %}">
                   <input 
                     type="radio" 
                     name="competency{{ radio_button.name|json }}"
@@ -82,7 +80,7 @@
                   >
                   <label 
                     for={{ radio_option.id }}
-                    class="inline-flex items-center justify-center w-full h-12 p-2 text-sm font-medium text-gray-900 bg-white border-2 border-gray-300 rounded-lg cursor-pointer peer-checked:bg-blue-600 peer-checked:text-white peer-checked:border-transparent hover:bg-gray-100 hover:shadow-sm transition duration-300"
+                    class="my-exam-radio-label"
                   >
                     {% if show_point_values %}
                       {{ radio_option.value.point_value }}
@@ -92,7 +90,7 @@
             {% endfor %}
             {# Add the antithesis to the right of the table #}
             {% if row.right_label != "" %}
-              <td class="py-2 px-4 border-b sm:text-xs text-left break-words">{{ row.right_label }}</td>
+              <td class="my-table-cell text-left break-words">{{ row.right_label }}</td>
             {% endif %}
           {% endfor %}
         </tr>
@@ -103,45 +101,40 @@
 
 {% macro render_bonuses(bonus_items, show_point_values, freeze_buttons) %}
 
-  <table class="min-w-full bg-white">
-    <h2 class="text-2xl font-bold py-4 px-4 border-b-2 text-center">Bonus Points</h2>
-    <tbody>
-      {% for bonus_item in bonus_items %}
-        <tr>
-          <td class="py-2 px-4 border-b text-xl text-right">{{ bonus_item.name }}</td>
+  <div class="my-section hidden sm:block my-dashboard-gradient">
+    <h2 class="my-section-title text-center mb-4">Bonus Points</h2>
 
-          <td class="py-2 px-4 border-b text-center">
-            <input 
-              type="checkbox" 
-              name="bonus_index{{ bonus_item.bonus_index }}" 
-              value="{{ bonus_item.score }}" 
-              id="bonus_index{{ bonus_item.bonus_index }}" 
-              class="hidden peer"
-              {% if bonus_item.achieved %}checked{% endif %}
-              {% if freeze_buttons %}disabled{% endif %}
-            >
-            <label for="bonus_index{{ bonus_item.bonus_index }}" class="inline-flex items-center justify-center w-full h-12 p-2 text-sm font-medium text-gray-900 bg-white border-2 border-gray-300 rounded-lg cursor-pointer peer-checked:bg-blue-600 peer-checked:text-white peer-checked:border-transparent hover:bg-gray-100 hover:shadow-sm transition duration-300">
-              {% if show_point_values %}
-                + {{ bonus_item.score }}
-              {% endif %}
-            </label>
-          </td>
-        </tr>
+    <div class="my-grid">
+      {% for bonus_item in bonus_items %}
+        <div class="w-full min-h-12 sm:w-1/2 md:w-1/3 lg:w-1/4">
+          <input 
+            type="checkbox"
+            name="bonus_index{{ bonus_item.bonus_index }}"
+            value="{{ bonus_item.score }}"
+            id="bonus_index{{ bonus_item.bonus_index }}"
+            class="hidden peer"
+            {% if bonus_item.achieved %}checked{% endif %}
+            {% if freeze_buttons %}disabled{% endif %}
+          >
+          <label for="bonus_index{{ bonus_item.bonus_index }}" class="my-exam-radio-label aspect-4/3">
+            {{ bonus_item.name }}{% if show_point_values %} +{{ bonus_item.score }}{% endif %}
+          </label>
+        </div>
       {% endfor %}
-    </tbody>
-  </table>
+    </div>
+  </div>
 
 {% endmacro %}
 
 {# Renders a `TestGrade` object #}
 {% macro render_grade(grade) %}
   {% if grade.is_passing %}
-    <div class="my-card bg-green-100 hover:bg-green-200 text-center">
+    <div class="my-section hidden sm:block bg-green-100 hover:bg-green-200 text-center">
   {% else %}
-    <div class="my-card bg-red-100 hover:bg-red-200 text-center">
+    <div class="my-section hidden sm:block bg-red-100 hover:bg-red-200 text-center">
   {% endif %}
 
-    <h2 class="my-title">Scoring Information</h2>
+    <h2 class="my-section-title">Scoring Information</h2>
     <p class="text-xl"><span class="font-semibold">Score: </span> {{ grade.achieved_score }} / {{ grade.max_score }} = {{ "{:.0}"|format(grade.achieved_percent) }}%</p> 
     <p class="text-xl"><span class="font-semibold">Passing Score: </span>{{ "{:.0}"|format(grade.minimum_percent) }}%</p>
 
@@ -157,7 +150,7 @@
         </p>
 
         {% if !grade.failure_explanations.is_empty() %}
-          <ul class="max-h-12 overflow-y-auto mt-4 space-y-2">
+          <ul class="max-h-48 overflow-y-auto mt-4 space-y-2">
             {% for failure_explanation in grade.failure_explanations %}
               <li>
               {% match failure_explanation %}

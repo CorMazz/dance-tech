@@ -5,15 +5,17 @@
 {% block title %}{{ test.metadata.test_name }}{% endblock %}
 
 {% block content %}
-<div class="mx-auto p-4">
-  <h2 class="text-4xl font-bold mb-4 text-center">{{ test.metadata.test_name }}</h2>
-  <form id="dancer-test" method="post" class="bg-white p-6 rounded shadow-md">
+
+  <h2 class="my-title text-center">{{ test.metadata.test_name }}</h2>
+
+  <form id="dancer-test" method="post">
 
     {# User Info Section #} 
     {% if grade is not defined %}
-      <div class="card block shadow-md rounded border border-gray-300 mb-6 p-4">
+      <div class="my-section hidden sm:block my-dashboard-gradient">
+        <h2 class="my-section-title">User Info</h2>
         <input 
-           id="email" type="email" name="email" list="email-datalist" value="{{ testee_email }}"
+           id="email" type="email" name="email" list="email-datalist" value="{{ testee_email }}" class="my-input mt-4" placeholder="Testee Email"
           {# We want to search for possible email matches every time we type, and put them in a datalist.
              The datalist is weird though, and when you accept the input from the datalist it counts as a
              keyup event, which would make the datalist open again right after you closed it, which is 
@@ -48,9 +50,9 @@
     {% endif %}
 
     {# Tiny Screen Warning #}
-    <div class="sm:hidden mt-4 p-4 border border-gray-300 rounded-lg shadow-lg bg-gray-100">
-      <h1 class="text-xl font-semibold text-gray-700 mb-2">Screen Too Small</h1>
-      <p class="text-gray-600">For the best experience, please use a larger screen or switch to landscape mode on your mobile device.</p>
+    <div class="md:hidden my-section">
+      <h1 class="my-section-title mb-2">Screen Too Small</h1>
+      <p class="my-fineprint">For the best experience, please use a larger screen or switch to landscape mode on your mobile device.</p>
     </div>
 
     <div class="hidden sm:block justify-center">
@@ -72,7 +74,8 @@
           <input 
             type="submit" 
             value={% if is_demo_mode %}"Submission Disabled for Demo"{% else %}Submit Test{% endif %}
-            class="{% if is_demo_mode %}bg-gray-300 text-gray-900{% else %}bg-blue-500 hover:bg-blue-700 text-white{% endif %} w-full font-bold py-2 px-4 mb-4 rounded" {% if is_demo_mode %}disabled{% else %}{% endif %}
+            class="my-button h-16 mt-10 {% if is_demo_mode %}bg-gray-300 text-gray-900{% endif %}" 
+            {% if is_demo_mode %}disabled{% endif %}
             hx-post={{ rts.administer_exam(test_index) }} hx-target="#primary-content" hx-swap="innerHTML" hx-push-url="true" hx-confirm="Confirm submission"
           />  
         {% endif %}
@@ -88,6 +91,5 @@
     {% endif %}
 
   </form>
-</div>
 {% endblock %}
 

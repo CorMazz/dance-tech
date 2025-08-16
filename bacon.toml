@@ -21,5 +21,14 @@ watch = ["templates/",  "static/css/input.css"]
 ignore = [ "README.md" ]
 kill = ["pkill", "-TERM", "-P"]
 
+[jobs.sqlxprepare]
+command = ["cargo", "sqlx", "prepare"]
+need_stdout = true
+allow_warnings = true
+background = false
+on_change_strategy = "kill_then_restart"
+watch = ["src/"]
+
 [keybindings]
 r = "job:hotreload" # comment this to have 'c' run clippy on only the default target
+p = "job:sqlxprepare"

@@ -56,7 +56,7 @@ pub enum AuthError {
     NoEmailConfig,
 
     #[error(
-        "Account not found. Please create an account on our service first, then if desired you can sign in with your Google account."
+        "Account not found. Please create an account on our service first; then, if you used a Google account email, you can sign in with Google."
     )]
     AccountNotFound,
 
