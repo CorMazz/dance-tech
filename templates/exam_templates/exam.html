@@ -5,8 +5,8 @@
 {% block title %}{{ test.metadata.test_name }}{% endblock %}
 
 {% block content %}
-  <div class="my-container animate-fade-in">
-    <h2 class="my-title text-center">{{ test.metadata.test_name }}</h2>
+<div class="p-4"> {# Do not put this in a container as we want to maximize screen space #}
+    <h2 class="my-title text-center mt-16">{{ test.metadata.test_name }}</h2>
 
     <form id="dancer-test" method="post">
 
