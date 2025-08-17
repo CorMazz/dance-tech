@@ -13,6 +13,9 @@ pub enum CheckInError {
     #[error("An internal server error occurred: {0:?}")]
     InternalServerError(Option<String>),
 
+    #[error("This checkout session is expired. Did you complete this payment more than 1 day ago?")]
+    ExpiredCheckoutSession,
+
     #[error("An error occurred when communicating with the Stripe API")]
     /// We purposefully do not include more information to avoid leaking secrets to users.
     StripeApiError,

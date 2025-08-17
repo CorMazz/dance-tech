@@ -8,6 +8,7 @@ use crate::{
     },
 };
 use axum::response::Redirect;
+use chrono::Utc;
 use std::collections::HashMap;
 use tracing::{debug, error};
 
@@ -111,6 +112,10 @@ pub async fn verify_successful_checkout_session(
         CheckInError::InternalServerError(Some("Invalid Stripe response format.".into()))
     })?;
     debug!(%status, parsed_response = ?session, full_response = %body, "Stripe Verify Session API Response (Success)");
+
+    if session.expires_at < Utc::now() {
+        return Err(CheckInError::ExpiredCheckoutSession);
+    }
 
     // Ensure exactly one line item
     let line_items = &session.line_items.data;

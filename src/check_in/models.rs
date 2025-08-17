@@ -1,4 +1,5 @@
 use crate::auth::models::Roles;
+use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
 
@@ -304,7 +305,13 @@ pub struct CheckoutSessionResponse {
 pub struct StripeCheckoutSession {
     pub payment_status: String,
     pub line_items: LineItems,
-    pub customer_details: CustomerDetails
+    pub customer_details: CustomerDetails,
+    /// Theoretically, Checkout Sessions expire after 1 day. So if we are past the expiry date,
+    /// this should no longer be valid to show the success page. 
+    /// So that we can ensure users can't use old checkout success pages to trick the people at the
+    /// front desk into believing they have already paid.
+    #[serde(with = "chrono::serde::ts_seconds")]
+    pub expires_at: DateTime<Utc>,
 
 }
 
