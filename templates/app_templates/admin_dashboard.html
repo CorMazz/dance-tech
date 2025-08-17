@@ -3,107 +3,109 @@
 {% block title %}Admin Dashboard{% endblock %}
 
 {% block content %}
-<div class="my-dashboard">
-  
-  <div class="my-section my-dashboard-gradient">
-    <div class="my-section-header">
-      <h1 class="my-section-title">Products</h1>
-      <button hx-post="{{ rts.update_products }}" hx-swap="none" class="my-section-action">
-        Update Products
-      </button>
-    </div>
-    <div class="my-grid">
-      {% for product in products %}
-        <div class="my-card">
-          <h2 class="my-section-title">{{ product.name }}</h2>
-          <p class="my-paragraph mb-2">{{ product.description }}</p>
-          <p class="my-fineprint">
-            {% if !product.requires_roles.is_empty() %}
-              Requires Roles: <code>{{ product.requires_roles.display_roles() }}</code>
-            {% else %}
-              No Roles Required
-            {% endif %}
-          </p>
-          <p class="my-fineprint mt-2">
-            {% if product.show_preview %}✅{% else %}❌{% endif %} Show Preview
-          </p>
-          <form action={{ rts.create_checkout_session }} method="POST">
-            <input type="hidden" name="product_id" value="{{ product.id }}">
-            <input type="hidden" name="price_id" value="{{ product.price_id }}">
-            <button type="submit" class="my-button mt-4">
-              Checkout - {{ product.price }}
-            </button>
-          </form>
+  <div class="my-container animate-fade-in">
+    <div class="my-dashboard">
+      
+      <div class="my-section my-dashboard-gradient">
+        <div class="my-section-header">
+          <h1 class="my-section-title">Products</h1>
+          <button hx-post="{{ rts.update_products }}" hx-swap="none" class="my-section-action">
+            Update Products
+          </button>
         </div>
-      {% endfor %}
-    </div>
-    <div class="my-card mt-4">
-      <h2 class="my-section-title">Product Configuration</h2>
-      <p class="my-paragraph mt-4">
-        Products are automatically scraped from Stripe. Access the 
-        <a class="underline text-primary-300 hover:text-primary-500" href="https://dashboard.stripe.com">
-          Stripe Dashboard
-        </a>
-        to modify the product selection. Then either wait 5 minutes for the app to automatically update, or click the update products button.
-      </p>
+        <div class="my-grid">
+          {% for product in products %}
+            <div class="my-card">
+              <h2 class="my-section-title">{{ product.name }}</h2>
+              <p class="my-paragraph mb-2">{{ product.description }}</p>
+              <p class="my-fineprint">
+                {% if !product.requires_roles.is_empty() %}
+                  Requires Roles: <code>{{ product.requires_roles.display_roles() }}</code>
+                {% else %}
+                  No Roles Required
+                {% endif %}
+              </p>
+              <p class="my-fineprint mt-2">
+                {% if product.show_preview %}✅{% else %}❌{% endif %} Show Preview
+              </p>
+              <form action={{ rts.create_checkout_session }} method="POST">
+                <input type="hidden" name="product_id" value="{{ product.id }}">
+                <input type="hidden" name="price_id" value="{{ product.price_id }}">
+                <button type="submit" class="my-button mt-4">
+                  Checkout - {{ product.price }}
+                </button>
+              </form>
+            </div>
+          {% endfor %}
+        </div>
+        <div class="my-card mt-4">
+          <h2 class="my-section-title">Product Configuration</h2>
+          <p class="my-paragraph mt-4">
+            Products are automatically scraped from Stripe. Access the 
+            <a class="underline text-primary-300 hover:text-primary-500" href="https://dashboard.stripe.com">
+              Stripe Dashboard
+            </a>
+            to modify the product selection. Then either wait 5 minutes for the app to automatically update, or click the update products button.
+          </p>
 
-      <p class="my-paragraph mt-4">
-        Certain key parameters are taken from Stripe for each product. These include obvious ones like:
-      </p>
+          <p class="my-paragraph mt-4">
+            Certain key parameters are taken from Stripe for each product. These include obvious ones like:
+          </p>
 
-      <ul class="my-paragraph list-disc list-inside ml-4">
-        <li>Product name</li>
-        <li>Description</li>
-        <li>Price</li>
-        <li>Whether the product is active (inactive products are not displayed)</li>
-      </ul>
+          <ul class="my-paragraph list-disc list-inside ml-4">
+            <li>Product name</li>
+            <li>Description</li>
+            <li>Price</li>
+            <li>Whether the product is active (inactive products are not displayed)</li>
+          </ul>
 
-      <p class="my-paragraph mt-4">
-        Additionally, some <strong>metadata tags</strong> (also from Stripe) are used by this application:
-      </p>
+          <p class="my-paragraph mt-4">
+            Additionally, some <strong>metadata tags</strong> (also from Stripe) are used by this application:
+          </p>
 
-      <ul class="my-paragraph list-disc list-inside ml-4">
-        <li>
-          <code>show-on-dancetech</code>: Must be set to <code>true</code> for the product to display in the app.
-        </li>
-        <li>
-          <code>requires-roles</code>: Comma-separated list of roles (case-insensitive) to restrict product access.
-        </li>
-        <li>
-          <code>show-preview</code>: Set to <code>true</code> to allow users without sufficient permissions to see a preview of the product.
-        </li>
-      </ul>
+          <ul class="my-paragraph list-disc list-inside ml-4">
+            <li>
+              <code>show-on-dancetech</code>: Must be set to <code>true</code> for the product to display in the app.
+            </li>
+            <li>
+              <code>requires-roles</code>: Comma-separated list of roles (case-insensitive) to restrict product access.
+            </li>
+            <li>
+              <code>show-preview</code>: Set to <code>true</code> to allow users without sufficient permissions to see a preview of the product.
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="my-section my-dashboard-gradient">
+        <div class="my-section-header">
+          <h1 class="my-section-title">Tests</h1>
+        </div>
+        <div class="my-grid">
+          {% for test in tests %}
+            <a href={{ rts.administer_exam(loop.index0) }} hx-boost="true" hx-target="#primary-content" hx-swap="innerHTML show:none" class="my-card w-full">
+              <h5 class="my-title">{{ test.metadata.test_name }}</h5>
+              <p class="my-paragraph">Min Passing Percent: {{ test.metadata.minimum_percent }}%</p>
+              <p class="my-paragraph">Max Possible Score: {{ test.metadata.max_score }} Points</p>
+              <p class="my-paragraph">
+                {% if test.metadata.config.live_grading %}✅{% else %}❌{% endif %} Live Grading
+              </p>
+              <p class="my-paragraph">
+                {% if test.metadata.config.show_point_values %}✅{% else %}❌{% endif %} Show Points
+              </p>
+              <p class="my-paragraph text-sm text-gray-500">
+                Grants Roles:
+                {% for role in test.metadata.config.grants_roles %}
+                  <code>{{ role }}</code>
+                {% endfor %}
+              </p>
+            </a>
+          {% endfor %}
+        </div>
+      </div>
+
+      <div id="user-role-widget-container" hx-get="{{ rts.user_roles }}" hx-trigger="load"></div>
     </div>
   </div>
-
-  <div class="my-section my-dashboard-gradient">
-    <div class="my-section-header">
-      <h1 class="my-section-title">Tests</h1>
-    </div>
-    <div class="my-grid">
-      {% for test in tests %}
-        <a href={{ rts.administer_exam(loop.index0) }} hx-boost="true" hx-target="#primary-content" hx-swap="innerHTML show:none" class="my-card w-full">
-          <h5 class="my-title">{{ test.metadata.test_name }}</h5>
-          <p class="my-paragraph">Min Passing Percent: {{ test.metadata.minimum_percent }}%</p>
-          <p class="my-paragraph">Max Possible Score: {{ test.metadata.max_score }} Points</p>
-          <p class="my-paragraph">
-            {% if test.metadata.config.live_grading %}✅{% else %}❌{% endif %} Live Grading
-          </p>
-          <p class="my-paragraph">
-            {% if test.metadata.config.show_point_values %}✅{% else %}❌{% endif %} Show Points
-          </p>
-          <p class="my-paragraph text-sm text-gray-500">
-            Grants Roles:
-            {% for role in test.metadata.config.grants_roles %}
-              <code>{{ role }}</code>
-            {% endfor %}
-          </p>
-        </a>
-      {% endfor %}
-    </div>
-  </div>
-
-  <div id="user-role-widget-container" hx-get="{{ rts.user_roles }}" hx-trigger="load"></div>
-</div>
 {% endblock %}
 

@@ -2,114 +2,116 @@
 
 {% block title %}Search Exams{% endblock %}
 
-{% block content %}
-  <div class="my-section my-dashboard-gradient">
-    <div class="my-section-header">
-      <h1 class="my-section-title">Search Graded Exams</h1>
-    </div>
-    {% if is_signed_in %}
-      <form
-        id="{{ ids.test_form }}"
-        hx-get="{{ rts.search_exam_widget }}"
-        hx-target="#search-results"
-        hx-swap="innerHTML"
-        hx-push-url="true"
-        class="mb-6 grid grid-cols-1 md:grid-cols-3 gap-4"
-      >
-        {% if is_superuser %}
+<div class="my-container animate-fade-in">
+  {% block content %}
+    <div class="my-section my-dashboard-gradient"> 
+      <div class="my-section-header">
+        <h1 class="my-section-title">Search Graded Exams</h1>
+      </div>
+      {% if is_signed_in %}
+        <form
+          id="{{ ids.test_form }}"
+          hx-get="{{ rts.search_exam_widget }}"
+          hx-target="#search-results"
+          hx-swap="innerHTML"
+          hx-push-url="true"
+          class="mb-6 grid grid-cols-1 md:grid-cols-3 gap-4"
+        >
+          {% if is_superuser %}
+            <input
+              type="text"
+              name="testee_query"
+              placeholder="Testee name or email"
+              {% if let Some(query) = filter.testee_query %}value="{{ query }}"{% endif %}
+              class="my-input"
+            />
+          {% endif %}
           <input
             type="text"
-            name="testee_query"
-            placeholder="Testee name or email"
-            {% if let Some(query) = filter.testee_query %}value="{{ query }}"{% endif %}
+            name="proctor_query"
+            placeholder="Proctor name or email"
+            {% if let Some(query) = filter.proctor_query %}value="{{ query }}"{% endif %}
             class="my-input"
           />
-        {% endif %}
-        <input
-          type="text"
-          name="proctor_query"
-          placeholder="Proctor name or email"
-          {% if let Some(query) = filter.proctor_query %}value="{{ query }}"{% endif %}
-          class="my-input"
-        />
-        <input
-          type="text"
-          name="test_name"
-          placeholder="Test name"
-          {% if let Some(query) = filter.test_name %}value="{{ query }}"{% endif %}
-          class="my-input"
-        />
-        <select name="pass_or_fail" class="my-input">
-          <option value="both">All</option>
-          <option value="passing" {% if filter.pass_or_fail == Some(ExamStatus::Passing) %}selected{% endif %}>Passing</option>
-          <option value="failing" {% if filter.pass_or_fail == Some(ExamStatus::Failing) %}selected{% endif %}>Failing</option>
-        </select>
-        <input type="hidden" name="page" value="1" />
-        <input type="hidden" name="per_page" value="{{ filter.per_page }}" />
+          <input
+            type="text"
+            name="test_name"
+            placeholder="Test name"
+            {% if let Some(query) = filter.test_name %}value="{{ query }}"{% endif %}
+            class="my-input"
+          />
+          <select name="pass_or_fail" class="my-input">
+            <option value="both">All</option>
+            <option value="passing" {% if filter.pass_or_fail == Some(ExamStatus::Passing) %}selected{% endif %}>Passing</option>
+            <option value="failing" {% if filter.pass_or_fail == Some(ExamStatus::Failing) %}selected{% endif %}>Failing</option>
+          </select>
+          <input type="hidden" name="page" value="1" />
+          <input type="hidden" name="per_page" value="{{ filter.per_page }}" />
 
-        <button type="submit" class="my-button h-12 col-span-1 md:col-span-3">Search</button>
-      </form>
-      
-    {% block table %}
-      <div id="search-results" class="my-table-container">
-        {% if filtered_exam_info.len() == 0 %}
-          <p class="my-fineprint">No results found.</p>
-        {% else %}
-          <table class="my-table">
-            <thead class="my-table-head">
-              <tr>
-                <th class="my-table-cell">Test Name</th>
-                <th class="my-table-cell">Testee</th>
-                <th class="my-table-cell">Proctor</th>
-                <th class="my-table-cell">Grade</th>
-                <th class="my-table-cell">Result</th>
-              </tr>
-            </thead>
-            <tbody class="my-table-body">
-              {% for info in filtered_exam_info %}
-                {% let exam = info.test %}
-                {% let testee = info.testee %}
-                {% let proctor = info.proctor %}
-                <tr class="my-table-row">
-                  <td class="my-table-cell font-medium text-gray-900">
-                    <a href="{{ rts.graded_exam(exam.id) }}" hx-boost="true" hx-target="#primary-content" class="block w-full h-full">
-                      {{ exam.test.metadata.test_name }}
-                    </a>
-                  </td>
-                  <td class="my-table-cell font-medium text-gray-900">
-                    <a href="{{ rts.graded_exam(exam.id) }}" hx-boost="true" hx-target="#primary-content" class="block w-full h-full">
-                      {{ testee.first_name }} {{ testee.last_name }}
-                    </a>
-                  </td>
-                  <td class="my-table-cell font-medium text-gray-900">
-                    <a href="{{ rts.graded_exam(exam.id) }}" hx-boost="true" hx-target="#primary-content" class="block w-full h-full">
-                      {{ proctor.first_name }} {{ proctor.last_name }}
-                    </a>
-                  </td>
-                  <td class="my-table-cell font-medium text-gray-900">
-                    <a href="{{ rts.graded_exam(exam.id) }}" hx-boost="true" hx-target="#primary-content" class="block w-full h-full">
-                      {{ exam.grade.achieved_score }}
-                    </a>
-                  </td>
-                  <td class="my-table-cell font-medium text-gray-900">
-                    <a href="{{ rts.graded_exam(exam.id) }}" hx-boost="true" hx-target="#primary-content" class="block w-full h-full">
-                      {% if exam.grade.is_passing %}
-                        ✅ Passed
-                      {% else %}
-                        ❌ Failed
-                      {% endif %}
-                    </a>
-                  </td>
+          <button type="submit" class="my-button h-12 col-span-1 md:col-span-3">Search</button>
+        </form>
+        
+      {% block table %}
+        <div id="search-results" class="my-table-container">
+          {% if filtered_exam_info.len() == 0 %}
+            <p class="my-fineprint">No results found.</p>
+          {% else %}
+            <table class="my-table">
+              <thead class="my-table-head">
+                <tr>
+                  <th class="my-table-cell">Test Name</th>
+                  <th class="my-table-cell">Testee</th>
+                  <th class="my-table-cell">Proctor</th>
+                  <th class="my-table-cell">Grade</th>
+                  <th class="my-table-cell">Result</th>
                 </tr>
-              {% endfor %}
-            </tbody>
-          </table>
-        {% endif %}
-      </div>
-      {% endblock %}
+              </thead>
+              <tbody class="my-table-body">
+                {% for info in filtered_exam_info %}
+                  {% let exam = info.test %}
+                  {% let testee = info.testee %}
+                  {% let proctor = info.proctor %}
+                  <tr class="my-table-row">
+                    <td class="my-table-cell font-medium text-gray-900">
+                      <a href="{{ rts.graded_exam(exam.id) }}" hx-boost="true" hx-target="#primary-content" class="block w-full h-full">
+                        {{ exam.test.metadata.test_name }}
+                      </a>
+                    </td>
+                    <td class="my-table-cell font-medium text-gray-900">
+                      <a href="{{ rts.graded_exam(exam.id) }}" hx-boost="true" hx-target="#primary-content" class="block w-full h-full">
+                        {{ testee.first_name }} {{ testee.last_name }}
+                      </a>
+                    </td>
+                    <td class="my-table-cell font-medium text-gray-900">
+                      <a href="{{ rts.graded_exam(exam.id) }}" hx-boost="true" hx-target="#primary-content" class="block w-full h-full">
+                        {{ proctor.first_name }} {{ proctor.last_name }}
+                      </a>
+                    </td>
+                    <td class="my-table-cell font-medium text-gray-900">
+                      <a href="{{ rts.graded_exam(exam.id) }}" hx-boost="true" hx-target="#primary-content" class="block w-full h-full">
+                        {{ exam.grade.achieved_score }}
+                      </a>
+                    </td>
+                    <td class="my-table-cell font-medium text-gray-900">
+                      <a href="{{ rts.graded_exam(exam.id) }}" hx-boost="true" hx-target="#primary-content" class="block w-full h-full">
+                        {% if exam.grade.is_passing %}
+                          ✅ Passed
+                        {% else %}
+                          ❌ Failed
+                        {% endif %}
+                      </a>
+                    </td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          {% endif %}
+        </div>
+        {% endblock %}
 
-      {% else %}  {# Not Signed In #}
-        <div class="my-fineprint">Sign in to see your test results!</div>
-      {% endif %}
-  </div>
-{% endblock %}
+        {% else %}  {# Not Signed In #}
+          <div class="my-fineprint">Sign in to see your test results!</div>
+        {% endif %}
+    </div>
+  {% endblock %}
+</div>

@@ -3,33 +3,36 @@
 {% block title %}Home{% endblock %}
 
 {% block content %}
-  <div class="relative w-full h-64 lg:h-96 bg-cover bg-center rounded-lg mb-8" style="background-image: url('/static/images/dance-hero.jpg');">
-    <div class="absolute inset-0 bg-black bg-opacity-40 flex items-center justify-center">
-      <h1 class="text-4xl lg:text-6xl text-white font-bold text-center">
-        Welcome to DanceTech
-      </h1>
-    </div>
-  </div>
-  <div class="my-grid">
-    <div class="my-card">
-      <h2 class="my-title">Welcome</h2>
-      <p class="my-paragraph mb-4">
-        Hello and welcome! DanceTech is your digital companion for keeping track of progress, grading tests, and enhancing the dance experience for the Greenville Westies community.
-      </p>
+  <div class=animate-fade-in>
+    <div id="bg-image" class="absolute inset-0 -z-10">
+      <img src="/static/images/hero_banner_1.png" 
+           class="w-full h-auto object-cover rounded-b-4xl" 
+           alt="Hero background" />
     </div>
 
-    <div class="my-card">
-      <h2 class="my-title">Our Purpose</h2>
-      <p class="my-paragraph mb-4">
-        DanceTech was originally built to provide a seamless workflow for community members to navigate our lessons as they progress from beginner+ lessons to advanced levels. It ensures consistency, clarity, and efficiency for both instructors and dancers.
-      </p>
-    </div>
+    <div class="my-container">
+      <div class="my-grid mt-64 lg:mt-128 xl:mt-200">
+        <div class="my-card bg-white/92">
+          <h2 class="my-title">Welcome</h2>
+          <p class="my-paragraph mb-4">
+            Hello and welcome! DanceTech is your digital companion for keeping track of progress, grading tests, and enhancing the dance experience for the Greenville Westies community.
+          </p>
+        </div>
 
-    <div class="my-card">
-      <h2 class="my-title">Mission Statement</h2>
-      <p class="my-paragraph mb-4">
-        Our mission is to foster a welcoming and supportive dance community where everyone can grow, learn, and achieve their goals. Through technology, we make grading, tracking, and celebrating achievements simple and enjoyable.
-      </p>
+        <div class="my-card bg-white/92">
+          <h2 class="my-title">Our Purpose</h2>
+          <p class="my-paragraph mb-4">
+            DanceTech was originally built to provide a seamless workflow for community members to navigate our lessons as they progress from beginner+ lessons to advanced levels. It ensures consistency, clarity, and efficiency for both instructors and dancers.
+          </p>
+        </div>
+
+        <div class="my-card bg-white/92">
+          <h2 class="my-title">Mission Statement</h2>
+          <p class="my-paragraph mb-4">
+            Our mission is to foster a welcoming and supportive dance community where everyone can grow, learn, and achieve their goals. Through technology, we make grading, tracking, and celebrating achievements simple and enjoyable.
+          </p>
+        </div>
+      </div>
     </div>
   </div>
 {% endblock %}

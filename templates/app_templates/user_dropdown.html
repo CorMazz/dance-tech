@@ -1,51 +1,81 @@
 {% match user %}
 
-{% when Some with (data) %}
+  {% when Some with (data) %}
 
     <div class="flex items-center md:order-2 space-x-3 md:space-x-0 rtl:space-x-reverse">
-        <button type="button" class="flex text-sm bg-gray-800 rounded-full md:me-0 focus:ring-4 focus:ring-gray-300 dark:focus:ring-gray-600" id="user-menu-button" aria-expanded="false" data-dropdown-toggle="user-dropdown" data-dropdown-placement="bottom">
-            <span class="sr-only">Open user menu</span>
-            <img class="w-8 h-8 rounded-full" src="{{ pfp_url }}" alt="user photo">
-        </button>
+      <!-- User avatar button -->
+      <button type="button" 
+              class="flex text-sm bg-primary-300 rounded-full focus:ring-4 focus:ring-primary-200" 
+              id="user-menu-button" 
+              aria-expanded="false" 
+              data-dropdown-toggle="user-dropdown" 
+              data-dropdown-placement="bottom">
+        <span class="sr-only">Open user menu</span>
+        <img class="w-8 h-8 rounded-full border border-gray-200 shadow-sm" src="{{ pfp_url }}" alt="user photo">
+      </button>
 
-        {# Dropdown Menu #}
+      {# Dropdown Menu #}
+      <div id="user-dropdown" 
+           class="z-50 hidden my-4 text-base list-none bg-white border border-gray-200 rounded-xl shadow-lg animate-fade-in-opacity">
         
-        <div class="z-50 hidden my-4 text-base list-none bg-white divide-y divide-gray-100 rounded-lg shadow-sm dark:bg-gray-700 dark:divide-gray-600" id="user-dropdown">
+        <!-- User info -->
         <div class="px-4 py-3">
-            <span class="block text-sm text-gray-900 dark:text-white">{{ data.first_name }} {{ data.last_name }}</span>
-            <span class="block text-sm  text-gray-500 truncate dark:text-gray-400">{{ data.email }}</span>
+          <span class="block text-sm font-semibold text-gray-900">
+            {{ data.first_name }} {{ data.last_name }}
+          </span>
+          <span class="block text-sm text-gray-500 truncate">
+            {{ data.email }}
+          </span>
         </div>
+
+        <!-- Links -->
         <ul class="py-2" aria-labelledby="user-menu-button">
-            <li>
-              <a href={{ rts.root }} hx-boost="true" hx-target="#primary-content" hx-swap="innerHTML" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 dark:text-gray-200 dark:hover:text-white">Home</a>
-            </li>
-            {% if is_proctor %}
-              <li>
-                <a href={{ rts.proctor_dashboard }} hx-boost="true" hx-target="#primary-content" hx-swap="innerHTML" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 dark:text-gray-200 dark:hover:text-white">Proctor Dashboard</a>
-              </li>
-            {% endif %}
-            {% if is_admin %}
-              <li>
-                <a href={{ rts.admin_dashboard }} hx-boost="true" hx-target="#primary-content" hx-swap="innerHTML show:none" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 dark:text-gray-200 dark:hover:text-white">Admin Dashboard</a>
-              </li>
-            {% endif %}
+          <li>
+            <a href={{ rts.root }} hx-boost="true" hx-target="#primary-content" hx-swap="innerHTML"
+               class="block px-4 py-2 text-sm text-gray-700 hover:bg-primary-100/40 hover:text-primary-500 transition">
+              Home
+            </a>
+          </li>
+          {% if is_proctor %}
+          <li>
+            <a href={{ rts.proctor_dashboard }} hx-boost="true" hx-target="#primary-content" hx-swap="innerHTML"
+               class="block px-4 py-2 text-sm text-gray-700 hover:bg-primary-100/40 hover:text-primary-500 transition">
+              Proctor Dashboard
+            </a>
+          </li>
+          {% endif %}
+          {% if is_admin %}
+          <li>
+            <a href={{ rts.admin_dashboard }} hx-boost="true" hx-target="#primary-content" hx-swap="innerHTML show:none"
+               class="block px-4 py-2 text-sm text-gray-700 hover:bg-primary-100/40 hover:text-primary-500 transition">
+              Admin Dashboard
+            </a>
+          </li>
+          {% endif %}
         </ul>
-        <div class="py-2">
-          <a href={{rts.logout}} class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 dark:text-gray-200 dark:hover:text-white">Logout</a>
+
+        <!-- Logout -->
+        <div class="py-2 border-t border-gray-200">
+          <a href={{ rts.logout }} 
+             class="block px-4 py-2 text-sm text-gray-700 hover:bg-primary-100/40 hover:text-primary-500 transition">
+            Logout
+          </a>
         </div>
-        </div>
+      </div>
     </div>
 
-{% when None %}
+    {% when None %}
     <div class="flex items-center">
       <a href={{ rts.login }} hx-boost="true" hx-target="#primary-content" hx-swap="innerHTML show:none">
-
-      <!-- For really tiny screens, just say login so that it fits in the navbar -->
-      <button type="button" class="sm:hidden text-white bg-primary-400 hover:bg-primary-500 focus:ring-4 focus:outline-none focus:ring-primary-400 font-medium rounded-lg text-sm px-4 py-2 text-center">Login</button>
-      
-      <!-- Otherwise say sign in/sign up  -->
-      <button type="button" class="hidden sm:block text-white bg-primary-400 hover:bg-primary-500 focus:ring-4 focus:outline-none focus:ring-primary-400 font-medium rounded-lg text-sm px-4 py-2 text-center">Sign In/Sign Up</button>
-      </a>    
+        <!-- Tiny screens -->
+        <button type="button" class="sm:hidden my-button">
+          Login
+        </button>
+        <!-- Larger screens -->
+        <button type="button" class="hidden sm:block my-button">
+          Sign In / Sign Up
+        </button>
+      </a>
     </div>
 
 {% endmatch %}

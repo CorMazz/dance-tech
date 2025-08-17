@@ -3,31 +3,31 @@
 {% block title %}Proctor Dashboard{% endblock %}
 
 {% block content %}
+  <div class="my-container animate-fade-in">
+    <div class="my-dashboard">
+      <div class="my-section my-dashboard-gradient">
+        <div class="my-section-header">
+          <h1 class="my-section-title">Test Administration</h1>
+        </div>
 
-<div class="my-dashboard">
-  <div class="my-section my-dashboard-gradient">
-    <div class="my-section-header">
-      <h1 class="my-section-title">Test Administration</h1>
-    </div>
+        <div class="my-flexbox">
+          {% for test_name in test_names %}
+            <a 
+              href={{ rts.administer_exam(loop.index0) }} 
+              hx-boost="true" hx-target="#primary-content" hx-swap="innerHTML show:none"
+              class="my-card w-full max-w-sm"
+            >
+              <h5 class="my-title">{{ test_name }}</h5>
+              <p class="my-paragraph">Administer this test.</p>
+            </a>
+          {% endfor %}
+        </div>
+        <p class="my-paragraph mt-4">Click these buttons to be taken to the test administration page for the respective exam. If you administer an exam with these buttons, your testee will need to have created an account, and you will need to enter their email address in the input at the top. Otherwise, you can administer a test directly from a testee waiting in the queue, and it will have the testee information already filled in.</p>
+      </div>
 
-    <div class="my-flexbox">
-      {% for test_name in test_names %}
-        <a 
-          href={{ rts.administer_exam(loop.index0) }} 
-          hx-boost="true" hx-target="#primary-content" hx-swap="innerHTML show:none"
-          class="my-card w-full max-w-sm"
-        >
-          <h5 class="my-title">{{ test_name }}</h5>
-          <p class="my-paragraph">Administer this test.</p>
-        </a>
-      {% endfor %}
+      <div hx-get={{ rts.queue_widget }} hx-swap="outerHTML" hx-trigger="load"></div>
+
+      <div id="search-tests-container" hx-get="{{ rts.search_exam_widget }}" hx-swap="outerHTML" hx-trigger="load"></div>
     </div>
-    <p class="my-paragraph mt-4">Click these buttons to be taken to the test administration page for the respective exam. If you administer an exam with these buttons, your testee will need to have created an account, and you will need to enter their email address in the input at the top. Otherwise, you can administer a test directly from a testee waiting in the queue, and it will have the testee information already filled in.</p>
   </div>
-
-  <div hx-get={{ rts.queue_widget }} hx-swap="outerHTML" hx-trigger="load"></div>
-
-  <div id="search-tests-container" hx-get="{{ rts.search_exam_widget }}" hx-swap="outerHTML" hx-trigger="load"></div>
-</div>
-
 {% endblock %}

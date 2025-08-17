@@ -68,7 +68,6 @@ USER appuser
 # Copy the executable from the "build" stage.
 COPY --from=build /bin/server /bin
 COPY static/ static/
-COPY migrations/ migrations/
 
 # What the container should run when it is started.
 CMD ["/bin/server"]

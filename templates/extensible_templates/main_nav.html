@@ -5,7 +5,7 @@
   <nav class="my-navbar">
     <div class="max-w-screen-xl mx-auto px-6 py-3 flex items-center justify-between flex-wrap">
 
-      <!-- Logo -->
+      {# Logo #}
 
       <a href="/" class="flex items-center space-x-3 rtl:space-x-reverse">
           <img src="/static/images/dance_tech_logo.png" class="h-8 rounded" alt="Dance Tech Logo" />
@@ -13,11 +13,11 @@
       </a>
 
       <div class="flex md:order-last">
-        <!-- Sign-In/Up Button or User Dropdown -->
+        {# Sign-In/Up Button or User Dropdown #}
 
-        <div class="flex items-center space-x-3 md:space-x-0" hx-get={{ rts.user_dropdown }} hx-trigger="load"></div>
+        <div class="flex items-center space-x-3 md:space-x-0 mr-2" hx-get={{ rts.user_dropdown }} hx-trigger="load"></div>
 
-        <!-- Hamburger Button (for mobile/small screens) -->
+        {# Hamburger Button (for mobile/small screens) #}
 
         <button data-collapse-toggle="navbar-user" type="button" class="inline-flex items-center p-2 w-10 h-10 justify-center text-sm text-gray-500 rounded-lg md:hidden ml-auto mr-4 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-200" aria-controls="navbar-user" aria-expanded="false">
           <span class="sr-only">Open main menu</span>
@@ -27,20 +27,20 @@
         </button>
       </div>
 
-      <!-- Navigation Links -->
+      {# Navigation Links #}
 
       <div class="items-center justify-between hidden w-full md:flex md:w-auto md:order-1" id="navbar-user">
-        <ul class="flex flex-col font-medium p-4 md:p-0 mt-4 sm:border sm:border-gray-100 rounded-lg sm:bg-gray-50 md:space-x-8 rtl:space-x-reverse md:flex-row md:mt-0 md:border-0 md:bg-transparent">
-          <li>
+        <ul class="flex flex-col font-medium p-4 md:p-0 mt-4 sm:border sm:border-gray-100 rounded-lg sm:bg-gray-50 md:space-x-8 rtl:space-x-reverse md:flex-row md:mt-0 md:border-0 md:bg-transparent animate-fade-in-opacity">
+          <li class="rounded hover:bg-primary-300/40 md:hover:bg-transparent transition duration-400 ease-in-out">
             <a href={{ rts.root }} hx-boost="true" hx-target="#primary-content" hx-swap="innerHTML show:none" class="my-nav-button">Home</a>
           </li>
-          <li>
+          <li class="rounded hover:bg-primary-300/40 md:hover:bg-transparent transition duration-400 ease-in-out">
             <a href={{ rts.check_in }} hx-boost="true" hx-target="#primary-content" hx-swap="innerHTML show:none" class="my-nav-button">Check In</a>
           </li>
-          <li>
+          <li class="rounded hover:bg-primary-300/40 md:hover:bg-transparent transition duration-400 ease-in-out">
             <a href={{ rts.user_dashboard }} hx-boost="true" hx-target="#primary-content" hx-swap="innerHTML show:none" class="my-nav-button">Advancement Exam</a>
           </li>
-          <li>
+          <li class="rounded hover:bg-primary-300/40 md:hover:bg-transparent transition duration-400 ease-in-out">
             <a href={{ rts.contact }} hx-boost="true" hx-target="#primary-content" hx-swap="innerHTML show:none" class="my-nav-button">Contact</a>
           </li>
         </ul>

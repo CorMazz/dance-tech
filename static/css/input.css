@@ -30,6 +30,25 @@
 
 @layer components {
 
+  /* Animation */
+
+  @keyframes fade-in-opacity {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
+
+  .animate-fade-in-opacity {
+    animation: fade-in-opacity 0.5s ease-out forwards;
+  }
+
+  @keyframes fade-in-opacity-translation {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .animate-fade-in {
+    animation: fade-in-opacity-translation 0.5s ease-out forwards;
+  }
+
   /* Container Classes */
 
   /* The overall container used on the #primary-content class */
@@ -79,7 +98,7 @@
   }
 
   .my-nav-button {
-    @apply block py-2 px-3 text-gray-900 font-medium rounded-sm md:hover:bg-transparent md:hover:text-primary-500 md:p-0;
+    @apply block md:mx-auto py-2 px-3 text-gray-900 font-bold rounded-sm md:hover:bg-transparent md:hover:text-primary-500 md:p-0;
   }
 
 
@@ -97,14 +116,14 @@
   }
 
   /* These are for the special forms on the exam */
-.my-exam-radio-label {
-  @apply inline-flex items-center justify-center w-full h-12 p-2 text-sm font-semibold text-gray-900
-         bg-white border-2 border-gray-300 rounded-lg cursor-pointer shadow-sm
-         peer-checked:bg-gradient-to-r peer-checked:from-primary-300 peer-checked:to-secondary-300
-         peer-checked:text-white peer-checked:border-transparent 
-         hover:bg-primary-200 hover:text-white hover:shadow-lg hover:scale-105
-         transition-all duration-500 ease-in-out;
-}
+  .my-exam-radio-label {
+    @apply inline-flex items-center justify-center w-full h-12 p-2 text-sm font-semibold text-gray-900
+           bg-white border-2 border-gray-300 rounded-lg cursor-pointer shadow-sm
+           peer-checked:bg-gradient-to-r peer-checked:from-primary-300 peer-checked:to-secondary-300
+           peer-checked:text-white peer-checked:border-transparent 
+           hover:bg-primary-200 hover:text-white hover:shadow-lg hover:scale-105
+           transition-all duration-500 ease-in-out;
+  }
 
     /* Table wrapper */
   .my-table-container {
@@ -189,4 +208,5 @@
   .my-error-icon {
     @apply h-12 w-12 text-red-600;
   }
+
 }

@@ -5,94 +5,95 @@
 {% block title %}{{ test.metadata.test_name }}{% endblock %}
 
 {% block content %}
+  <div class="my-container animate-fade-in">
+    <h2 class="my-title text-center">{{ test.metadata.test_name }}</h2>
 
-  <h2 class="my-title text-center">{{ test.metadata.test_name }}</h2>
+    <form id="dancer-test" method="post">
 
-  <form id="dancer-test" method="post">
-
-    {# User Info Section #} 
-    {% if grade is not defined %}
-      <div class="my-section hidden sm:block my-dashboard-gradient">
-        <div class="my-section-header">
-          <h2 class="my-section-title text-4xl">User Info</h2>
-        </div>
-        <input 
-           id="email" type="email" name="email" list="email-datalist" value="{{ testee_email }}" class="my-input mt-4" placeholder="Testee Email (required)" 
-          {# We want to search for possible email matches every time we type, and put them in a datalist.
-             The datalist is weird though, and when you accept the input from the datalist it counts as a
-             keyup event, which would make the datalist open again right after you closed it, which is 
-             annoying. To fix this, we need to make sure that the original event that triggered the keyup
-             was an instance of KeyboardEvent, since accepting the datalist suggestion isn't a KeyboardEvent.
-          #}
-          hx-on:keyup="this.dispatchEvent(new CustomEvent('email-input-keyup', { bubbles: true, detail: { userTyped: event instanceof KeyboardEvent }}))"
-          {# When we're finally done typing we want to ensure we search for user details #}
-          hx-on:change="this.dispatchEvent(new CustomEvent('email-input-changed', { bubbles: true }))"
-          required
-        />
-        <datalist id="email-datalist"></datalist>
-        <div id="user-info-container"></div>
-        
-        {# Update the user info (the email input needs to update two things, which can't be done on a single element) #}
-        <div 
-          hx-get="{{ rts.user_info_widget }}" 
-          hx-trigger="load, email-input-keyup from:#email delay:400ms, email-input-changed from:#email delay:400ms" 
-          hx-include="#email"  {# include the form info from the email element #}
-          hx-target="#user-info-container" 
-          hx-swap="innerHTML">
-        </div>
-
-        {# Update the datalist for autocomplete #}
-        <div 
-          hx-get="{{ rts.search_users }}" 
-          hx-trigger="load, email-input-keyup[event.detail?.userTyped] from:#email delay:400ms" 
-          hx-include="#email"
-          hx-target="#email-datalist" 
-          hx-swap="innerHTML">
-        </div>
-      </div>
-    {% endif %}
-
-    {# Tiny Screen Warning #}
-    <div class="md:hidden my-section">
-      <h1 class="my-section-title mb-2">Screen Too Small</h1>
-      <p class="my-fineprint">For the best experience, please use a larger screen or switch to landscape mode on your mobile device.</p>
-    </div>
-
-    <div class="hidden sm:block justify-center">
-      <div class="flex flex-col text-center">
-
-        {% if grade is defined %}
-          {% call macros::render_grade(grade) %}
-        {% else if test_index is defined %}
-
-          {% if test.metadata.config.live_grading %}
-            <div 
-              hx-post={{ rts.live_grading(test_index) }}
-              hx-trigger="change from:form"
-              hx-debounce="0.5s"
-            >
-            </div>
-          {% endif %} 
-
+      {# User Info Section #} 
+      {% if grade is not defined %}
+        <div class="my-section hidden sm:block my-dashboard-gradient">
+          <div class="my-section-header">
+            <h2 class="my-section-title text-4xl">User Info</h2>
+          </div>
           <input 
-            type="submit" 
-            value={% if is_demo_mode %}"Submission Disabled for Demo"{% else %}Submit Test{% endif %}
-            class="my-button h-16 mt-10 {% if is_demo_mode %}bg-gray-300 text-gray-900{% endif %}" 
-            {% if is_demo_mode %}disabled{% endif %}
-            hx-post={{ rts.administer_exam(test_index) }} hx-target="#primary-content" hx-push-url="true" hx-confirm="Confirm submission" hx-validate="true"
-          />  
-        {% endif %}
+             id="email" type="email" name="email" list="email-datalist" value="{{ testee_email }}" class="my-input mt-4" placeholder="Testee Email (required)" 
+            {# We want to search for possible email matches every time we type, and put them in a datalist.
+               The datalist is weird though, and when you accept the input from the datalist it counts as a
+               keyup event, which would make the datalist open again right after you closed it, which is 
+               annoying. To fix this, we need to make sure that the original event that triggered the keyup
+               was an instance of KeyboardEvent, since accepting the datalist suggestion isn't a KeyboardEvent.
+            #}
+            hx-on:keyup="this.dispatchEvent(new CustomEvent('email-input-keyup', { bubbles: true, detail: { userTyped: event instanceof KeyboardEvent }}))"
+            {# When we're finally done typing we want to ensure we search for user details #}
+            hx-on:change="this.dispatchEvent(new CustomEvent('email-input-changed', { bubbles: true }))"
+            required
+          />
+          <datalist id="email-datalist"></datalist>
+          <div id="user-info-container"></div>
+          
+          {# Update the user info (the email input needs to update two things, which can't be done on a single element) #}
+          <div 
+            hx-get="{{ rts.user_info_widget }}" 
+            hx-trigger="load, email-input-keyup from:#email delay:400ms, email-input-changed from:#email delay:400ms" 
+            hx-include="#email"  {# include the form info from the email element #}
+            hx-target="#user-info-container" 
+            hx-swap="innerHTML">
+          </div>
+
+          {# Update the datalist for autocomplete #}
+          <div 
+            hx-get="{{ rts.search_users }}" 
+            hx-trigger="load, email-input-keyup[event.detail?.userTyped] from:#email delay:400ms" 
+            hx-include="#email"
+            hx-target="#email-datalist" 
+            hx-swap="innerHTML">
+          </div>
+        </div>
+      {% endif %}
+
+      {# Tiny Screen Warning #}
+      <div class="md:hidden my-section">
+        <h1 class="my-section-title mb-2">Screen Too Small</h1>
+        <p class="my-fineprint">For the best experience, please use a larger screen or switch to landscape mode on your mobile device.</p>
       </div>
-    </div>
 
-    {% for container in test.containers %}
-      {% call macros::render_container(container, show_point_values=test.metadata.config.show_point_values, freeze_buttons=grade is defined) %}
-    {% endfor %}
-    
-    {% if !test.bonus_items.is_empty() %}
-      {% call macros::render_bonuses(test.bonus_items, show_point_values=test.metadata.config.show_point_values, freeze_buttons=grade is defined) %}
-    {% endif %}
+      <div class="hidden sm:block justify-center">
+        <div class="flex flex-col text-center">
 
-  </form>
+          {% if grade is defined %}
+            {% call macros::render_grade(grade) %}
+          {% else if test_index is defined %}
+
+            {% if test.metadata.config.live_grading %}
+              <div 
+                hx-post={{ rts.live_grading(test_index) }}
+                hx-trigger="change from:form"
+                hx-debounce="0.5s"
+              >
+              </div>
+            {% endif %} 
+
+            <input 
+              type="submit" 
+              value={% if is_demo_mode %}"Submission Disabled for Demo"{% else %}Submit Test{% endif %}
+              class="my-button h-16 mt-10 {% if is_demo_mode %}bg-gray-300 text-gray-900{% endif %}" 
+              {% if is_demo_mode %}disabled{% endif %}
+              hx-post={{ rts.administer_exam(test_index) }} hx-target="#primary-content" hx-push-url="true" hx-confirm="Confirm submission" hx-validate="true"
+            />  
+          {% endif %}
+        </div>
+      </div>
+
+      {% for container in test.containers %}
+        {% call macros::render_container(container, show_point_values=test.metadata.config.show_point_values, freeze_buttons=grade is defined) %}
+      {% endfor %}
+      
+      {% if !test.bonus_items.is_empty() %}
+        {% call macros::render_bonuses(test.bonus_items, show_point_values=test.metadata.config.show_point_values, freeze_buttons=grade is defined) %}
+      {% endif %}
+
+    </form>
+  </div>
 {% endblock %}
 

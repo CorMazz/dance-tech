@@ -2,32 +2,35 @@
 
 {% block title %}Error{% endblock %}
 
-{% block content %}
-<div class="my-flexbox">
-  <div class="my-card max-w-sm w-full text-center">
-    <!-- Error Icon -->
-    <div class="flex justify-center">
-      <svg xmlns="http://www.w3.org/2000/svg" class="my-error-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-          d="M12 9v6m0 4v.01M12 3v.01M12 21v.01M5 12a7 7 0 1114 0A7 7 0 015 12z"/>
-      </svg>
-    </div>
 
-    <!-- Error Message -->
-    <h2 class="my-title text-2xl">Oops! Something went wrong.</h2>
+<div class="my-container">
+  {% block content %}
+  <div class="my-flexbox animate-fade-in">
+    <div class="my-card max-w-sm w-full text-center">
+      <!-- Error Icon -->
+      <div class="flex justify-center">
+        <svg xmlns="http://www.w3.org/2000/svg" class="my-error-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M12 9v6m0 4v.01M12 3v.01M12 21v.01M5 12a7 7 0 1114 0A7 7 0 015 12z"/>
+        </svg>
+      </div>
 
-    <p class="my-paragraph">We couldn't process your request. Please try again later, or contact support if the issue persists.</p>
+      <!-- Error Message -->
+      <h2 class="my-title text-2xl">Oops! Something went wrong.</h2>
 
-    <!-- Divider -->
-    <div class="my-4 border-t border-gray-200"></div>
+      <p class="my-paragraph">We couldn't process your request. Please try again later, or contact support if the issue persists.</p>
 
-    <!-- Specific Error Details -->
-    <p class="my-fineprint italic">{{ error_message }}</p>
-    
-    <!-- Action Button -->
-    <div class="mt-6">
-      <a href="/" class="my-button">Go Back Home</a>
+      <!-- Divider -->
+      <div class="my-4 border-t border-gray-200"></div>
+
+      <!-- Specific Error Details -->
+      <p class="my-fineprint italic">{{ error_message }}</p>
+      
+      <!-- Action Button -->
+      <div class="mt-6">
+        <a href="/" class="my-button">Go Back Home</a>
+      </div>
     </div>
   </div>
+  {% endblock %}
 </div>
-{% endblock %}
