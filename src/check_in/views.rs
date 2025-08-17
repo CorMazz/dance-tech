@@ -1,4 +1,3 @@
-use crate::check_in::handlers::CheckoutInfo;
 use crate::AppState;
 use crate::app::router::ROUTES;
 use crate::app::router::Routes;
@@ -6,6 +5,7 @@ use crate::app::utils::is_htmx_request;
 use crate::app::utils::render;
 use crate::auth::middleware::AuthStatus;
 use crate::auth::models::Roles;
+use crate::check_in::handlers::CheckoutInfo;
 use crate::check_in::handlers::create_stripe_checkout_session;
 use crate::check_in::handlers::verify_successful_checkout_session;
 use crate::check_in::models::Product;
@@ -20,11 +20,11 @@ use axum::{
     response::{Html, IntoResponse},
 };
 use serde::Deserialize;
-use tracing::info;
 use std::collections::HashSet;
 use std::sync::Arc;
 use tracing::debug;
 use tracing::error;
+use tracing::info;
 use tracing::instrument;
 
 use crate::check_in::handlers::get_products_from_actor;
@@ -45,7 +45,7 @@ pub struct CheckInTemplate {
     /// Let the template know if it needs to display a "hey you have no products" message
     /// This is because not all users can see all products, and I don't want to leave an
     /// unprivileged user with a blank page.
-    something_is_displayed: bool
+    something_is_displayed: bool,
 }
 
 /// Serve the check in page template.
@@ -160,7 +160,12 @@ pub async fn get_successful_checkout_session(
 ) -> impl IntoResponse {
     #[allow(clippy::cast_precision_loss)]
     match verify_successful_checkout_session(&data, &params.session_id).await {
-        Ok(CheckoutInfo{ paid: payment_successful, description: product_name, price_cents, customer_name }) => {
+        Ok(CheckoutInfo {
+            paid: payment_successful,
+            description: product_name,
+            price_cents,
+            customer_name,
+        }) => {
             let current_time = chrono::Utc::now().format("%b %e, %Y").to_string();
             let template = SuccessfulPaymentTemplate {
                 payment_successful,

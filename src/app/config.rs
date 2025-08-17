@@ -1,6 +1,10 @@
-use std::time::Duration;
 use crate::app::utils::get_env_var;
-use lettre::{message::Mailbox, transport::smtp::{authentication::Credentials, PoolConfig}, AsyncSmtpTransport, Tokio1Executor};
+use lettre::{
+    AsyncSmtpTransport, Tokio1Executor,
+    message::Mailbox,
+    transport::smtp::{PoolConfig, authentication::Credentials},
+};
+use std::time::Duration;
 use tracing::{error, info, warn};
 use url::Url;
 
@@ -85,20 +89,22 @@ impl SMTPConfig {
                     );
 
                     let creds = Credentials::new(user.to_string(), password.to_string());
-                    let mailer: AsyncSmtpTransport<Tokio1Executor> = match AsyncSmtpTransport::<Tokio1Executor>::relay(host) {
-                        Ok(transport) => {
-                            transport
-                                .credentials(creds)
-                                .pool_config(
-                                    PoolConfig::new()
-                                        .max_size(10)
-                                        .idle_timeout(Duration::from_secs(60)),
-                                )
-                                .build()
-                        }
+                    let mailer: AsyncSmtpTransport<Tokio1Executor> = match AsyncSmtpTransport::<
+                        Tokio1Executor,
+                    >::relay(
+                        host
+                    ) {
+                        Ok(transport) => transport
+                            .credentials(creds)
+                            .pool_config(
+                                PoolConfig::new()
+                                    .max_size(10)
+                                    .idle_timeout(Duration::from_secs(60)),
+                            )
+                            .build(),
                         Err(err) => {
                             error!(%err, "Unable to create SMPT Mailer. Proceeding without SMPT functionality.");
-                            return None
+                            return None;
                         }
                     };
 
@@ -106,9 +112,10 @@ impl SMTPConfig {
                         user_email: mailbox,
                         mailer,
                     })
-
                 } else {
-                    warn!("Email functionality disabled. Unable to parse '{email}' into email address.");
+                    warn!(
+                        "Email functionality disabled. Unable to parse '{email}' into email address."
+                    );
                     None
                 }
             }

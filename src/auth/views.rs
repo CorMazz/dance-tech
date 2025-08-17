@@ -5,6 +5,17 @@
 use std::net::SocketAddr;
 use std::sync::Arc;
 
+use crate::AppState;
+use crate::app::router::{ROUTES, Routes};
+use crate::app::utils::{is_htmx_request, render};
+use crate::auth::handlers::{
+    GoogleOAuthCallbackParams, google_oauth_callback_handler, google_oauth_init_flow_handler,
+    login_user_handler, logout_handler, post_request_password_reset_handler,
+    post_reset_password_handler, register_user_handler,
+};
+use crate::auth::models::User;
+use crate::auth::utils::validate_reset_password_token;
+use crate::auth::{errors::AuthError, middleware::AuthStatus};
 use askama::Template;
 use axum::extract::{ConnectInfo, Query, State};
 use axum::response::{Html, IntoResponse, Redirect};
@@ -12,15 +23,6 @@ use axum::{Extension, Form};
 use axum_extra::extract::CookieJar;
 use reqwest::StatusCode;
 use serde::Deserialize;
-use crate::auth::utils::validate_reset_password_token;
-use crate::AppState;
-use crate::app::router::{ROUTES, Routes};
-use crate::app::utils::{is_htmx_request, render};
-use crate::auth::handlers::{
-    google_oauth_callback_handler, google_oauth_init_flow_handler, login_user_handler, logout_handler, post_request_password_reset_handler, post_reset_password_handler, register_user_handler, GoogleOAuthCallbackParams
-};
-use crate::auth::models::User;
-use crate::auth::{errors::AuthError, middleware::AuthStatus};
 
 /// The one absolute truth for html element IDs that are used across multiple templates
 #[allow(clippy::struct_field_names)]
@@ -56,9 +58,10 @@ pub async fn get_user_dropdown(
     let is_proctor = user.as_ref().is_some_and(super::models::User::is_proctor);
     let is_admin = user.as_ref().is_some_and(super::models::User::is_admin);
 
-    let pfp_url = cookie_jar
-        .get("profile_picture")
-        .map_or_else(|| "static/images/default_pfp.jpg".to_string(), |c| c.value().to_string());
+    let pfp_url = cookie_jar.get("profile_picture").map_or_else(
+        || "static/images/default_pfp.jpg".to_string(),
+        |c| c.value().to_string(),
+    );
 
     let template = UserDropdownTemplate {
         rts: ROUTES,
@@ -81,9 +84,7 @@ pub struct SignUpTemplate {
     rts: Routes,
 }
 
-pub async fn get_signup_page(
-    headers: axum::http::HeaderMap,
-) ->impl IntoResponse {
+pub async fn get_signup_page(headers: axum::http::HeaderMap) -> impl IntoResponse {
     let template = SignUpTemplate { rts: ROUTES };
 
     if is_htmx_request(&headers) {
@@ -210,8 +211,8 @@ pub async fn get_google_oauth_callback(
 pub struct RequestPasswordResetTemplate {
     rts: Routes,
     ids: Ids,
-    /// If the SMPT env vars weren't set, we cannot perform a password reset. 
-    email_functionality_active: bool
+    /// If the SMPT env vars weren't set, we cannot perform a password reset.
+    email_functionality_active: bool,
 }
 
 /// The user facing page for requesting a password reset.
@@ -219,7 +220,7 @@ pub async fn get_request_password_reset_page(
     headers: axum::http::HeaderMap,
     State(data): State<Arc<AppState>>,
 ) -> impl IntoResponse {
-    let template = RequestPasswordResetTemplate { 
+    let template = RequestPasswordResetTemplate {
         rts: ROUTES,
         ids: IDS,
         email_functionality_active: data.smtp_config.is_some(),
@@ -229,12 +230,13 @@ pub async fn get_request_password_reset_page(
         (StatusCode::OK, Html(render(template.as_content())))
     } else {
         (StatusCode::OK, Html(render(template)))
-
     }
 }
 
 #[derive(Debug, Deserialize)]
-pub struct RequestPasswordResetForm { pub email: String }
+pub struct RequestPasswordResetForm {
+    pub email: String,
+}
 
 /// Send an email to reset the user's password
 pub async fn post_request_password_reset_page(
@@ -243,7 +245,6 @@ pub async fn post_request_password_reset_page(
     ConnectInfo(addr): ConnectInfo<SocketAddr>,
     Form(form): Form<RequestPasswordResetForm>,
 ) -> impl IntoResponse {
-   
     // I anticipate running this behind Cloudflare, so I'm trying to use Cloudflare's header. If
     // that doesn't exist (because we're doing local development or something else), just use the
     // default IP source
@@ -255,16 +256,14 @@ pub async fn post_request_password_reset_page(
         .to_string();
 
     match post_request_password_reset_handler(form, user_ip, data).await {
-        Ok(()) => {
-            (
-                StatusCode::OK,
-                Html("If the email exists in our system, a reset link has been sent.".to_string()),
-            ).into_response()
-        }
-        Err(e) => e.into_response(&headers)
+        Ok(()) => (
+            StatusCode::OK,
+            Html("If the email exists in our system, a reset link has been sent.".to_string()),
+        )
+            .into_response(),
+        Err(e) => e.into_response(&headers),
     }
 }
-
 
 #[derive(Template)]
 #[template(path = "./auth_templates/reset_password.html", blocks = ["content"])]
@@ -272,13 +271,12 @@ pub struct ResetPasswordTemplate {
     rts: Routes,
     ids: Ids,
     token: String,
-
 }
 
 #[derive(Deserialize)]
 pub struct ResetPasswordQuery {
     /// The token generated by the request password reset handler.
-    pub token: String
+    pub token: String,
 }
 
 /// The user facing page for resetting a password via email.
@@ -287,12 +285,11 @@ pub async fn get_reset_password_page(
     State(data): State<Arc<AppState>>,
     Query(query): Query<ResetPasswordQuery>,
 ) -> impl IntoResponse {
-
     if let Err(e) = validate_reset_password_token(&query.token, &data, false).await {
         return e.into_response(&headers);
     }
 
-    let template = ResetPasswordTemplate { 
+    let template = ResetPasswordTemplate {
         rts: ROUTES,
         ids: IDS,
         token: query.token,
@@ -302,7 +299,6 @@ pub async fn get_reset_password_page(
         (StatusCode::OK, Html(render(template.as_content()))).into_response()
     } else {
         (StatusCode::OK, Html(render(template))).into_response()
-
     }
 }
 
@@ -321,17 +317,19 @@ pub async fn post_reset_password_page(
 ) -> impl IntoResponse {
     // Check passwords match
     if form.new_password != form.confirm_password {
-        return (StatusCode::OK, Html("Password do not match.")).into_response()
+        return (StatusCode::OK, Html("Password do not match.")).into_response();
     }
 
-    if let Err(e) = post_reset_password_handler(form.token, form.new_password, form.confirm_password, data).await {
-        return e.into_response(&headers)
+    if let Err(e) =
+        post_reset_password_handler(form.token, form.new_password, form.confirm_password, data)
+            .await
+    {
+        return e.into_response(&headers);
     }
 
     let success_msg = "Password successfully updated. You can now log in.";
     (StatusCode::OK, Html(success_msg)).into_response()
 }
-
 
 // #######################################################################################################################################################
 // Logout Endpoint

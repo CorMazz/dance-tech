@@ -17,7 +17,7 @@ pub enum AuthError {
 
     #[error("Invalid email or password.")]
     InvalidEmailOrPassword,
-    
+
     /// Used on the sign-up page. Could probably do this with just a toast instead but oh well.
     #[error("Passwords do not match.")]
     PasswordsDoNotMatch,
@@ -52,7 +52,9 @@ pub enum AuthError {
     #[error("There was an issue with OAuth. Please contact the site administrator.")]
     OAuthError,
 
-    #[error("Email functionality is not configured. Passwords cannot be reset. Contact a site administrator.")]
+    #[error(
+        "Email functionality is not configured. Passwords cannot be reset. Contact a site administrator."
+    )]
     NoEmailConfig,
 
     #[error(
@@ -60,7 +62,9 @@ pub enum AuthError {
     )]
     AccountNotFound,
 
-    #[error("This token either expired or was never valid. Please complete the password reset within 15 minutes of requesting it.")]
+    #[error(
+        "This token either expired or was never valid. Please complete the password reset within 15 minutes of requesting it."
+    )]
     InvalidOrExpiredToken,
 }
 

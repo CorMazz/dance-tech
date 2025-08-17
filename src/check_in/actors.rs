@@ -33,7 +33,7 @@ use tracing::warn;
 /// products immediately
 /// The secret key is from Stripe
 ///
-/// If the clone to send the product request gets too expensive, perhaps use a RwLock instead.
+/// If the clone to send the product request gets too expensive, perhaps use a `RwLock` instead.
 /// In the meantime, FISI
 #[instrument(skip(product_request_rx, trigger_update_rx, app_state))]
 pub async fn product_manager_actor_runtime(

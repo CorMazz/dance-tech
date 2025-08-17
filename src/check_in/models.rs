@@ -307,12 +307,11 @@ pub struct StripeCheckoutSession {
     pub line_items: LineItems,
     pub customer_details: CustomerDetails,
     /// Theoretically, Checkout Sessions expire after 1 day. So if we are past the expiry date,
-    /// this should no longer be valid to show the success page. 
+    /// this should no longer be valid to show the success page.
     /// So that we can ensure users can't use old checkout success pages to trick the people at the
     /// front desk into believing they have already paid.
     #[serde(with = "chrono::serde::ts_seconds")]
     pub expires_at: DateTime<Utc>,
-
 }
 
 /// Grab this information so that we can show what product was purchased on the success page.

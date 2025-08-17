@@ -120,7 +120,10 @@ pub async fn verify_successful_checkout_session(
     // Ensure exactly one line item
     let line_items = &session.line_items.data;
     if line_items.len() != 1 {
-        error!(line_items_len = line_items.len(), "Expected exactly one line item in checkout session");
+        error!(
+            line_items_len = line_items.len(),
+            "Expected exactly one line item in checkout session"
+        );
         return Err(CheckInError::StripeApiError);
     }
 

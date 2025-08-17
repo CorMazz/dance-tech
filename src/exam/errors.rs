@@ -13,7 +13,6 @@ pub enum ExamError {
     // /// Display a message to the user to tell them how to possibly fix the error.
     // #[error("{0:?}")]
     // InternalServerError(String),
-
     #[error("There was an error with the database. Please contact the site administrator.")]
     DatabaseError,
 

@@ -102,7 +102,10 @@ async fn main() {
         error!(%err, "Unable to grant admin permissions to user.");
     }
 
-    sqlx::migrate!("./migrations").run(&pool).await.expect("Unable to perform database migrations");
+    sqlx::migrate!("./migrations")
+        .run(&pool)
+        .await
+        .expect("Unable to perform database migrations");
 
     let redis_client = match Client::open(app_config.redis_url.clone()) {
         Ok(client) => {
@@ -132,8 +135,7 @@ async fn main() {
         product_manager_actor_runtime(product_request_rx, trigger_update_rx, actor_app_state).await;
     });
 
-    let app = create_router(app_state)
-        .layer(TraceLayer::new_for_http());
+    let app = create_router(app_state).layer(TraceLayer::new_for_http());
 
     info!(
         "🚀 Server started successfully on port {}",
@@ -143,23 +145,31 @@ async fn main() {
     let listener = tokio::net::TcpListener::bind(format!("0.0.0.0:{}", app_config.server_port))
         .await
         .unwrap();
-    axum::serve(listener, app.into_make_service_with_connect_info::<SocketAddr>()).await.unwrap();
+    axum::serve(
+        listener,
+        app.into_make_service_with_connect_info::<SocketAddr>(),
+    )
+    .await
+    .unwrap();
 }
 
 /// On startup, check to see if the `SET_ADMIN_EMAIL` env var is set, and if it is, search the
 /// database for that user and if they exist, grant them admin roles.
 pub async fn grant_admin(db: &Pool<Postgres>) -> Result<(), AuthError> {
-    if let Ok(admin_email) = std::env::var("SET_ADMIN_EMAIL") {
-        if !admin_email.is_empty() {
-            if let Some(mut user) = get_user_by_email(&admin_email, db).await? {
-                let mut roles_to_add = HashSet::new();
-                roles_to_add.insert(Roles::Admin);
+    if let Ok(admin_email) = std::env::var("SET_ADMIN_EMAIL")
+        && !admin_email.is_empty()
+    {
+        if let Some(mut user) = get_user_by_email(&admin_email, db).await? {
+            let mut roles_to_add = HashSet::new();
+            roles_to_add.insert(Roles::Admin);
 
-                grant_roles(&mut user, roles_to_add, db).await?;
-                info!("Granted 'Admin' role to '{}'", admin_email);
-            } else {
-                info!("'SET_ADMIN_EMAIL' is set but no user found for '{}'", admin_email);
-            }
+            grant_roles(&mut user, roles_to_add, db).await?;
+            info!("Granted 'Admin' role to '{}'", admin_email);
+        } else {
+            info!(
+                "'SET_ADMIN_EMAIL' is set but no user found for '{}'",
+                admin_email
+            );
         }
     }
     Ok(())

@@ -1,32 +1,31 @@
-use crate::auth::models::User;
-use crate::auth::utils::search_for_users;
 use crate::AppState;
 use crate::app::utils::is_htmx_request;
 use crate::app::utils::render;
 use crate::auth::middleware::AuthStatus;
 use crate::auth::models::DisplayRoles;
+use crate::auth::models::User;
+use crate::auth::utils::search_for_users;
 use crate::check_in::handlers::get_products_from_actor;
 use crate::check_in::models::Product;
 use crate::exam::models::Test;
 use askama::Template;
-use axum::extract::Query;
 use axum::Extension;
+use axum::Form;
+use axum::extract::Query;
 use axum::extract::State;
 use axum::response::Redirect;
-use axum::Form;
 use axum::{
     http::StatusCode,
     response::{Html, IntoResponse},
 };
-use uuid::Uuid;
 use std::sync::Arc;
+use uuid::Uuid;
 
+use super::handlers::delete_user_roles_widget_handler;
+use super::handlers::post_user_roles_widget_handler;
 use crate::app::router::ROUTES;
 use crate::app::router::Routes;
 use crate::app::utils::ErrorTemplate;
-use super::handlers::delete_user_roles_widget_handler;
-use super::handlers::post_user_roles_widget_handler;
-
 
 /// The one absolute truth for html element IDs that are used across multiple templates
 pub struct Ids {
@@ -110,8 +109,8 @@ pub struct UserRolesTemplate {
 
 #[derive(serde::Deserialize)]
 pub struct UserQuery {
-    #[serde(default)] 
-    query: Option<String>
+    #[serde(default)]
+    query: Option<String>,
 }
 
 /// This widget minimally allows admins to see user roles and add/remove roles from users.
@@ -134,15 +133,14 @@ pub async fn get_user_roles_widget(
         Some(user_query) => match search_for_users(user_query, &data.db).await {
             Ok(users) => users,
             Err(err) => return err.into_response(&headers),
-        }
+        },
     };
 
     let template = UserRolesTemplate {
         rts: ROUTES,
         ids: IDS,
-        users
+        users,
     };
-
 
     if matches!(headers.get("HX-Trigger"), Some(div_id) if div_id == IDS.user_role_form) {
         (StatusCode::OK, Html(render(template.as_table_body()))).into_response()
@@ -162,7 +160,7 @@ pub struct ModifyUserQuery {
 
 /// This widget minimally allows admins to see user roles and add/remove roles from users.
 ///
-/// The delete method allows admins to remove roles from certain users. 
+/// The delete method allows admins to remove roles from certain users.
 pub async fn delete_user_roles_widget(
     State(data): State<Arc<AppState>>,
     headers: axum::http::HeaderMap,
@@ -177,10 +175,9 @@ pub async fn delete_user_roles_widget(
 
     match delete_user_roles_widget_handler(query, &data.db).await {
         Ok(..) => StatusCode::OK.into_response(),
-        Err(e) => e.into_response(&headers)
+        Err(e) => e.into_response(&headers),
     }
 }
-
 
 /// This widget minimally allows admins to see user roles and add/remove roles from users.
 ///
@@ -205,8 +202,8 @@ pub async fn post_user_roles_widget(
                 users,
             };
             (StatusCode::OK, Html(render(template.as_table_body()))).into_response()
-        },
-        Err(e) => e.into_response(&headers)
+        }
+        Err(e) => e.into_response(&headers),
     }
 }
 
@@ -224,10 +221,7 @@ pub async fn get_contact_page(headers: axum::http::HeaderMap) -> impl IntoRespon
     } else {
         (StatusCode::OK, Html(render(template))).into_response()
     }
-
 }
-
-
 
 /// Serve the error 404 not found page
 pub async fn error_404_page() -> impl IntoResponse {

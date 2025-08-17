@@ -16,8 +16,8 @@ use sqlx::types::Json;
 use sqlx::{Execute, Pool, Postgres, QueryBuilder};
 use std::collections::HashSet;
 use std::collections::{BTreeMap, HashMap};
-use tracing::{trace, warn};
 use tracing::{debug, error, instrument};
+use tracing::{trace, warn};
 use uuid::Uuid;
 
 /// Take a `DataFrame` and convert it into a nested `TestTable` structure
@@ -209,7 +209,7 @@ pub async fn save_graded_test_to_db(
 
 /// Loads a graded test from the database.
 ///
-/// The test was originally stored as JSONB, so it deserializes the JSON into a GradedTest object.
+/// The test was originally stored as JSONB, so it deserializes the JSON into a `GradedTest` object.
 #[instrument(skip(db))]
 pub async fn load_graded_test_from_db(
     test_id: Uuid,
@@ -449,31 +449,31 @@ pub async fn query_filtered_exams(
         }
     }
 
-    if let Some(testee_ids) = &filter.testee_ids {
-        if !testee_ids.is_empty() {
-            builder
-                .push(" AND test_data->>'testee_id' IN (")
-                .push_values(
-                    // the iterator that yields each bind value
-                    testee_ids.iter(),
-                    // how to bind each element
-                    |mut b, id| {
-                        b.push_bind(id.to_string());
-                    },
-                )
-                .push(")");
-        }
+    if let Some(testee_ids) = &filter.testee_ids
+        && !testee_ids.is_empty()
+    {
+        builder
+            .push(" AND test_data->>'testee_id' IN (")
+            .push_values(
+                // the iterator that yields each bind value
+                testee_ids.iter(),
+                // how to bind each element
+                |mut b, id| {
+                    b.push_bind(id.to_string());
+                },
+            )
+            .push(")");
     }
 
-    if let Some(proctor_ids) = &filter.proctor_ids {
-        if !proctor_ids.is_empty() {
-            builder
-                .push(" AND test_data->>'proctor_id' IN (")
-                .push_values(proctor_ids.iter(), |mut b, id| {
-                    b.push_bind(id.to_string());
-                })
-                .push(")");
-        }
+    if let Some(proctor_ids) = &filter.proctor_ids
+        && !proctor_ids.is_empty()
+    {
+        builder
+            .push(" AND test_data->>'proctor_id' IN (")
+            .push_values(proctor_ids.iter(), |mut b, id| {
+                b.push_bind(id.to_string());
+            })
+            .push(")");
     }
 
     if let Some(test_name) = &filter.test_name {

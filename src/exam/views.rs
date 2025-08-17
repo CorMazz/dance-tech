@@ -53,7 +53,6 @@ pub struct Ids {
     /// Same as above. This is the div that launches the hx-get request to populate the
     /// `queue_container`
     pub queue_reload_handler: &'static str,
-
 }
 
 pub const IDS: Ids = Ids {
@@ -71,8 +70,8 @@ pub struct AdministerExamTemplate {
     /// Used for on the fly test grading and the `submit button`
     test_index: usize,
     is_demo_mode: bool,
-    /// If `true`, adds a checkbox that will trigger emailing test results the testee.
-    email_functionality_active: bool,
+    // /// If `true`, adds a checkbox that will trigger emailing test results the testee.
+    // email_functionality_active: bool,
     /// Prefills the user on the test page
     testee_email: String,
     rts: Routes,
@@ -111,7 +110,7 @@ pub async fn get_test_page(
                 test: test.clone(),
                 test_index,
                 is_demo_mode: data.app_config.is_demo_mode,
-                email_functionality_active: data.smtp_config.is_some(),
+                // email_functionality_active: data.smtp_config.is_some(),
                 testee_email: testee_email.email,
                 rts: ROUTES,
             };
@@ -290,7 +289,10 @@ pub struct UserDashboardTemplate {
 }
 
 pub async fn get_user_dashboard_page(headers: axum::http::HeaderMap) -> impl IntoResponse {
-    let template = UserDashboardTemplate { rts: ROUTES, ids: IDS };
+    let template = UserDashboardTemplate {
+        rts: ROUTES,
+        ids: IDS,
+    };
 
     if is_htmx_request(&headers) {
         (StatusCode::OK, Html(render(template.as_content())))
@@ -383,7 +385,7 @@ pub async fn post_queue_widget(
 ) -> impl IntoResponse {
     let user = match auth_status.require_auth() {
         Ok(user) => user,
-        Err(e) => return e,
+        Err(e) => return e.into_response(),
     };
 
     let user_id = match form.user_id.to_lowercase().as_str() {
@@ -433,7 +435,7 @@ pub async fn delete_queue_widget(
 ) -> impl IntoResponse {
     let user = match auth_status.require_auth() {
         Ok(user) => user,
-        Err(e) => return e,
+        Err(e) => return e.into_response(),
     };
 
     let user_id = match form.user_id.to_lowercase().as_str() {
@@ -495,7 +497,7 @@ pub async fn get_user_info_widget(
 ) -> impl IntoResponse {
     // I tried returning a result type from the function, but it was a PITA
     if let Err(e) = auth_status.require_auth() {
-        return e;
+        return e.into_response();
     }
 
     let user = get_user_by_email(&form.email, &data.db).await;
@@ -534,7 +536,7 @@ pub async fn get_user_autocomplete(
     Query(form): Query<UserEmailForm>,
 ) -> impl IntoResponse {
     if let Err(e) = auth_status.require_auth() {
-        return e;
+        return e.into_response();
     }
 
     let users = search_for_users(form.email, &data.db).await;
@@ -609,9 +611,9 @@ pub async fn get_search_tests_widget(
             is_signed_in: false,
         };
         if is_htmx_request(&headers) {
-            return (StatusCode::OK, Html(render(template.as_content()))).into_response()
+            return (StatusCode::OK, Html(render(template.as_content()))).into_response();
         }
-        return (StatusCode::OK, Html(render(template))).into_response()
+        return (StatusCode::OK, Html(render(template))).into_response();
     };
 
     let (graded_tests, has_next_page) =

@@ -1,19 +1,28 @@
 use crate::{
-    app::views::{delete_user_roles_widget, error_404_page, get_admin_dashboard, get_contact_page, get_home_page, get_user_roles_widget, post_user_roles_widget 
-    }, auth::{
+    AppState,
+    app::views::{
+        delete_user_roles_widget, error_404_page, get_admin_dashboard, get_contact_page,
+        get_home_page, get_user_roles_widget, post_user_roles_widget,
+    },
+    auth::{
         middleware::{check_auth_middleware, require_auth_middleware},
         views::{
-            get_google_oauth_callback, get_google_oauth_init_flow, get_login_page, get_logout_page, get_request_password_reset_page, get_reset_password_page, get_signup_page, get_user_dropdown, post_login_form, post_request_password_reset_page, post_reset_password_page, post_signup_form
+            get_google_oauth_callback, get_google_oauth_init_flow, get_login_page, get_logout_page,
+            get_request_password_reset_page, get_reset_password_page, get_signup_page,
+            get_user_dropdown, post_login_form, post_request_password_reset_page,
+            post_reset_password_page, post_signup_form,
         },
-    }, check_in::views::{
+    },
+    check_in::views::{
         get_check_in_page, get_successful_checkout_session, post_create_check_out_session,
         post_update_available_products,
-    }, exam::views::{
+    },
+    exam::views::{
         delete_queue_widget, get_graded_test_page, get_join_queue_widget,
         get_proctor_dashboard_page, get_queue_widget, get_search_tests_widget, get_test_page,
         get_user_autocomplete, get_user_dashboard_page, get_user_info_widget, post_live_grading,
         post_queue_widget, post_test_form,
-    }, AppState
+    },
 };
 use axum::{
     Router, middleware,
@@ -21,7 +30,6 @@ use axum::{
 };
 use std::sync::Arc;
 use tower_http::services::ServeDir;
-
 
 /// A struct containing all routes for the app, to minimize code duplication.
 pub struct Routes {
@@ -119,11 +127,8 @@ impl Routes {
             root.pop(); // remove trailing slash
         }
 
-        format!(
-            "{root}/{path}?token={password_token}",
-        )
+        format!("{root}/{path}?token={password_token}",)
     }
-
 }
 
 /// This constant will be shared across the application and is the absolute truth for all routes
@@ -172,7 +177,12 @@ pub fn create_router(app_state: Arc<AppState>) -> Router {
         .route(ROUTES.user_info_widget, get(get_user_info_widget))
         .route(ROUTES.search_users, get(get_user_autocomplete))
         .route(ROUTES.admin_dashboard, get(get_admin_dashboard))
-        .route(ROUTES.user_roles, get(get_user_roles_widget).post(post_user_roles_widget).delete(delete_user_roles_widget))
+        .route(
+            ROUTES.user_roles,
+            get(get_user_roles_widget)
+                .post(post_user_roles_widget)
+                .delete(delete_user_roles_widget),
+        )
         .route(
             &ROUTES.administer_exam("{test_index}"),
             get(get_test_page).post(post_test_form),
@@ -213,8 +223,14 @@ pub fn create_router(app_state: Arc<AppState>) -> Router {
         .route(&ROUTES.graded_exam("{test_id}"), get(get_graded_test_page))
         .route(ROUTES.contact, get(get_contact_page))
         .route(ROUTES.root, get(get_home_page))
-        .route(ROUTES.request_password_reset, get(get_request_password_reset_page).post(post_request_password_reset_page))
-        .route(ROUTES.reset_password, get(get_reset_password_page).post(post_reset_password_page))
+        .route(
+            ROUTES.request_password_reset,
+            get(get_request_password_reset_page).post(post_request_password_reset_page),
+        )
+        .route(
+            ROUTES.reset_password,
+            get(get_reset_password_page).post(post_reset_password_page),
+        )
         .route(ROUTES.logout, get(get_logout_page));
 
     // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!

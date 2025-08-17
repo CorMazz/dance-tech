@@ -34,10 +34,10 @@ impl AuthStatus {
     }
 
     /// Return the `User` or redirect the user to the login page.
-    pub fn require_auth(self) -> Result<User, axum::http::Response<axum::body::Body>> {
+    pub fn require_auth(self) -> Result<User, Redirect> {
         match self {
             Self::Authorized(user) => Ok(user),
-            Self::Unauthorized(_) => Err(Redirect::to(ROUTES.login).into_response()),
+            Self::Unauthorized(_) => Err(Redirect::to(ROUTES.login)),
         }
     }
 }

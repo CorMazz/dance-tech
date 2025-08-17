@@ -1,8 +1,11 @@
 //! For functions that are used inside of handlers.
 
-use argon2::PasswordHasher;
 use crate::auth::models::Roles;
-use argon2::{password_hash::{rand_core::OsRng, SaltString}, Argon2};
+use argon2::PasswordHasher;
+use argon2::{
+    Argon2,
+    password_hash::{SaltString, rand_core::OsRng},
+};
 use axum_extra::extract::{
     CookieJar,
     cookie::{Cookie, SameSite},
@@ -137,7 +140,7 @@ pub async fn grant_roles(
     current_roles.extend(roles_to_add);
 
     if current_roles.len() == original_len {
-        return Ok(())
+        return Ok(());
     }
 
     // Update in database
@@ -171,7 +174,7 @@ pub async fn revoke_roles(
 
     if current_roles.len() == original_len {
         // No change — nothing to do
-        return Ok(())
+        return Ok(());
     }
 
     // Update in database
@@ -375,7 +378,7 @@ pub fn verify_jwt_token(
 
 /// Validates a password reset token by checking Redis for a matching user ID
 /// and confirming that user exists in the database.
-/// 
+///
 /// If `consume` is `true`, the token will be deleted from Redis after validation
 /// to prevent reuse. Returns the matching `User` on success.
 #[instrument(skip(data))]
@@ -397,13 +400,10 @@ pub async fn validate_reset_password_token(
         })?;
 
     // Get the user_id from Redis
-    let user_id: Option<String> = redis_client
-        .get(&redis_key)
-        .await
-        .map_err(|err| {
-            error!(%err, "Error while fetching password reset token from redis.");
-            AuthError::FatalInternalServerError
-        })?;
+    let user_id: Option<String> = redis_client.get(&redis_key).await.map_err(|err| {
+        error!(%err, "Error while fetching password reset token from redis.");
+        AuthError::FatalInternalServerError
+    })?;
 
     let user_id: Uuid = if let Some(uid) = user_id {
         uid.parse().map_err(|err| {
@@ -425,13 +425,10 @@ pub async fn validate_reset_password_token(
 
     // Optionally delete the token
     if consume {
-        let _: () = redis_client
-            .del(&redis_key)
-            .await
-            .map_err(|err| {
-                error!(%err, "Error while deleting password reset token from redis.");
-                AuthError::FatalInternalServerError
-            })?;
+        let _: () = redis_client.del(&redis_key).await.map_err(|err| {
+            error!(%err, "Error while deleting password reset token from redis.");
+            AuthError::FatalInternalServerError
+        })?;
     }
 
     Ok(user)

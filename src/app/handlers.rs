@@ -1,9 +1,12 @@
+use super::views::ModifyUserQuery;
+use crate::auth::{
+    errors::AuthError,
+    models::{Roles, User},
+    utils::{get_user_by_id, grant_roles, revoke_roles},
+};
+use sqlx::{Pool, Postgres};
 use std::collections::HashSet;
 use tracing::instrument;
-use sqlx::{Pool, Postgres};
-use crate::auth::{errors::AuthError, models::{Roles, User}, utils::{get_user_by_id, grant_roles, revoke_roles}};
-use super::views::ModifyUserQuery;
-
 
 /// Delete a role from a user via the admin dashboard
 #[instrument(skip(db))]
