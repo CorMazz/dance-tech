@@ -61,7 +61,7 @@
   /* The sections used to delineate different blocks of content */
   /* For instance, widgets should be contained within a section */
   .my-section {
-    @apply bg-white rounded-2xl p-8 shadow-lg mt-10 transition hover:shadow-xl;
+    @apply bg-white rounded-2xl px-2 py-8 md:px-8 shadow-lg mt-10 transition hover:shadow-xl;
   }
   
   /* A fixed one or two column grid. Used to organize cards. */

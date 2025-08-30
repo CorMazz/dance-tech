@@ -15,6 +15,9 @@ pub struct AppConfig {
     pub database_url: String,
     pub redis_url: String,
     pub site_url: Url,
+    /// The URL to the terms of service page that Stripe will require people to agree to before
+    /// checking out successfully. Can be a link to a Google doc, etc.
+    pub tos_url: Url,
 }
 
 impl AppConfig {
@@ -28,6 +31,9 @@ impl AppConfig {
         let raw_site_url = get_env_var("SITE_URL");
         let site_url = Url::parse(&raw_site_url)
             .unwrap_or_else(|err| panic!("Failed to parse SITE_URL '{raw_site_url}': {err}"));
+        let raw_tos_url = get_env_var("TERMS_OF_SERVICE_URL");
+        let tos_url = Url::parse(&raw_tos_url)
+            .unwrap_or_else(|err| panic!("Failed to parse TERMS_OF_SERVICE_URL '{raw_tos_url}': {err}"));
 
         Self {
             is_demo_mode,
@@ -35,6 +41,7 @@ impl AppConfig {
             database_url,
             redis_url,
             site_url,
+            tos_url,
         }
     }
 }

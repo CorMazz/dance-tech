@@ -23,7 +23,7 @@
       {# Create the Overall Scoring Category Headers #}         
       <tr>
         {# Empty Padding to Align Everything #}
-        <th class="w-1/5"></th>
+        <th class="w-1/6"></th>
 
         {% for scoring_category in table.scoring_categories %}
           <th class="my-table-cell text-2xl" colspan="{{ scoring_category.values.len() }}" scope="colgroup">
@@ -42,17 +42,18 @@
       {# Create the Detailed Scoring Headers #}
       <tr>
         {# Empty Padding to Align Everything #}
-          <th class="my-table-cell w-1/5"></th>
+          <th class="my-table-cell w-1/6"></th>
 
           {% for scoring_category in table.scoring_categories %}
             {% let last_scoring_category = loop.last %}
             {% for header in scoring_category.values %}
-              <th class="my-table-cell text-xl p-1 wrap-break-word {% if !last_scoring_category && loop.last %}border-r border-gray-300 last:border-0{% endif %}">
+              <th class="my-table-cell text-l md:text-xl p-1 wrap-break-word {% if !last_scoring_category && loop.last %}border-r border-gray-300 last:border-0{% endif %}">
                 {{ header }}
               </th>
             {% endfor %}
           {% endfor %}
-          {# Removing this unless I am specifically asked to add this back, because I'm tired of this grandpa.
+          {# 
+            Removing this unless I am specifically asked to add this back, because I'm tired of this grandpa.
           {# If there is only one scoring category then the item to be graded may have an antithesis. This leaves room for that #}
           {% if table.scoring_categories.len() == 1 %}
             <th class="my-table-cell w-[15%]"></th>
@@ -66,7 +67,7 @@
       {% for row in table.rows %}
         <tr class="my-table-row">
           {# Add the Item Name to the Left Column #}
-          <td class="my-table-cell text-right text-xl border-r border-gray-300">
+          <td class="my-table-cell px-2 text-right text-xl border-r border-gray-300">
             {{ row.left_label }}
             {% if row.left_label_subtext != "" %}}<br><span class="my-fineprint">{{ row.left_label_subtext }}</span>{% endif %}
           </td>

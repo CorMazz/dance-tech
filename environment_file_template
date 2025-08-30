@@ -1,6 +1,8 @@
 
 # On startup, look for this user and give them admin permissions
 SET_ADMIN_EMAIL=
+
+# Currently demo mode is kinda broken. Just set it to false
 DEMO_MODE=false
 
 # One of error, warn, info, debug, trace. Changes the log level output to stdout
@@ -8,6 +10,9 @@ RUST_LOG=
 
 # The base url that the site will be hosted on. Used for redirects from Stripe and Google OAuth 
 SITE_URL=""
+
+# The link to the terms of service agreement that users must agree to before purchasing any of our products
+TERMS_OF_SERVICE_URL=""
 
 SIGNUP_LICENSING_KEY=coryisthebest
 
