@@ -205,5 +205,5 @@ pub async fn post_update_available_products(
 
     info!("Requesting Stripe Product update.");
 
-    Redirect::to(ROUTES.check_in).into_response()
+    StatusCode::OK.into_response()
 }

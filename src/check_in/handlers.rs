@@ -14,7 +14,7 @@ use tracing::{debug, error};
 
 /// Use Stripe's checkout API to direct the user to a payment page.
 ///
-/// It looks like stripe doesn't actually need the requested product, just the price. 
+/// It looks like stripe doesn't actually need the requested product, just the price.
 ///
 /// I'm leaving it because I'm lazy. I wonder why clippy isn't complaining.
 ///
@@ -40,10 +40,16 @@ pub async fn create_stripe_checkout_session(
     params.insert("line_items[0][price]".to_string(), price_id.to_string());
     params.insert("line_items[0][quantity]".to_string(), "1".to_string());
 
-    params.insert("consent_collection[terms_of_service]".to_string(), "required".to_string());
+    params.insert(
+        "consent_collection[terms_of_service]".to_string(),
+        "required".to_string(),
+    );
     params.insert(
         "custom_text[terms_of_service_acceptance][message]".to_string(),
-        format!("I agree to the [Terms of Service]({})", data.app_config.tos_url)
+        format!(
+            "I agree to the [Terms of Service]({})",
+            data.app_config.tos_url
+        ),
     );
 
     let client = &data.http_client;

@@ -9,7 +9,8 @@
       <div class="my-section my-dashboard-gradient">
         <div class="my-section-header">
           <h1 class="my-section-title">Products</h1>
-          <button hx-post="{{ rts.update_products }}" hx-swap="none" class="my-section-action">
+          {# Reload the whole page after a second because I can't be bothered to reload just this htmx element. #}
+          <button hx-post="{{ rts.update_products }}" hx-swap="none" class="my-section-action" hx-on::after-request="setTimeout(() => window.location.reload(), 1000)">
             Update Products
           </button>
         </div>
@@ -28,6 +29,9 @@
               <p class="my-fineprint mt-2">
                 {% if product.show_preview %}✅{% else %}❌{% endif %} Show Preview
               </p>
+              <p class="my-fineprint mt-2">
+                Sort Level = {{ product.sort_level }}
+              </p>
               <form action={{ rts.create_checkout_session }} method="POST">
                 <input type="hidden" name="product_id" value="{{ product.id }}">
                 <input type="hidden" name="price_id" value="{{ product.price_id }}">
@@ -45,7 +49,7 @@
             <a class="underline text-primary-300 hover:text-primary-500" href="https://dashboard.stripe.com">
               Stripe Dashboard
             </a>
-            to modify the product selection. Then either wait 5 minutes for the app to automatically update, or click the update products button.
+            to modify the product selection. Then either wait 10 minutes for the app to automatically update, or click the update products button.
           </p>
 
           <p class="my-paragraph mt-4">
@@ -72,6 +76,9 @@
             </li>
             <li>
               <code>show-preview</code>: Set to <code>true</code> to allow users without sufficient permissions to see a preview of the product.
+            </li>
+            <li>
+              <code>sort-level</code>: Set to an integer to change the order with which the products appear. Smaller numbers appear first. Products with the same sort level are sorted alphabetically.
             </li>
           </ul>
         </div>

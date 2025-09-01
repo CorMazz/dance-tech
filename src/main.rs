@@ -61,7 +61,7 @@ async fn main() {
     tracing_subscriber::registry()
         .with(
             EnvFilter::try_from_default_env()
-                .unwrap_or_else(|_| EnvFilter::new("warn,dancetech=info"))
+                .unwrap_or_else(|_| EnvFilter::new("warn,dancetech=info")),
         )
         .with(fmt::layer().pretty())
         .init();

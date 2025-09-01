@@ -48,7 +48,7 @@ pub async fn product_manager_actor_runtime(
 
     loop {
         tokio::select! {
-            // Reload every 5 minutes
+            // Reload every n minutes
             _ = periodic_refresh.tick() => {
                 match get_stripe_products(&app_state.http_client, &app_state.check_in_config.secret_key).await {
                     Ok(fresh) => {
@@ -88,6 +88,7 @@ pub async fn product_manager_actor_runtime(
 /// `"show-on-dancetech":"true"`.
 /// Will also grab the metadata key "requires-roles":"["advanced-leader", etc...]"
 /// Will also grab the metadata key "show-preview": "true"
+/// Will also grab the metadata key `"sort-level": <int>` and sort products by level and then name.
 ///
 /// See the Stripe Dashboard for setting metadata.
 #[tracing::instrument(skip(client, secret_key))]
@@ -105,7 +106,7 @@ pub async fn get_stripe_products(
     let price_map: HashMap<String, &StripePrice> =
         all_prices.iter().map(|p| (p.id.clone(), p)).collect();
 
-    let final_products: Vec<Product> = all_products
+    let mut final_products: Vec<Product> = all_products
         .into_iter()
         .filter_map(|p| {
             // Find associated price
@@ -142,6 +143,12 @@ pub async fn get_stripe_products(
                 // both
                 .is_some_and(|val| val == "true");
 
+            let sort_level = p
+                .metadata
+                .get("sort-level")
+                .and_then(|s| s.parse::<i32>().ok())
+                .unwrap_or(0);
+
             Some(Product {
                 name: p.name,
                 id: p.id,
@@ -150,9 +157,12 @@ pub async fn get_stripe_products(
                 price_id,
                 requires_roles,
                 show_preview,
+                sort_level,
             })
         })
         .collect();
+
+    final_products.sort_by_key(|p| (p.sort_level, p.name.to_lowercase()));
 
     Ok(final_products)
 }

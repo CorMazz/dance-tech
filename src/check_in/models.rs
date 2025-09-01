@@ -24,6 +24,10 @@ pub struct Product {
     /// Show a greyed out preview of the product to people who don't yet have
     /// the requisite roles. The default is `false`.
     pub show_preview: bool,
+    /// A higher number puts this product further down the list on the check-in page. 
+    /// If a product doesn't have it specified, the default is 0. All products on the same level
+    /// are sorted lexicographically.
+    pub sort_level: i32
 }
 
 /// The response from the Stripe Checkout Session API.

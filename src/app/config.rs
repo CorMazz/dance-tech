@@ -32,8 +32,9 @@ impl AppConfig {
         let site_url = Url::parse(&raw_site_url)
             .unwrap_or_else(|err| panic!("Failed to parse SITE_URL '{raw_site_url}': {err}"));
         let raw_tos_url = get_env_var("TERMS_OF_SERVICE_URL");
-        let tos_url = Url::parse(&raw_tos_url)
-            .unwrap_or_else(|err| panic!("Failed to parse TERMS_OF_SERVICE_URL '{raw_tos_url}': {err}"));
+        let tos_url = Url::parse(&raw_tos_url).unwrap_or_else(|err| {
+            panic!("Failed to parse TERMS_OF_SERVICE_URL '{raw_tos_url}': {err}")
+        });
 
         Self {
             is_demo_mode,
