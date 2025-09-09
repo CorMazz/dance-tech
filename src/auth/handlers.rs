@@ -103,7 +103,7 @@ pub async fn login_user_handler(
 
     let jar = login_user(user, &data, cookie_jar).await?;
 
-    Ok((jar, Redirect::to("/")))
+    Ok((jar, Redirect::to(ROUTES.check_in)))
 }
 
 // #######################################################################################################################################################
@@ -316,7 +316,7 @@ pub async fn google_oauth_callback_handler(
     }
 
     // Return response once, no duplication
-    Ok((jar, Redirect::to("/")).into_response())
+    Ok((jar, Redirect::to(ROUTES.check_in)).into_response())
 }
 // #######################################################################################################################################################
 // Logout
