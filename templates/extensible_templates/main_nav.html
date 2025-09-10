@@ -61,9 +61,26 @@
         return;
       }
 
-      // Make our own Flowbite Collapse instance
-      const collapse = new window.Collapse(menu, button);
+      {#
+        Flowbite sometimes creates multiple Collapse instances for the same
+        target element (especially with responsive breakpoints). Instead of
+        picking one, we operate on **all instances that point to the same
+        trigger button**. This ensures outside-click and Escape handling
+        works consistently, no matter how many internal instances exist.
+      #}
 
+      function getAllCollapsesForButton() {
+        const instancesObj = FlowbiteInstances.getInstances("Collapse");
+        if (!instancesObj) return [];
+
+        // Convert object values to array
+        const instances = Object.values(instancesObj);
+
+        // Return only those with our trigger button
+        return instances.filter(c => c._triggerEl === button);
+      }
+
+      // Close on outside click
       document.addEventListener("click", (e) => {
         const userDropdown = document.querySelector("[data-collapse-toggle='user-dropdown']");
         const isOpen = !menu.classList.contains("hidden");
@@ -74,7 +91,8 @@
           !button.contains(e.target) &&
           !(userDropdown && userDropdown.contains(e.target))
         ) {
-          collapse.collapse(); 
+          const collapses = getAllCollapsesForButton();
+          collapses.forEach(c => c.collapse()); // collapse all linked instances
         }
       });
 
@@ -82,7 +100,8 @@
       document.addEventListener("keydown", (e) => {
         const isOpen = !menu.classList.contains("hidden");
         if (e.key === "Escape" && isOpen) {
-          collapse.collapse();
+          const collapses = getAllCollapsesForButton();
+          collapses.forEach(c => c.collapse());
         }
       });
     });
