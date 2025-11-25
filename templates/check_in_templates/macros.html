@@ -1,0 +1,157 @@
+{% macro render_shopping_cart() %}
+<el-dialog id="shopping-cart">
+  <dialog id="drawer" aria-labelledby="drawer-title" class="fixed inset-0 size-auto max-h-none max-w-none overflow-hidden bg-transparent not-open:hidden backdrop:bg-transparent">
+    <el-dialog-backdrop class="absolute inset-0 bg-gray-500/75 transition-opacity duration-500 ease-in-out data-closed:opacity-0"></el-dialog-backdrop>
+
+    <div tabindex="0" class="absolute inset-0 pl-10 focus:outline-none sm:pl-16">
+      <el-dialog-panel class="ml-auto block size-full max-w-md transform transition duration-500 ease-in-out data-closed:translate-x-full sm:duration-700">
+        <div class="flex h-full flex-col overflow-y-auto bg-white shadow-xl">
+          <div class="flex-1 overflow-y-auto px-4 py-6 sm:px-6">
+            <div class="flex items-start justify-between">
+              <h2 id="drawer-title" class="text-lg font-medium text-gray-900">Shopping cart</h2>
+              <div class="ml-3 flex h-7 items-center">
+                <button type="button" command="close" commandfor="drawer" class="relative -m-2 p-2 text-gray-400 hover:text-gray-500">
+                  <span class="absolute -inset-0.5"></span>
+                  <span class="sr-only">Close panel</span>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" data-slot="icon" aria-hidden="true" class="size-6">
+                    <path d="M6 18 18 6M6 6l12 12" stroke-linecap="round" stroke-linejoin="round" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            <div class="mt-8">
+              <div class="flow-root">
+                <ul role="list" class="-my-6 divide-y divide-gray-200">
+                  <li class="flex py-6">
+                    <div class="size-24 shrink-0 overflow-hidden rounded-md border border-gray-200">
+                      <img src="https://tailwindcss.com/plus-assets/img/ecommerce-images/shopping-cart-page-04-product-01.jpg" alt="Salmon orange fabric pouch with match zipper, gray zipper pull, and adjustable hip belt." class="size-full object-cover" />
+                    </div>
+
+                    <div class="ml-4 flex flex-1 flex-col">
+                      <div>
+                        <div class="flex justify-between text-base font-medium text-gray-900">
+                          <h3>
+                            <a href="#">Throwback Hip Bag</a>
+                          </h3>
+                          <p class="ml-4">$90.00</p>
+                        </div>
+                        <p class="mt-1 text-sm text-gray-500">Salmon</p>
+                      </div>
+                      <div class="flex flex-1 items-end justify-between text-sm">
+                        <p class="text-gray-500">Qty 1</p>
+
+                        <div class="flex">
+                          <button type="button" class="font-medium text-indigo-600 hover:text-indigo-500">Remove</button>
+                        </div>
+                      </div>
+                    </div>
+                  </li>
+                  <li class="flex py-6">
+                    <div class="size-24 shrink-0 overflow-hidden rounded-md border border-gray-200">
+                      <img src="https://tailwindcss.com/plus-assets/img/ecommerce-images/shopping-cart-page-04-product-02.jpg" alt="Front of satchel with blue canvas body, black straps and handle, drawstring top, and front zipper pouch." class="size-full object-cover" />
+                    </div>
+
+                    <div class="ml-4 flex flex-1 flex-col">
+                      <div>
+                        <div class="flex justify-between text-base font-medium text-gray-900">
+                          <h3>
+                            <a href="#">Medium Stuff Satchel</a>
+                          </h3>
+                          <p class="ml-4">$32.00</p>
+                        </div>
+                        <p class="mt-1 text-sm text-gray-500">Blue</p>
+                      </div>
+                      <div class="flex flex-1 items-end justify-between text-sm">
+                        <p class="text-gray-500">Qty 1</p>
+
+                        <div class="flex">
+                          <button type="button" class="font-medium text-indigo-600 hover:text-indigo-500">Remove</button>
+                        </div>
+                      </div>
+                    </div>
+                  </li>
+                  <li class="flex py-6">
+                    <div class="size-24 shrink-0 overflow-hidden rounded-md border border-gray-200">
+                      <img src="https://tailwindcss.com/plus-assets/img/ecommerce-images/shopping-cart-page-04-product-03.jpg" alt="Front of zip tote bag with white canvas, black canvas straps and handle, and black zipper pulls." class="size-full object-cover" />
+                    </div>
+
+                    <div class="ml-4 flex flex-1 flex-col">
+                      <div>
+                        <div class="flex justify-between text-base font-medium text-gray-900">
+                          <h3>
+                            <a href="#">Zip Tote Basket</a>
+                          </h3>
+                          <p class="ml-4">$140.00</p>
+                        </div>
+                        <p class="mt-1 text-sm text-gray-500">White and black</p>
+                      </div>
+                      <div class="flex flex-1 items-end justify-between text-sm">
+                        <p class="text-gray-500">Qty 1</p>
+
+                        <div class="flex">
+                          <button type="button" class="font-medium text-indigo-600 hover:text-indigo-500">Remove</button>
+                        </div>
+                      </div>
+                    </div>
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          <div class="border-t border-gray-200 px-4 py-6 sm:px-6">
+            <div class="flex justify-between text-base font-medium text-gray-900">
+              <p>Subtotal</p>
+              <p>$262.00</p>
+            </div>
+            <p class="mt-0.5 text-sm text-gray-500">Shipping and taxes calculated at checkout.</p>
+            <div class="mt-6">
+              <a href="#" class="flex items-center justify-center rounded-md border border-transparent bg-indigo-600 px-6 py-3 text-base font-medium text-white shadow-xs hover:bg-indigo-700">Checkout</a>
+            </div>
+            <div class="mt-6 flex justify-center text-center text-sm text-gray-500">
+              <p>
+                or
+                <button type="button" command="close" commandfor="drawer" class="font-medium text-indigo-600 hover:text-indigo-500">
+                  Continue Shopping
+                  <span aria-hidden="true"> &rarr;</span>
+                </button>
+              </p>
+            </div>
+          </div>
+        </div>
+      </el-dialog-panel>
+    </div>
+  </dialog>
+</el-dialog>
+<script src="https://cdn.jsdelivr.net/npm/@tailwindplus/elements@1" type="module"></script>
+{% endmacro %}
+
+{% macro render_shopping_cart_button() %}
+
+<div id="shopping-cart-button" class="relative">
+  <button 
+      command="show-modal" 
+      commandfor="drawer"
+      class="fixed bottom-12 right-12 z-50 rounded-full bg-blue-600 text-white px-4 py-3 shadow-lg hover:bg-blue-700 transition"
+  >
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="h-8 w-8">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 00-3 3h15.75m-12.75-3h11.218c1.121-2.3 2.1-4.684 2.924-7.138a60.114 60.114 0 00-16.536-1.84M7.5 14.25L5.106 5.272M6 20.25a.75.75 0 11-1.5 0 .75.75 0 011.5 0zm12.75 0a.75.75 0 11-1.5 0 .75.75 0 011.5 0z" />
+      </svg>
+    <span id="shopping-cart-button-count" class="absolute -top-1 -right-1 bg-red-500 text-white rounded-full text-xs w-5 h-5 flex items-center justify-center">
+      3
+    </span>
+  </button>
+</div>
+
+
+<!-- <div class="fixed bottom-0 right-0 w-full h-0 pointer-events-none z-50"> -->
+<!--   <button  -->
+<!--     command="show-modal"  -->
+<!--     commandfor="drawer"  -->
+<!--     class="absolute bottom-6 right-6 pointer-events-auto rounded-full bg-gray-900 px-6 py-4 text-sm font-semibold text-white shadow-lg hover:bg-gray-800 transition-colors"> -->
+<!--     🛒 Cart -->
+<!--   </button> -->
+<!-- </div> -->
+
+{% endmacro %}
