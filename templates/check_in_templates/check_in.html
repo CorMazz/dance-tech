@@ -1,10 +1,13 @@
 
 {% extends "../extensible_templates/main_nav.html" %}
+{% import "../check_in_templates/macros.html" as macros %}
 
 {% block title %}Check In{% endblock %}
 
 {% block content %}
 
+  {% call macros::render_shopping_cart_button() %}
+  {% call macros::render_shopping_cart() %}
   <div class="animate-fade-in">
     <div id="bg-image" class="absolute inset-0 -z-10">
       <img src="/static/images/hero_banner_2.png" 
@@ -36,13 +39,13 @@
                       <input type="hidden" name="product_id" value="{{ product.id }}">
                       <input type="hidden" name="price_id" value="{{ product.price_id }}">
                       <button type="submit" class="my-button">
-                        Checkout - {{ product.price }}
+                        Add to Cart - {{ product.price }}
                       </button>
                     </form>
                   {% else %}
                     <form>
                       <button disabled class="my-button">
-                        Checkout - {{ product.price }}
+                        Add to Cart - {{ product.price }}
                       </button>
                     </form>
                   {% endif %}
@@ -52,6 +55,7 @@
           {% endif %}
         {% endfor %}
       </div>
+
 
       {% if !something_is_displayed %}
         <div class="my-section">
