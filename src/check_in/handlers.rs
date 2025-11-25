@@ -47,7 +47,7 @@ pub async fn create_stripe_checkout_session(
     params.insert(
         "custom_text[terms_of_service_acceptance][message]".to_string(),
         format!(
-            "I agree to the [Terms of Service]({})",
+            "I agree to the terms of the [Liability Waiver]({})",
             data.app_config.tos_url
         ),
     );
