@@ -52,6 +52,8 @@ pub async fn create_stripe_checkout_session(
         ),
     );
 
+    params.insert("allow_promotion_codes".to_string(), "true".to_string());
+
     let client = &data.http_client;
     let res = client
         .post("https://api.stripe.com/v1/checkout/sessions")
