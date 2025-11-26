@@ -1,3 +1,6 @@
+use crate::check_in::handlers::get_or_create_cart;
+use crate::check_in::handlers::update_cart;
+use crate::check_in::models::ShoppingCart;
 use crate::AppState;
 use crate::app::router::ROUTES;
 use crate::app::router::Routes;
@@ -19,6 +22,7 @@ use axum::{
     http::StatusCode,
     response::{Html, IntoResponse},
 };
+use axum_extra::extract::CookieJar;
 use serde::Deserialize;
 use std::collections::HashSet;
 use std::sync::Arc;
@@ -29,6 +33,18 @@ use tracing::instrument;
 
 use crate::check_in::handlers::get_products_from_actor;
 
+/// The one absolute truth for html element IDs that are used across multiple templates
+pub struct Ids {
+    /// The master container that holds the shopping cart drawer and the button to access the
+    /// drawer
+    shopping_cart_container: &'static str,
+}
+
+pub const IDS: Ids = Ids {
+    shopping_cart_container: "shopping-cart-container"
+};
+
+
 // #######################################################################################################################################################
 // check_in.html
 // #######################################################################################################################################################
@@ -37,7 +53,9 @@ use crate::check_in::handlers::get_products_from_actor;
 #[template(path = "./check_in_templates/check_in.html", blocks = ["content"])]
 pub struct CheckInTemplate {
     rts: Routes,
+    ids: Ids,
     products: Vec<Product>,
+    shopping_cart: ShoppingCart,
     /// If the current user is an admin or not. Admins can see all products
     is_admin: bool,
     /// The roles that the current user has, used to filter out products
@@ -59,6 +77,7 @@ pub struct CheckInTemplate {
 #[instrument(skip(data, headers))]
 pub async fn get_check_in_page(
     State(data): State<Arc<AppState>>,
+    cookie_jar: CookieJar,
     headers: axum::http::HeaderMap,
     Extension(auth_status): Extension<AuthStatus>,
 ) -> impl IntoResponse {
@@ -78,20 +97,81 @@ pub async fn get_check_in_page(
         is_admin || product.requires_roles.is_subset(&roles) || product.show_preview
     });
 
+    let (cookie_jar, _, shopping_cart) = match get_or_create_cart(&data, cookie_jar).await {
+        Ok(res) => res,
+        Err(err) => return err.into_response(&headers),
+    };
+
     debug!("Products: {products:#?}\nUser Roles: {roles:#?}\nIs Admin?: {is_admin:#?}");
 
     let template = CheckInTemplate {
         products,
         rts: ROUTES,
+        ids: IDS,
+        shopping_cart,
         is_admin,
         roles,
         something_is_displayed,
     };
 
     if is_htmx_request(&headers) {
-        (StatusCode::OK, Html(render(template.as_content()))).into_response()
+        (StatusCode::OK, cookie_jar, Html(render(template.as_content()))).into_response()
     } else {
-        (StatusCode::OK, Html(render(template))).into_response()
+        (StatusCode::OK, cookie_jar, Html(render(template))).into_response()
+    }
+}
+
+
+/// We render the button and the shopping cart together, that way when we call `update-cart` we can
+/// send the updated cart and swap it with one htmx request.
+#[derive(Template)]
+#[template(
+    ext = "txt",
+    source = r#"
+{% import "./check_in_templates/macros.html" as macros %}
+<div id="shopping-cart-container">
+    {% call macros::render_shopping_cart_button(shopping_cart.items.len()) %}
+    {% call macros::render_shopping_cart(shopping_cart) %}
+</div>
+"#
+)]
+pub struct ShoppingCartTemplate {
+    rts: Routes,
+    ids: Ids,
+    shopping_cart: ShoppingCart
+}
+
+/// Get the `product_id` and `price_id` from the button click on the check-in page
+#[derive(Deserialize, Debug)]
+pub struct UpdateCartForm {
+    pub product_id: String,
+    pub quantity: u64,
+}
+
+#[tracing::instrument(skip(data, headers, cookie_jar))]
+pub async fn post_update_cart(
+    State(data): State<Arc<AppState>>,
+    cookie_jar: CookieJar,
+    headers: axum::http::HeaderMap,
+    Form(update_data): Form<UpdateCartForm>,
+) -> impl IntoResponse {
+    let products = match get_products_from_actor(&data).await {
+        Ok(products) => products,
+        Err(err) => return err.into_response(&headers),
+    };
+
+    match update_cart(&data, cookie_jar, products, &update_data.product_id, update_data.quantity)
+        .await
+    {
+        Ok((cookie_jar, shopping_cart)) => {
+            let template = ShoppingCartTemplate {
+                rts: ROUTES,
+                ids: IDS,
+                shopping_cart,
+            };
+            (StatusCode::OK, cookie_jar, Html(render(template))).into_response()
+        },
+        Err(err) => err.into_response(&headers),
     }
 }
 

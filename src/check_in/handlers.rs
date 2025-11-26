@@ -1,5 +1,5 @@
 use crate::app::router::ROUTES;
-use crate::check_in::models::Product;
+use crate::check_in::models::{Product, ShoppingCart};
 use crate::{
     AppState,
     check_in::{
@@ -8,9 +8,98 @@ use crate::{
     },
 };
 use axum::response::Redirect;
+use axum_extra::extract::cookie::{Cookie, SameSite};
+use axum_extra::extract::CookieJar;
 use chrono::Utc;
+use redis::AsyncCommands;
+use uuid::Uuid;
 use std::collections::HashMap;
 use tracing::{debug, error};
+
+/// Get the contents of the shopping cart from the Redis db if the shopping cart cookie was found.
+/// Otherwise, create the shoping cart id
+pub async fn get_or_create_cart(
+    data: &AppState,
+    jar: CookieJar,
+) -> Result<(CookieJar, Uuid, ShoppingCart), CheckInError> {
+    // 1️⃣ Extract or generate cart_id
+    let cart_id = match jar.get("cart_id") {
+        Some(cookie) => Uuid::parse_str(cookie.value()).map_err(|e| {
+            error!("Error deserializing shopping cart cookie id: {e}");
+            CheckInError::ShoppingCartError
+        })?,
+        None => Uuid::new_v4(),
+    };
+
+    // 2️⃣ Always reset cookie TTL (sliding expiration)
+    let cookie = Cookie::build(("cart_id", cart_id.to_string()))
+        .path("/")
+        .http_only(true)
+        .same_site(SameSite::Lax)
+        .max_age(time::Duration::days(1));
+
+
+    // 3️⃣ Redis connection
+    let mut redis = data
+        .redis_client
+        .get_multiplexed_async_connection()
+        .await
+        .map_err(|_| CheckInError::DatabaseError)?;
+
+    let redis_key = format!("cart:{cart_id}");
+
+    // 4️⃣ Load existing cart JSON or create a new one
+    let cart: ShoppingCart = match redis.get::<_, String>(&redis_key).await {
+        Ok(json) => serde_json::from_str(&json).unwrap_or_else(|_| ShoppingCart::new()),
+        Err(_) => ShoppingCart::new(),
+    };
+
+    Ok((jar.add(cookie), cart_id, cart))
+}
+
+/// Update a specific product in the cart.
+///
+/// A cart-id is stored client-side in a cookie. This cart-id corresponds to a `ShoppingCart` object
+/// in the Redis db. If there is no cart-id in the cookie, we create a new one and add the cookie.
+/// If there is no `ShoppingCart` that corresponds to cart-id in the database, we clear that cookie
+/// and create a new one (to update the TTL). This function will communicate with the
+/// `StripeProductActor` and get information about the existing products. The product id must match
+/// one of the existing products. Then, we update the shopping cart in the redis db to add the new
+/// product, or update the quantity if it already exists. If the quantity reaches 0, we remove the
+/// product.
+#[tracing::instrument(skip(data, cookie_jar))]
+pub async fn update_cart(
+    data: &AppState,
+    cookie_jar: CookieJar,
+    products: Vec<Product>,
+    product_id: &str,
+    quantity: u64,
+) -> Result<(CookieJar, ShoppingCart), CheckInError> {
+    let (jar, cart_id, cart) = get_or_create_cart(data, cookie_jar).await?;
+
+    if let Some(product) = products.iter().find(|p| p.id.as_str() == product_id) {
+        // 5️⃣ Update cart
+        let mut updated_cart = cart;
+        updated_cart.add_item(product_id, product.clone(), quantity);
+        // 6️⃣ Serialize and save back to Redis
+        let cart_json = serde_json::to_string(&updated_cart).map_err(|e| {
+            error!("There was an issue serializing the shopping cart: {e}");
+            CheckInError::ShoppingCartError}
+            )?;
+        let redis_key = format!("cart:{cart_id}");
+        let mut redis = data
+            .redis_client
+            .get_multiplexed_async_connection()
+            .await
+            .map_err(|_| CheckInError::DatabaseError)?;
+        let _ : () = redis.set_ex(&redis_key, cart_json, 60*60*24).await.map_err(|e| {
+            error!("Error saving the shopping cart to redis: {e}");
+            CheckInError::DatabaseError})?; // 1-day TTL
+        return Ok((jar, updated_cart))
+    } 
+    Err(CheckInError::InvalidProductError)
+}    
+
 
 /// Use Stripe's checkout API to direct the user to a payment page.
 ///

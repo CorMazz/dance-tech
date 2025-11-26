@@ -114,11 +114,9 @@ pub async fn get_stripe_products(
             let price = price_map.get(&price_id)?;
 
             // Format the price as currency
-            let formatted_price = match price.unit_amount {
+            let dollar_price = match price.unit_amount {
                 Some(amount) => {
-                    #[allow(clippy::cast_precision_loss)]
-                    let amount_float = amount as f64 / 100.0;
-                    format!("${amount_float:.2}")
+                    amount as f64 / 100.0
                 }
                 None => return None,
             };
@@ -153,7 +151,7 @@ pub async fn get_stripe_products(
                 name: p.name,
                 id: p.id,
                 description: p.description.unwrap_or_default(),
-                price: formatted_price,
+                dollar_price,
                 price_id,
                 requires_roles,
                 show_preview,

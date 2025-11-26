@@ -16,6 +16,7 @@
         </div>
         <div class="my-grid">
           {% for product in products %}
+            {% let price = format!("${:.2}", product.dollar_price) %}
             <div class="my-card">
               <h2 class="my-section-title">{{ product.name }}</h2>
               <p class="my-paragraph mb-2">{{ product.description }}</p>
@@ -36,7 +37,7 @@
                 <input type="hidden" name="product_id" value="{{ product.id }}">
                 <input type="hidden" name="price_id" value="{{ product.price_id }}">
                 <button type="submit" class="my-button mt-4">
-                  Checkout - {{ product.price }}
+                  Checkout - {{ price }}
                 </button>
               </form>
             </div>

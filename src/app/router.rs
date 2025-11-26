@@ -1,10 +1,8 @@
 use crate::{
-    AppState,
     app::views::{
         delete_user_roles_widget, error_404_page, get_admin_dashboard, get_contact_page,
         get_home_page, get_user_roles_widget, post_user_roles_widget,
-    },
-    auth::{
+    }, auth::{
         middleware::{check_auth_middleware, require_auth_middleware},
         views::{
             get_google_oauth_callback, get_google_oauth_init_flow, get_login_page, get_logout_page,
@@ -12,17 +10,16 @@ use crate::{
             get_user_dropdown, post_login_form, post_request_password_reset_page,
             post_reset_password_page, post_signup_form,
         },
-    },
-    check_in::views::{
-        get_check_in_page, get_successful_checkout_session, post_create_check_out_session,
-        post_update_available_products,
-    },
-    exam::views::{
+    }, check_in::{
+        views::{
+            get_check_in_page, get_successful_checkout_session, post_create_check_out_session,
+            post_update_available_products, post_update_cart,
+    }}, exam::views::{
         delete_queue_widget, get_graded_test_page, get_join_queue_widget,
         get_proctor_dashboard_page, get_queue_widget, get_search_tests_widget, get_test_page,
         get_user_autocomplete, get_user_dashboard_page, get_user_info_widget, post_live_grading,
         post_queue_widget, post_test_form,
-    },
+    }, AppState
 };
 use axum::{
     Router, middleware,
@@ -49,6 +46,7 @@ pub struct Routes {
     pub create_checkout_session: &'static str,
     pub stripe_success_callback: &'static str,
     pub update_products: &'static str,
+    pub update_cart: &'static str,
 
     // Exam Routes
     /// The exam route has a variable in it, so it needs to be dynamically generated. See the
@@ -149,6 +147,7 @@ pub const ROUTES: Routes = Routes {
     create_checkout_session: "/create-checkout-session",
     stripe_success_callback: "/stripe/success",
     update_products: "/update-products",
+    update_cart: "/update-cart",
 
     // Exam Routes
     administer_exam_root: "/administer-exam",
@@ -223,6 +222,7 @@ pub fn create_router(app_state: Arc<AppState>) -> Router {
         .route(&ROUTES.graded_exam("{test_id}"), get(get_graded_test_page))
         .route(ROUTES.contact, get(get_contact_page))
         .route(ROUTES.root, get(get_home_page))
+        .route(ROUTES.update_cart, post(post_update_cart))
         .route(
             ROUTES.request_password_reset,
             get(get_request_password_reset_page).post(post_request_password_reset_page),

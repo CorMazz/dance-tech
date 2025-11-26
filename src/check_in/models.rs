@@ -15,8 +15,8 @@ pub struct Product {
     pub id: String,
     /// A description to be displayed to the user. Make it pretty.
     pub description: String,
-    /// Price to be displayed, ie "$5"
-    pub price: String,
+    /// Price in dollars
+    pub dollar_price: f64,
     /// Price ID from Stripe
     pub price_id: String,
     /// The roles a user must have to view this item on the `check-in` page.
@@ -29,6 +29,56 @@ pub struct Product {
     /// are sorted lexicographically.
     pub sort_level: i32
 }
+
+/// Store a hashmap of `product_id`: (product, quantity) pairs.
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ShoppingCart {
+    pub items: std::collections::HashMap<String, (Product, u64)>,
+}
+
+impl ShoppingCart {
+    pub fn new() -> Self {
+        Self { items: std::collections::HashMap::new() }
+    }
+
+    /// Add a new item to the shopping cart or increment quantity if it already exists
+    pub fn add_item(&mut self, product_id: &str, product: Product, quantity: u64) {
+        if quantity == 0 {
+            self.items.remove(product_id);
+        } else {
+            self.items
+                .entry(product_id.to_string())
+                .and_modify(|(_, q)| *q += quantity)
+                .or_insert((product, quantity));
+        }
+    }
+    
+    /// Update the quantity of a specific item
+    pub fn update_item(&mut self, product_id: &str, quantity: u64) {
+        if quantity == 0 {
+            self.items.remove(product_id);
+        } else if let Some((_product, qty)) = self.items.get_mut(product_id) {
+            *qty = quantity;
+        }
+    }
+
+    /// Total number of items in cart
+    pub fn total_items(&self) -> usize {
+        self.items.len()
+    }
+
+    /// Total quantity of all items in cart
+    pub fn total_quantity(&self) -> u64 {
+        self.items.values().map(|(_, qty)| *qty).sum()
+    }
+
+    /// Price times quantity for all items, in dollars.
+    pub fn subtotal(&self) -> f64 {
+        self.items.values()
+            .map(|(product, quantity)| product.dollar_price * *quantity as f64).sum()
+    }
+}
+
 
 /// The response from the Stripe Checkout Session API.
 ///
