@@ -1,4 +1,4 @@
-{% macro render_shopping_cart() %}
+{% macro render_shopping_cart(cart) %}
 <el-dialog id="shopping-cart">
   <dialog id="drawer" aria-labelledby="drawer-title" class="fixed inset-0 size-auto max-h-none max-w-none overflow-hidden bg-transparent not-open:hidden backdrop:bg-transparent">
     <el-dialog-backdrop class="absolute inset-0 bg-gray-500/75 transition-opacity duration-500 ease-in-out data-closed:opacity-0"></el-dialog-backdrop>
@@ -23,78 +23,52 @@
             <div class="mt-8">
               <div class="flow-root">
                 <ul role="list" class="-my-6 divide-y divide-gray-200">
-                  <li class="flex py-6">
-                    <div class="size-24 shrink-0 overflow-hidden rounded-md border border-gray-200">
-                      <img src="https://tailwindcss.com/plus-assets/img/ecommerce-images/shopping-cart-page-04-product-01.jpg" alt="Salmon orange fabric pouch with match zipper, gray zipper pull, and adjustable hip belt." class="size-full object-cover" />
-                    </div>
-
-                    <div class="ml-4 flex flex-1 flex-col">
-                      <div>
-                        <div class="flex justify-between text-base font-medium text-gray-900">
-                          <h3>
-                            <a href="#">Throwback Hip Bag</a>
-                          </h3>
-                          <p class="ml-4">$90.00</p>
-                        </div>
-                        <p class="mt-1 text-sm text-gray-500">Salmon</p>
+                  {% for (product, quantity) in cart.items.values() %}
+                    {% let price = format!("${:.2}", product.dollar_price) %}
+                    <li class="flex py-6">
+                      <div class="size-24 shrink-0 overflow-hidden rounded-md border border-gray-200">
+                        <img src="https://tailwindcss.com/plus-assets/img/ecommerce-images/shopping-cart-page-04-product-01.jpg" alt="Salmon orange fabric pouch with match zipper, gray zipper pull, and adjustable hip belt." class="size-full object-cover" />
                       </div>
-                      <div class="flex flex-1 items-end justify-between text-sm">
-                        <p class="text-gray-500">Qty 1</p>
 
-                        <div class="flex">
-                          <button type="button" class="font-medium text-indigo-600 hover:text-indigo-500">Remove</button>
+                      <div class="ml-4 flex flex-1 flex-col">
+                        <div>
+                          <div class="flex justify-between text-base font-medium text-gray-900">
+                            <h3>
+                              {{ product.name }}
+                            </h3>
+                            <p class="ml-4">{{ price }}</p>
+                          </div>
+                          {# <p class="mt-1 text-sm text-gray-500">Salmon</p> #}
                         </div>
-                      </div>
-                    </div>
-                  </li>
-                  <li class="flex py-6">
-                    <div class="size-24 shrink-0 overflow-hidden rounded-md border border-gray-200">
-                      <img src="https://tailwindcss.com/plus-assets/img/ecommerce-images/shopping-cart-page-04-product-02.jpg" alt="Front of satchel with blue canvas body, black straps and handle, drawstring top, and front zipper pouch." class="size-full object-cover" />
-                    </div>
-
-                    <div class="ml-4 flex flex-1 flex-col">
-                      <div>
-                        <div class="flex justify-between text-base font-medium text-gray-900">
-                          <h3>
-                            <a href="#">Medium Stuff Satchel</a>
-                          </h3>
-                          <p class="ml-4">$32.00</p>
-                        </div>
-                        <p class="mt-1 text-sm text-gray-500">Blue</p>
-                      </div>
-                      <div class="flex flex-1 items-end justify-between text-sm">
-                        <p class="text-gray-500">Qty 1</p>
-
-                        <div class="flex">
-                          <button type="button" class="font-medium text-indigo-600 hover:text-indigo-500">Remove</button>
+                        <div class="flex flex-1 items-end justify-between text-sm">
+                          <p class="text-gray-500">Qty {{ quantity }}</p>
+                          <div class="flex">
+                            <button
+                              type="button"
+                              class="font-medium text-indigo-600 hover:text-indigo-500"
+                              hx-post="{{ rts.update_cart }}"
+                              hx-vals='{"product_id": "{{ product.id }}", "quantity": 0}'
+                              hx-target="#{{ ids.shopping_cart_container }}"
+                            >
+                              Remove
+                            </button>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  </li>
-                  <li class="flex py-6">
-                    <div class="size-24 shrink-0 overflow-hidden rounded-md border border-gray-200">
-                      <img src="https://tailwindcss.com/plus-assets/img/ecommerce-images/shopping-cart-page-04-product-03.jpg" alt="Front of zip tote bag with white canvas, black canvas straps and handle, and black zipper pulls." class="size-full object-cover" />
-                    </div>
-
-                    <div class="ml-4 flex flex-1 flex-col">
-                      <div>
-                        <div class="flex justify-between text-base font-medium text-gray-900">
-                          <h3>
-                            <a href="#">Zip Tote Basket</a>
-                          </h3>
-                          <p class="ml-4">$140.00</p>
-                        </div>
-                        <p class="mt-1 text-sm text-gray-500">White and black</p>
+                    </li>
+                  {% endfor %}
+                  {% if cart.items.is_empty() %}
+                    <li class="py-16 text-center">
+                      <div class="mx-auto inline-flex items-center justify-center size-12 rounded-full bg-gray-100">
+                        <svg class="size-6 text-gray-400" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2 9m12-9l2 9m-6 0a1 1 0 11-2 0m2 0a1 1 0 11-2 0" />
+                        </svg>
                       </div>
-                      <div class="flex flex-1 items-end justify-between text-sm">
-                        <p class="text-gray-500">Qty 1</p>
-
-                        <div class="flex">
-                          <button type="button" class="font-medium text-indigo-600 hover:text-indigo-500">Remove</button>
-                        </div>
-                      </div>
-                    </div>
-                  </li>
+                      <p class="mt-4 text-gray-600 font-medium">Your cart is empty.</p>
+                      <p class="mt-1 text-sm text-gray-400">Add items to get started.</p>
+                    </li>
+                  {% endif %}
                 </ul>
               </div>
             </div>
@@ -103,11 +77,13 @@
           <div class="border-t border-gray-200 px-4 py-6 sm:px-6">
             <div class="flex justify-between text-base font-medium text-gray-900">
               <p>Subtotal</p>
-              <p>$262.00</p>
+              {% let subtotal_float = cart.subtotal() %}
+              {% let subtotal = format!("${:.2}", subtotal_float.abs() ) %}
+              <p>{{ subtotal }}</p>
             </div>
-            <p class="mt-0.5 text-sm text-gray-500">Shipping and taxes calculated at checkout.</p>
+            <p class="mt-0.5 text-sm text-gray-500">Taxes calculated at checkout.</p>
             <div class="mt-6">
-              <a href="#" class="flex items-center justify-center rounded-md border border-transparent bg-indigo-600 px-6 py-3 text-base font-medium text-white shadow-xs hover:bg-indigo-700">Checkout</a>
+              <a href="#" {% if cart.items.is_empty() %}disabled{% endif %} class="flex items-center justify-center rounded-md border border-transparent bg-indigo-600 px-6 py-3 text-base font-medium text-white shadow-xs hover:bg-indigo-700">Checkout</a>
             </div>
             <div class="mt-6 flex justify-center text-center text-sm text-gray-500">
               <p>
@@ -127,7 +103,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@tailwindplus/elements@1" type="module"></script>
 {% endmacro %}
 
-{% macro render_shopping_cart_button() %}
+{% macro render_shopping_cart_button(count) %}
 
 <div id="shopping-cart-button" class="relative">
   <button 
@@ -138,20 +114,12 @@
       <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="h-8 w-8">
         <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 00-3 3h15.75m-12.75-3h11.218c1.121-2.3 2.1-4.684 2.924-7.138a60.114 60.114 0 00-16.536-1.84M7.5 14.25L5.106 5.272M6 20.25a.75.75 0 11-1.5 0 .75.75 0 011.5 0zm12.75 0a.75.75 0 11-1.5 0 .75.75 0 011.5 0z" />
       </svg>
-    <span id="shopping-cart-button-count" class="absolute -top-1 -right-1 bg-red-500 text-white rounded-full text-xs w-5 h-5 flex items-center justify-center">
-      3
-    </span>
+      {% if count > 0 %}
+      <span id="shopping-cart-button-count" class="absolute -top-1 -right-1 bg-red-500 text-white rounded-full text-xs w-5 h-5 flex items-center justify-center">
+        {{ count }}
+      </span>
+    {% endif %}
   </button>
 </div>
-
-
-<!-- <div class="fixed bottom-0 right-0 w-full h-0 pointer-events-none z-50"> -->
-<!--   <button  -->
-<!--     command="show-modal"  -->
-<!--     commandfor="drawer"  -->
-<!--     class="absolute bottom-6 right-6 pointer-events-auto rounded-full bg-gray-900 px-6 py-4 text-sm font-semibold text-white shadow-lg hover:bg-gray-800 transition-colors"> -->
-<!--     🛒 Cart -->
-<!--   </button> -->
-<!-- </div> -->
 
 {% endmacro %}

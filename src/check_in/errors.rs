@@ -16,6 +16,21 @@ pub enum CheckInError {
     #[error("This checkout session is expired. Did you complete this payment more than 1 day ago?")]
     ExpiredCheckoutSession,
 
+    #[error(
+        "There was an issue interacting with the database. Please contact the site administrator"
+    )]
+    DatabaseError,
+
+    #[error(
+        "There was an issue with the shopping cart. Please contact the site administrator"
+    )]
+    ShoppingCartError,
+
+    #[error(
+        "Invalid product. Please clear your cookies and try again."
+    )]
+    InvalidProductError,
+
     #[error("An error occurred when communicating with the Stripe API")]
     /// We purposefully do not include more information to avoid leaking secrets to users.
     StripeApiError,
