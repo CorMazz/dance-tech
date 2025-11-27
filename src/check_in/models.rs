@@ -201,159 +201,219 @@ pub struct CheckoutSessionResponse {
 ///
 /// The response to the request here looks like this:
 /// ```
-///{
-///  "id": "cs_test_a1fQ0gZsA5W6YjWtfb9KpYYoK3yfiABrxzqeSF61oqLUwGvdnkRwBS84Nr",
-///  "object": "checkout.session",
-///  "adaptive_pricing": {
-///    "enabled": true
-///  },
-///  "after_expiration": null,
-///  "allow_promotion_codes": null,
-///  "amount_subtotal": 1000,
-///  "amount_total": 1000,
-///  "automatic_tax": {
-///    "enabled": false,
-///    "liability": null,
-///    "provider": null,
-///    "status": null
-///  },
-///  "billing_address_collection": null,
-///  "cancel_url": "http://localhost:8000/check-in",
-///  "client_reference_id": null,
-///  "client_secret": null,
-///  "collected_information": null,
-///  "consent": null,
-///  "consent_collection": null,
-///  "created": 1755379066,
-///  "currency": "usd",
-///  "currency_conversion": null,
-///  "custom_fields": [],
-///  "custom_text": {
-///    "after_submit": null,
-///    "shipping_address": null,
-///    "submit": null,
-///    "terms_of_service_acceptance": null
-///  },
-///  "customer": null,
-///  "customer_creation": "if_required",
-///  "customer_details": {
-///    "address": {
-///      "city": null,
-///      "country": "US",
-///      "line1": null,
-///      "line2": null,
-///      "postal_code": "29615",
-///      "state": null
-///    },
-///    "email": "corrado@mazzarelli.biz",
-///    "name": "Corrado Mazzarelli",
-///    "phone": null,
-///    "tax_exempt": "none",
-///    "tax_ids": []
-///  },
-///  "customer_email": null,
-///  "discounts": [],
-///  "expires_at": 1755465466,
-///  "invoice": null,
-///  "invoice_creation": {
-///    "enabled": false,
-///    "invoice_data": {
-///      "account_tax_ids": null,
-///      "custom_fields": null,
-///      "description": null,
-///      "footer": null,
-///      "issuer": null,
-///      "metadata": {},
-///      "rendering_options": null
-///    }
-///  },
-///  "line_items": {
-///    "object": "list",
-///    "data": [
-///      {
-///        "id": "li_1RwrTyQ2wtFMkx0YxL8F3T6Y",
-///        "object": "item",
-///        "amount_discount": 0,
-///        "amount_subtotal": 1000,
-///        "amount_tax": 0,
-///        "amount_total": 1000,
-///        "currency": "usd",
-///        "description": "Advanced Lesson & Social",
-///        "price": {
-///          "id": "price_1RWqnPQ2wtFMkx0YXDSw4GiG",
-///          "object": "price",
-///          "active": true,
-///          "billing_scheme": "per_unit",
-///          "created": 1749179899,
-///          "currency": "usd",
-///          "custom_unit_amount": null,
-///          "livemode": false,
-///          "lookup_key": null,
-///          "metadata": {},
-///          "nickname": "Standard fee for the pro lesson.",
-///          "product": "prod_SRkHmJL8FGGjTF",
-///          "recurring": null,
-///          "tax_behavior": "unspecified",
-///          "tiers_mode": null,
-///          "transform_quantity": null,
-///          "type": "one_time",
-///          "unit_amount": 1000,
-///          "unit_amount_decimal": "1000"
-///        },
-///        "quantity": 1
-///      }
-///    ],
-///    "has_more": false,
-///    "url": "/v1/checkout/sessions/cs_test_a1fQ0gZsA5W6YjWtfb9KpYYoK3yfiABrxzqeSF61oqLUwGvdnkRwBS84Nr/line_items"
-///  },
-///  "livemode": false,
-///  "locale": null,
-///  "metadata": {},
-///  "mode": "payment",
-///  "origin_context": null,
-///  "payment_intent": "pi_3RwrUIQ2wtFMkx0Y2QuW5uBE",
-///  "payment_link": null,
-///  "payment_method_collection": "if_required",
-///  "payment_method_configuration_details": {
-///    "id": "pmc_1RWqgNQ2wtFMkx0YuoIH56VJ",
-///    "parent": null
-///  },
-///  "payment_method_options": {
-///    "card": {
-///      "request_three_d_secure": "automatic"
-///    }
-///  },
-///  "payment_method_types": [
-///    "card",
-///    "klarna",
-///    "link",
-///    "cashapp",
-///    "amazon_pay"
-///  ],
-///  "payment_status": "paid",
-///  "permissions": null,
-///  "phone_number_collection": {
-///    "enabled": false
-///  },
-///  "recovered_from": null,
-///  "saved_payment_method_options": null,
-///  "setup_intent": null,
-///  "shipping_address_collection": null,
-///  "shipping_cost": null,
-///  "shipping_options": [],
-///  "status": "complete",
-///  "submit_type": null,
-///  "subscription": null,
-///  "success_url": "http://localhost:8000/stripe/success?session_id={CHECKOUT_SESSION_ID}",
-///  "total_details": {
-///    "amount_discount": 0,
-///    "amount_shipping": 0,
-///    "amount_tax": 0
-///  },
-///  "ui_mode": "hosted",
-///  "url": null,
-///  "wallet_options": null
-///}
+/// {
+///   "id": "cs_test_b1vh2rtcq0dqyOLKqQDIhEEh9Hb43ankyYnnt13zSdPZb7pzlSzz6BvNuu",
+///   "object": "checkout.session",
+///   "adaptive_pricing": {
+///     "enabled": true
+///   },
+///   "after_expiration": null,
+///   "allow_promotion_codes": true,
+///   "amount_subtotal": 1000,
+///   "amount_total": 0,
+///   "automatic_tax": {
+///     "enabled": false,
+///     "liability": null,
+///     "provider": null,
+///     "status": null
+///   },
+///   "billing_address_collection": null,
+///   "branding_settings": {
+///     "background_color": "#ffffff",
+///     "border_style": "rounded",
+///     "button_color": "#0074d4",
+///     "display_name": "Greenville Westies sandbox",
+///     "font_family": "default",
+///     "icon": null,
+///     "logo": null
+///   },
+///   "cancel_url": "http://localhost/check-in",
+///   "client_reference_id": null,
+///   "client_secret": null,
+///   "collected_information": {
+///     "business_name": null,
+///     "individual_name": "Corrado Mazzarelli",
+///     "shipping_details": null
+///   },
+///   "consent": {
+///     "promotions": null,
+///     "terms_of_service": "accepted"
+///   },
+///   "consent_collection": {
+///     "payment_method_reuse_agreement": null,
+///     "promotions": "none",
+///     "terms_of_service": "required"
+///   },
+///   "created": 1764213792,
+///   "currency": "usd",
+///   "currency_conversion": null,
+///   "custom_fields": [],
+///   "custom_text": {
+///     "after_submit": null,
+///     "shipping_address": null,
+///     "submit": null,
+///     "terms_of_service_acceptance": {
+///       "message": "I agree to the terms of the [Liability Waiver](https://google.com/)"
+///     }
+///   },
+///   "customer": null,
+///   "customer_creation": "if_required",
+///   "customer_details": {
+///     "address": null,
+///     "business_name": null,
+///     "email": "corrado@mazzarelli.biz",
+///     "individual_name": "Corrado Mazzarelli",
+///     "name": "Corrado Mazzarelli",
+///     "phone": null,
+///     "tax_exempt": "none",
+///     "tax_ids": []
+///   },
+///   "customer_email": null,
+///   "discounts": [
+///     {
+///       "coupon": null,
+///       "promotion_code": "promo_1SXPsPQ2wtFMkx0Y2fmEZ9MO"
+///     }
+///   ],
+///   "expires_at": 1764300192,
+///   "invoice": null,
+///   "invoice_creation": {
+///     "enabled": false,
+///     "invoice_data": {
+///       "account_tax_ids": null,
+///       "custom_fields": null,
+///       "description": null,
+///       "footer": null,
+///       "issuer": null,
+///       "metadata": {},
+///       "rendering_options": null
+///     }
+///   },
+///   "line_items": {
+///     "object": "list",
+///     "data": [
+///       {
+///         "id": "li_1SXvnYQ2wtFMkx0YI8Hyb20W",
+///         "object": "item",
+///         "amount_discount": 500,
+///         "amount_subtotal": 500,
+///         "amount_tax": 0,
+///         "amount_total": 0,
+///         "currency": "usd",
+///         "description": "Social Dance",
+///         "price": {
+///           "id": "price_1RWqlNQ2wtFMkx0YHyrIPuFM",
+///           "object": "price",
+///           "active": true,
+///           "billing_scheme": "per_unit",
+///           "created": 1749179773,
+///           "currency": "usd",
+///           "custom_unit_amount": null,
+///           "livemode": false,
+///           "lookup_key": null,
+///           "metadata": {},
+///           "nickname": "Standard price for the social dance.",
+///           "product": "prod_SRkFO2xHNexIoT",
+///           "recurring": null,
+///           "tax_behavior": "unspecified",
+///           "tiers_mode": null,
+///           "transform_quantity": null,
+///           "type": "one_time",
+///           "unit_amount": 500,
+///           "unit_amount_decimal": "500"
+///         },
+///         "quantity": 1
+///       },
+///       {
+///         "id": "li_1SXvnYQ2wtFMkx0Y6t7YjtNA",
+///         "object": "item",
+///         "amount_discount": 500,
+///         "amount_subtotal": 500,
+///         "amount_tax": 0,
+///         "amount_total": 0,
+///         "currency": "usd",
+///         "description": "Beginner+ Lesson & Social",
+///         "price": {
+///           "id": "price_1RYugeQ2wtFMkx0YZv6Jz06E",
+///           "object": "price",
+///           "active": true,
+///           "billing_scheme": "per_unit",
+///           "created": 1749671512,
+///           "currency": "usd",
+///           "custom_unit_amount": null,
+///           "livemode": false,
+///           "lookup_key": null,
+///           "metadata": {},
+///           "nickname": null,
+///           "product": "prod_STsRL6dA7jkiP0",
+///           "recurring": null,
+///           "tax_behavior": "unspecified",
+///           "tiers_mode": null,
+///           "transform_quantity": null,
+///           "type": "one_time",
+///           "unit_amount": 500,
+///           "unit_amount_decimal": "500"
+///         },
+///         "quantity": 1
+///       }
+///     ],
+///     "has_more": false,
+///     "url": "/v1/checkout/sessions/cs_test_b1vh2rtcq0dqyOLKqQDIhEEh9Hb43ankyYnnt13zSdPZb7pzlSzz6BvNuu/line_items"
+///   },
+///   "livemode": false,
+///   "locale": null,
+///   "metadata": {},
+///   "mode": "payment",
+///   "name_collection": {
+///     "individual": {
+///       "enabled": true,
+///       "optional": false
+///     }
+///   },
+///   "origin_context": null,
+///   "payment_intent": null,
+///   "payment_link": null,
+///   "payment_method_collection": "if_required",
+///   "payment_method_configuration_details": {
+///     "id": "pmc_1RWqgNQ2wtFMkx0YuoIH56VJ",
+///     "parent": null
+///   },
+///   "payment_method_options": {
+///     "card": {
+///       "request_three_d_secure": "automatic"
+///     }
+///   },
+///   "payment_method_types": [
+///     "card",
+///     "klarna",
+///     "link",
+///     "cashapp",
+///     "amazon_pay"
+///   ],
+///   "payment_status": "paid",
+///   "permissions": null,
+///   "phone_number_collection": {
+///     "enabled": false
+///   },
+///   "recovered_from": null,
+///   "saved_payment_method_options": null,
+///   "setup_intent": null,
+///   "shipping_address_collection": null,
+///   "shipping_cost": null,
+///   "shipping_options": [],
+///   "status": "complete",
+///   "submit_type": null,
+///   "subscription": null,
+///   "success_url": "http://localhost/stripe/success?session_id={CHECKOUT_SESSION_ID}",
+///   "total_details": {
+///     "amount_discount": 1000,
+///     "amount_shipping": 0,
+///     "amount_tax": 0
+///   },
+///   "ui_mode": "hosted",
+///   "url": null,
+///   "wallet_options": null
+/// }
 /// ```
 #[derive(Debug, Deserialize)]
 pub struct StripeCheckoutSession {
@@ -384,13 +444,8 @@ pub struct LineItems {
 #[derive(Debug, Deserialize)]
 pub struct LineItem {
     pub description: String,
-    pub price: Price,
-}
-
-/// Grab this information so that we can show what product was purchased on the success page.
-#[derive(Debug, Deserialize)]
-pub struct Price {
-    pub unit_amount: u64, // Stripe amounts are usually in the smallest currency unit (e.g., cents)
+    pub amount_total: u64,  // This is in cents
+    pub quantity: u64,
 }
 
 /// A Product as returned by Stripe's search product API.

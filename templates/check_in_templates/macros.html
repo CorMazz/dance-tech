@@ -24,10 +24,11 @@
               <div class="flow-root">
                 <ul role="list" class="-my-6 divide-y divide-gray-200">
                   {% for (product, quantity) in cart.items.values() %}
+                    {% let i = ((loop.index - 1) % 6)  + 1 %}
                     {% let price = format!("${:.2}", product.dollar_price) %}
                     <li class="flex py-6">
                       <div class="size-24 shrink-0 overflow-hidden rounded-md border border-gray-200">
-                        <img src="https://tailwindcss.com/plus-assets/img/ecommerce-images/shopping-cart-page-04-product-01.jpg" alt="Salmon orange fabric pouch with match zipper, gray zipper pull, and adjustable hip belt." class="size-full object-cover" />
+                        <img src="/static/images/shopping_cart_icon_{{ i }}.png" alt="Two people dancing icon" class="size-full object-cover" />
                       </div>
 
                       <div class="ml-4 flex flex-1 flex-col">
@@ -45,7 +46,7 @@
                           <div class="flex">
                             <button
                               type="button"
-                              class="font-medium text-indigo-600 hover:text-indigo-500"
+                              class="font-medium text-primary-300 hover:text-primary:600"
                               hx-post="{{ rts.update_cart }}"
                               hx-vals='{"product_id": "{{ product.id }}", "quantity": 0}'
                               hx-target="#{{ ids.shopping_cart_container }}"
@@ -83,12 +84,16 @@
             </div>
             <p class="mt-0.5 text-sm text-gray-500">Taxes calculated at checkout.</p>
             <div class="mt-6">
-              <a href="#" {% if cart.items.is_empty() %}disabled{% endif %} class="flex items-center justify-center rounded-md border border-transparent bg-indigo-600 px-6 py-3 text-base font-medium text-white shadow-xs hover:bg-indigo-700">Checkout</a>
+              <form action="{{ rts.create_checkout_session }}" method="POST">
+                <button {% if cart.items.is_empty() %}disabled{% endif %} class="flex w-full items-center justify-center my-button text-base font-medium text-white">
+                 Checkout
+                </button>
+              </form>
             </div>
             <div class="mt-6 flex justify-center text-center text-sm text-gray-500">
               <p>
                 or
-                <button type="button" command="close" commandfor="drawer" class="font-medium text-indigo-600 hover:text-indigo-500">
+                <button type="button" command="close" commandfor="drawer" class="font-medium text-primary-300 hover:text-primary-600">
                   Continue Shopping
                   <span aria-hidden="true"> &rarr;</span>
                 </button>

@@ -1,5 +1,5 @@
 use crate::app::router::ROUTES;
-use crate::check_in::models::{Product, ShoppingCart};
+use crate::check_in::models::{LineItem, Product, ShoppingCart};
 use crate::{
     AppState,
     check_in::{
@@ -112,8 +112,7 @@ pub async fn update_cart(
 #[tracing::instrument(skip(data))]
 pub async fn create_stripe_checkout_session(
     data: &AppState,
-    requested_product: &str,
-    price_id: &str,
+    shopping_cart: &ShoppingCart,
 ) -> Result<Redirect, CheckInError> {
     let mut success_url = data.app_config.site_url.clone();
     success_url.set_path(ROUTES.stripe_success_callback);
@@ -126,13 +125,23 @@ pub async fn create_stripe_checkout_session(
     params.insert("success_url".to_string(), success_url.to_string());
     params.insert("cancel_url".to_string(), cancel_url.to_string());
     params.insert("mode".to_string(), "payment".to_string());
-    params.insert("line_items[0][price]".to_string(), price_id.to_string());
-    params.insert("line_items[0][quantity]".to_string(), "1".to_string());
+
+    for (i, (product, quantity)) in shopping_cart.items.values().enumerate() {
+        params.insert(format!("line_items[{i}][price]"), product.price_id.clone());
+        params.insert(format!("line_items[{i}][quantity]"), quantity.to_string());
+    }
 
     params.insert(
         "consent_collection[terms_of_service]".to_string(),
         "required".to_string(),
     );
+
+
+    params.insert(
+        "name_collection[individual][enabled]".to_string(),
+        "true".to_string(),
+    );
+
     params.insert(
         "custom_text[terms_of_service_acceptance][message]".to_string(),
         format!(
@@ -181,8 +190,7 @@ pub async fn create_stripe_checkout_session(
 #[derive(Debug)]
 pub struct CheckoutInfo {
     pub paid: bool,
-    pub description: String,
-    pub price_cents: u64,
+    pub line_items: Vec<LineItem>,
     pub customer_name: String,
 }
 
@@ -227,22 +235,9 @@ pub async fn verify_successful_checkout_session(
         return Err(CheckInError::ExpiredCheckoutSession);
     }
 
-    // Ensure exactly one line item
-    let line_items = &session.line_items.data;
-    if line_items.len() != 1 {
-        error!(
-            line_items_len = line_items.len(),
-            "Expected exactly one line item in checkout session"
-        );
-        return Err(CheckInError::StripeApiError);
-    }
-
-    let item = &line_items[0];
-
     Ok(CheckoutInfo {
         paid: session.payment_status == "paid",
-        description: item.description.clone(),
-        price_cents: item.price.unit_amount,
+        line_items: session.line_items.data,
         customer_name: session.customer_details.name,
     })
 }

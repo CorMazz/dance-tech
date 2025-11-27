@@ -176,4 +176,6 @@ Ensure you are launching the server from the root of this repository. File paths
 8/30/2025: 2 hrs
 9/1/2025: 1 hrs
 9/9/2025: 2 hrs
-Total: 123 hrs
+11/25/2025: 2 hrs "Shopping Cart"
+11/26/2026: 6 hrs "Shopping Cart"
+Total: 131 hrs
