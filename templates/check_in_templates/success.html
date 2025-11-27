@@ -7,24 +7,42 @@
 {% block content %}
   <div class="my-container animate-fade-in">
     <div class="flex items-center justify-center min-h-[75dvh] p-4">
-        {% if payment_successful %}
-            <div class="max-w-xl w-full bg-white border border-green-200 shadow-lg rounded-2xl p-8">
-                <div class="flex items-center space-x-4 mb-6">
-                    <svg class="w-10 h-10 text-green-500" fill="none" stroke="currentColor" stroke-width="2"
-                         viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                        <path stroke-linecap="round" stroke-linejoin="round"
-                              d="M5 13l4 4L19 7"></path>
-                    </svg>
-                    <h2 class="text-3xl font-bold text-green-700">Thank you {{ customer_name }} for registering!</h2>
-                </div>
-                <p class="text-lg text-gray-700 mb-4">
-                    You’ve successfully purchased <span class="font-semibold text-xl">'{{ product_name }}'</span>
-                </p>
-                <p class="text-lg text-gray-700">
-                    Amount paid: <span class="font-semibold text-green-600">${{ price }}</span><br>
-                    Date: <span class="font-medium">{{ current_time }}</span>
-                </p>
-            </div>
+        {% if checkout_info.paid %}
+          <div class="max-w-3xl w-full mx-auto space-y-8">
+              <div class="flex items-center space-x-4 mb-10">
+                  <svg class="w-10 h-10 text-green-500" fill="none" stroke="currentColor" stroke-width="2"
+                       viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"></path>
+                  </svg>
+                  <h2 class="text-3xl font-bold text-green-700">
+                      Thank you, {{ checkout_info.customer_name }}!
+                  </h2>
+              </div>
+
+              {% for item in checkout_info.line_items %}
+                  {% let dollar = (item.amount_total as f64) / 100.0 %}
+                  {% let price = format!("${:.2}", dollar.abs()) %}
+                  
+                  <div class="bg-white border border-green-200 shadow-lg rounded-2xl p-8">
+                      <h3 class="text-2xl font-bold text-gray-900 mb-2">
+                          {{ item.description }}
+                      </h3>
+
+                      <p class="text-lg text-gray-700 mb-1">
+                          Quantity: <span class="font-semibold">{{ item.quantity }}</span>
+                      </p>
+
+                      <!-- Price in BIG text for the front desk -->
+                      <p class="text-4xl font-extrabold mt-4 {% if item.amount_total > 0 %}text-green-600{% else %}text-red-600{% endif %}">
+                          {{ price }}
+                      </p>
+
+                      <p class="text-sm text-gray-500 mt-3">
+                          Date: {{ current_time }}
+                      </p>
+                  </div>
+              {% endfor %}
+          </div>
         {% else %}
             <div class="max-w-xl w-full bg-white border border-red-200 shadow-lg rounded-2xl p-8">
                 <div class="flex items-center space-x-4 mb-6">

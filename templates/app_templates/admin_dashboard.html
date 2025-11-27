@@ -33,11 +33,9 @@
               <p class="my-fineprint mt-2">
                 Sort Level = {{ product.sort_level }}
               </p>
-              <form action={{ rts.create_checkout_session }} method="POST">
-                <input type="hidden" name="product_id" value="{{ product.id }}">
-                <input type="hidden" name="price_id" value="{{ product.price_id }}">
-                <button type="submit" class="my-button mt-4">
-                  Checkout - {{ price }}
+              <form>
+                <button type="submit" disabled class="my-button mt-4">
+                  {{ price }}
                 </button>
               </form>
             </div>
