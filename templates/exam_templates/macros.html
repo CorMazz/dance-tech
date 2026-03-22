@@ -137,7 +137,7 @@
 {% endmacro %}
 
 {# Renders a `TestGrade` object #}
-{% macro render_grade(grade) %}
+{% macro render_grade(grade, taken_at) %}
   {% if grade.is_passing %}
     <div class="my-section hidden sm:block bg-green-100 hover:bg-green-200 text-center">
   {% else %}
@@ -149,6 +149,9 @@
     </div>
     <p class="text-xl"><span class="font-semibold">Score: </span> {{ grade.achieved_score }} / {{ grade.max_score }} = {{ "{:.0}"|format(grade.achieved_percent) }}%</p> 
     <p class="text-xl"><span class="font-semibold">Passing Score: </span>{{ "{:.0}"|format(grade.minimum_percent) }}%</p>
+    {% if let Some(date) = taken_at %}
+      <p class="text-xl"><span class="font-semibold">Date Taken: </span>{{ date.format("%B %d, %Y") }}</p>
+    {% endif %}
 
       {% if grade.is_passing %}
         <p class="font-semibold text-xl"></p>

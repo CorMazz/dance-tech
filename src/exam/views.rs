@@ -30,6 +30,7 @@ use axum::response::Html;
 use axum::response::IntoResponse;
 use axum::response::Redirect;
 use axum_extra::extract::Host;
+use chrono::{DateTime, Utc};
 use reqwest::StatusCode;
 use serde::Deserialize;
 use std::collections::HashMap;
@@ -188,6 +189,7 @@ pub async fn post_test_form(
 pub struct GradedExamTemplate {
     test: Test,
     grade: TestGrade,
+    taken_at: Option<DateTime<Utc>>,
     rts: Routes,
 }
 
@@ -201,10 +203,11 @@ pub async fn get_graded_test_page(
         .await
         .map_or_else(
             |err| err.into_response(&headers),
-            |graded_test| {
+            |(graded_test, taken_at)| {
                 let template = GradedExamTemplate {
                     test: graded_test.test,
                     grade: graded_test.grade,
+                    taken_at,
                     rts: ROUTES,
                 };
 
@@ -223,11 +226,12 @@ pub async fn get_graded_test_page(
     ext = "txt",
     source = r#"
 {% import "./exam_templates/macros.html" as macros %}
-{% call macros::render_grade(grade) %}
+{% call macros::render_grade(grade, date_taken) %}
 "#
 )]
 pub struct TestGradeTemplate {
     grade: TestGrade,
+    date_taken: Option<DateTime<Utc>>,
 }
 
 /// Let users get feedback on the fly by grading partially completed tests and returning just the
@@ -249,6 +253,7 @@ pub async fn post_live_grading(
         Ok(graded_test) => {
             let template = TestGradeTemplate {
                 grade: graded_test.grade,
+                date_taken: None, // On live grading, just don't show the current date
             };
             return (StatusCode::OK, Html(render(template))).into_response();
         }

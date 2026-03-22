@@ -115,9 +115,7 @@ pub async fn get_stripe_products(
 
             // Format the price as currency
             let dollar_price = match price.unit_amount {
-                Some(amount) => {
-                    amount as f64 / 100.0
-                }
+                Some(amount) => amount as f64 / 100.0,
                 None => return None,
             };
 

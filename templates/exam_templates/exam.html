@@ -62,7 +62,7 @@
         <div class="flex flex-col text-center">
 
           {% if grade is defined %}
-            {% call macros::render_grade(grade) %}
+            {% call macros::render_grade(grade, taken_at) %}
           {% else if test_index is defined %}
 
             {% if test.metadata.config.live_grading %}

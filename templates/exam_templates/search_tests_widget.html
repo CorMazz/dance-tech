@@ -63,6 +63,7 @@
                   <th class="my-table-cell">Testee</th>
                   <th class="my-table-cell">Proctor</th>
                   <th class="my-table-cell">Grade</th>
+                  <th class="my-table-cell">Date</th>
                   <th class="my-table-cell">Result</th>
                 </tr>
               </thead>
@@ -90,6 +91,11 @@
                     <td class="my-table-cell font-medium text-gray-900">
                       <a href="{{ rts.graded_exam(exam.id) }}" hx-boost="true" hx-target="#primary-content" class="block w-full h-full">
                         {{ exam.grade.achieved_score }}
+                      </a>
+                    </td>
+                    <td class="my-table-cell font-medium text-gray-900">
+                      <a href="{{ rts.graded_exam(exam.id) }}" hx-boost="true" hx-target="#primary-content" class="block w-full h-full">
+                        {{ info.taken_at.format("%B %d, %Y") }}
                       </a>
                     </td>
                     <td class="my-table-cell font-medium text-gray-900">

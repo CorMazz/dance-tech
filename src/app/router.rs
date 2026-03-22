@@ -1,8 +1,10 @@
 use crate::{
+    AppState,
     app::views::{
         delete_user_roles_widget, error_404_page, get_admin_dashboard, get_contact_page,
         get_home_page, get_user_roles_widget, post_user_roles_widget,
-    }, auth::{
+    },
+    auth::{
         middleware::{check_auth_middleware, require_auth_middleware},
         views::{
             get_google_oauth_callback, get_google_oauth_init_flow, get_login_page, get_logout_page,
@@ -10,16 +12,17 @@ use crate::{
             get_user_dropdown, post_login_form, post_request_password_reset_page,
             post_reset_password_page, post_signup_form,
         },
-    }, check_in::{
-        views::{
-            get_check_in_page, get_successful_checkout_session, post_create_check_out_session,
-            post_update_available_products, post_update_cart,
-    }}, exam::views::{
+    },
+    check_in::views::{
+        get_check_in_page, get_successful_checkout_session, post_create_check_out_session,
+        post_update_available_products, post_update_cart,
+    },
+    exam::views::{
         delete_queue_widget, get_graded_test_page, get_join_queue_widget,
         get_proctor_dashboard_page, get_queue_widget, get_search_tests_widget, get_test_page,
         get_user_autocomplete, get_user_dashboard_page, get_user_info_widget, post_live_grading,
         post_queue_widget, post_test_form,
-    }, AppState
+    },
 };
 use axum::{
     Router, middleware,

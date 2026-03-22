@@ -8,6 +8,7 @@ use crate::exam::models::{
     CsvTestTable, ExamStatus, HtmlTestTable, RadioButton, RadioOption, TestRow,
 };
 use crate::exam::models::{RadioName, RadioValue, ScoringCategory};
+use chrono::{DateTime, Utc};
 use csv::ReaderBuilder;
 use serde_json::{from_value, to_value};
 use sqlx::PgPool;
@@ -210,14 +211,17 @@ pub async fn save_graded_test_to_db(
 /// Loads a graded test from the database.
 ///
 /// The test was originally stored as JSONB, so it deserializes the JSON into a `GradedTest` object.
+/// Returns a tuple of (`GradedTest`, `created_at` timestamp).
+/// `created_at` was added after the application was released to production, so we couldn't just include it
+/// as part of the `GradedTest` struct.
 #[instrument(skip(db))]
 pub async fn load_graded_test_from_db(
     test_id: Uuid,
     db: &Pool<Postgres>,
-) -> Result<GradedTest, ExamError> {
+) -> Result<(GradedTest, Option<DateTime<Utc>>), ExamError> {
     let row = sqlx::query!(
         r#"
-        SELECT test_data
+        SELECT test_data, created_at
         FROM graded_exams
         WHERE id = $1
         "#,
@@ -240,7 +244,7 @@ pub async fn load_graded_test_from_db(
         ExamError::FatalInternalServerError
     })?;
     debug!(%graded_test.id, "Loaded graded test from the database.");
-    Ok(graded_test)
+    Ok((graded_test, row.created_at))
 }
 
 /// Read a string into a CSV. Used to load the tests from files.
@@ -412,6 +416,7 @@ pub struct FilteredExamResult {
     pub test: GradedTest,
     pub testee: User,
     pub proctor: User,
+    pub taken_at: DateTime<Utc>,
 }
 
 /// Retrieve all tests that fit the parameters included in the filter
@@ -424,6 +429,7 @@ pub async fn query_filtered_exams(
     let mut builder = QueryBuilder::new(
         r"SELECT 
           graded_exams.test_data, 
+          graded_exams.created_at,
           row_to_json(testee_user.*) AS testee_user, 
           row_to_json(proctor_user.*) AS proctor_user
         FROM graded_exams 
@@ -531,10 +537,17 @@ pub async fn query_filtered_exams(
             error!(%err, "Error deserializing proctor.");
             ExamError::FatalInternalServerError
         })?;
+        let created_at_option: Option<DateTime<Utc>> =
+            row.try_get("created_at").map_err(|err| {
+                error!(%err, "Error retrieving created_at from row.");
+                ExamError::DatabaseError
+            })?;
+        let created_at = created_at_option.unwrap_or_else(Utc::now);
         results.push(FilteredExamResult {
             test: graded_test,
             testee,
             proctor,
+            taken_at: created_at,
         });
     }
 

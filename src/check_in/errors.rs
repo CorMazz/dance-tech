@@ -21,14 +21,10 @@ pub enum CheckInError {
     )]
     DatabaseError,
 
-    #[error(
-        "There was an issue with the shopping cart. Please contact the site administrator"
-    )]
+    #[error("There was an issue with the shopping cart. Please contact the site administrator")]
     ShoppingCartError,
 
-    #[error(
-        "Invalid product. Please clear your cookies and try again."
-    )]
+    #[error("Invalid product. Please clear your cookies and try again.")]
     InvalidProductError,
 
     #[error("An error occurred when communicating with the Stripe API")]

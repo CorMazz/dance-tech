@@ -8,13 +8,13 @@ use crate::{
     },
 };
 use axum::response::Redirect;
-use axum_extra::extract::cookie::{Cookie, SameSite};
 use axum_extra::extract::CookieJar;
+use axum_extra::extract::cookie::{Cookie, SameSite};
 use chrono::Utc;
 use redis::AsyncCommands;
-use uuid::Uuid;
 use std::collections::HashMap;
 use tracing::{debug, error};
+use uuid::Uuid;
 
 /// Get the contents of the shopping cart from the Redis db if the shopping cart cookie was found.
 /// Otherwise, create the shoping cart id
@@ -37,7 +37,6 @@ pub async fn get_or_create_cart(
         .http_only(true)
         .same_site(SameSite::Lax)
         .max_age(time::Duration::days(1));
-
 
     // 3️⃣ Redis connection
     let mut redis = data
@@ -84,22 +83,25 @@ pub async fn update_cart(
         // 6️⃣ Serialize and save back to Redis
         let cart_json = serde_json::to_string(&updated_cart).map_err(|e| {
             error!("There was an issue serializing the shopping cart: {e}");
-            CheckInError::ShoppingCartError}
-            )?;
+            CheckInError::ShoppingCartError
+        })?;
         let redis_key = format!("cart:{cart_id}");
         let mut redis = data
             .redis_client
             .get_multiplexed_async_connection()
             .await
             .map_err(|_| CheckInError::DatabaseError)?;
-        let _ : () = redis.set_ex(&redis_key, cart_json, 60*60*24).await.map_err(|e| {
-            error!("Error saving the shopping cart to redis: {e}");
-            CheckInError::DatabaseError})?; // 1-day TTL
-        return Ok((jar, updated_cart))
-    } 
+        let _: () = redis
+            .set_ex(&redis_key, cart_json, 60 * 60 * 24)
+            .await
+            .map_err(|e| {
+                error!("Error saving the shopping cart to redis: {e}");
+                CheckInError::DatabaseError
+            })?; // 1-day TTL
+        return Ok((jar, updated_cart));
+    }
     Err(CheckInError::InvalidProductError)
-}    
-
+}
 
 /// Use Stripe's checkout API to direct the user to a payment page.
 ///
@@ -135,7 +137,6 @@ pub async fn create_stripe_checkout_session(
         "consent_collection[terms_of_service]".to_string(),
         "required".to_string(),
     );
-
 
     params.insert(
         "name_collection[individual][enabled]".to_string(),

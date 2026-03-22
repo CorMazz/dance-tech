@@ -177,5 +177,6 @@ Ensure you are launching the server from the root of this repository. File paths
 9/1/2025: 1 hrs
 9/9/2025: 2 hrs
 11/25/2025: 2 hrs "Shopping Cart"
-11/26/2026: 6 hrs "Shopping Cart"
-Total: 131 hrs
+11/26/2025: 6 hrs "Shopping Cart"
+3/22/2026: 1 hrs "Add dates to the test page"
+Total: 132 hrs

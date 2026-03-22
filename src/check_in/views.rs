@@ -1,6 +1,3 @@
-use crate::check_in::handlers::get_or_create_cart;
-use crate::check_in::handlers::update_cart;
-use crate::check_in::models::ShoppingCart;
 use crate::AppState;
 use crate::app::router::ROUTES;
 use crate::app::router::Routes;
@@ -10,8 +7,11 @@ use crate::auth::middleware::AuthStatus;
 use crate::auth::models::Roles;
 use crate::check_in::handlers::CheckoutInfo;
 use crate::check_in::handlers::create_stripe_checkout_session;
+use crate::check_in::handlers::get_or_create_cart;
+use crate::check_in::handlers::update_cart;
 use crate::check_in::handlers::verify_successful_checkout_session;
 use crate::check_in::models::Product;
+use crate::check_in::models::ShoppingCart;
 use askama::Template;
 use axum::Extension;
 use axum::Form;
@@ -22,8 +22,8 @@ use axum::{
     http::StatusCode,
     response::{Html, IntoResponse},
 };
-use axum_extra::extract::cookie::Cookie;
 use axum_extra::extract::CookieJar;
+use axum_extra::extract::cookie::Cookie;
 use serde::Deserialize;
 use std::collections::HashSet;
 use std::sync::Arc;
@@ -42,9 +42,8 @@ pub struct Ids {
 }
 
 pub const IDS: Ids = Ids {
-    shopping_cart_container: "shopping-cart-container"
+    shopping_cart_container: "shopping-cart-container",
 };
-
 
 // #######################################################################################################################################################
 // check_in.html
@@ -116,12 +115,16 @@ pub async fn get_check_in_page(
     };
 
     if is_htmx_request(&headers) {
-        (StatusCode::OK, cookie_jar, Html(render(template.as_content()))).into_response()
+        (
+            StatusCode::OK,
+            cookie_jar,
+            Html(render(template.as_content())),
+        )
+            .into_response()
     } else {
         (StatusCode::OK, cookie_jar, Html(render(template))).into_response()
     }
 }
-
 
 /// We render the button and the shopping cart together, that way when we call `update-cart` we can
 /// send the updated cart and swap it with one htmx request.
@@ -139,7 +142,7 @@ pub async fn get_check_in_page(
 pub struct ShoppingCartTemplate {
     rts: Routes,
     ids: Ids,
-    shopping_cart: ShoppingCart
+    shopping_cart: ShoppingCart,
 }
 
 /// Get the `product_id` and `price_id` from the button click on the check-in page
@@ -161,8 +164,14 @@ pub async fn post_update_cart(
         Err(err) => return err.into_response(&headers),
     };
 
-    match update_cart(&data, cookie_jar, products, &update_data.product_id, update_data.quantity)
-        .await
+    match update_cart(
+        &data,
+        cookie_jar,
+        products,
+        &update_data.product_id,
+        update_data.quantity,
+    )
+    .await
     {
         Ok((cookie_jar, shopping_cart)) => {
             let template = ShoppingCartTemplate {
@@ -171,7 +180,7 @@ pub async fn post_update_cart(
                 shopping_cart,
             };
             (StatusCode::OK, cookie_jar, Html(render(template))).into_response()
-        },
+        }
         Err(err) => err.into_response(&headers),
     }
 }
@@ -196,9 +205,7 @@ pub async fn post_create_check_out_session(
     };
 
     // Clear the cart by just deleting the shopping cart cookie. It'll eventually expire in redis
-    match create_stripe_checkout_session(&data, &shopping_cart)
-        .await
-    {
+    match create_stripe_checkout_session(&data, &shopping_cart).await {
         Ok(redirect) => (cookie_jar.remove(Cookie::from("cart_id")), redirect).into_response(),
         Err(err) => err.into_response(&headers),
     }
