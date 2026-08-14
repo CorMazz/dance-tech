@@ -29,6 +29,9 @@ pub enum AuthError {
     #[error("You must be logged in to access this resource.")]
     NotLoggedIn,
 
+    #[error("You do not have permission to access this resource.")]
+    Forbidden,
+
     #[error("An internal server error occurred. Please contact the site administrator.")]
     FatalInternalServerError,
 

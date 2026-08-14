@@ -40,6 +40,15 @@ impl AuthStatus {
             Self::Unauthorized(_) => Err(Redirect::to(ROUTES.login)),
         }
     }
+
+    /// Return the user if they are an Admin or Proctor.
+    pub fn require_superuser(self) -> Result<User, AuthError> {
+        match self {
+            Self::Authorized(user) if user.is_superuser() => Ok(user),
+            Self::Authorized(_) => Err(AuthError::Forbidden),
+            Self::Unauthorized(err) => Err(err),
+        }
+    }
 }
 
 /// This function checks if the user is authorized. This is not to be used directly as middleware.
@@ -144,5 +153,47 @@ pub async fn require_auth_middleware(
             }
             _ => e.into_response(req.headers()),
         },
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::auth::models::Roles;
+    use sqlx::types::Json;
+    use std::collections::HashSet;
+
+    fn user_with_roles(roles: HashSet<Roles>) -> User {
+        User {
+            id: Uuid::new_v4(),
+            first_name: "Test".into(),
+            last_name: "User".into(),
+            email: "test@example.com".into(),
+            password: "hash".into(),
+            roles: Json(roles),
+            created_at: None,
+            updated_at: None,
+        }
+    }
+
+    #[test]
+    fn require_superuser_allows_admin_and_proctor() {
+        let admin = user_with_roles(HashSet::from([Roles::Admin]));
+        let proctor = user_with_roles(HashSet::from([Roles::Proctor]));
+        assert!(AuthStatus::Authorized(admin).require_superuser().is_ok());
+        assert!(AuthStatus::Authorized(proctor).require_superuser().is_ok());
+    }
+
+    #[test]
+    fn require_superuser_rejects_dancer_and_anonymous() {
+        let dancer = user_with_roles(HashSet::new());
+        assert!(matches!(
+            AuthStatus::Authorized(dancer).require_superuser(),
+            Err(AuthError::Forbidden)
+        ));
+        assert!(matches!(
+            AuthStatus::Unauthorized(AuthError::NotLoggedIn).require_superuser(),
+            Err(AuthError::NotLoggedIn)
+        ));
     }
 }

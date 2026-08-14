@@ -13,6 +13,7 @@ use crate::AppState;
 use crate::app::utils::ErrorTemplate;
 use crate::app::utils::is_htmx_request;
 use crate::app::utils::render;
+use crate::auth::errors::AuthError;
 use crate::auth::middleware::AuthStatus;
 use crate::auth::models::User;
 use crate::auth::utils::{get_user_by_email, get_user_by_id, search_for_users};
@@ -92,7 +93,12 @@ pub async fn get_test_page(
     Path(test_index): Path<usize>,
     headers: axum::http::HeaderMap,
     Query(testee_email): Query<UserEmailForm>,
+    Extension(auth_status): Extension<AuthStatus>,
 ) -> impl IntoResponse {
+    if let Err(err) = auth_status.require_superuser() {
+        return err.into_response(&headers);
+    }
+
     data.exam_config.tests.get(test_index).map_or_else(
         || {
             let template = ErrorTemplate {
@@ -123,6 +129,7 @@ pub async fn get_test_page(
             }
         },
     )
+    .into_response()
 }
 
 /// Handles parsing the test form, saving the graded test to the database, and emailing test results to the testee.
@@ -135,9 +142,9 @@ pub async fn post_test_form(
     Host(server_root_url): Host,
     Form(raw_form): Form<HashMap<String, String>>,
 ) -> impl IntoResponse {
-    let proctor_id = match auth_status {
-        AuthStatus::Authorized(proctor) => proctor.id,
-        AuthStatus::Unauthorized(err) => return err.into_response(&headers),
+    let proctor_id = match auth_status.require_superuser() {
+        Ok(proctor) => proctor.id,
+        Err(err) => return err.into_response(&headers),
     };
 
     if let Err(e) = post_test_form_handler(data, test_index, raw_form, proctor_id).await {
@@ -245,9 +252,9 @@ pub async fn post_live_grading(
     Host(server_root_url): Host,
     Form(raw_form): Form<HashMap<String, String>>,
 ) -> impl IntoResponse {
-    let proctor_id = match auth_status {
-        AuthStatus::Authorized(proctor) => proctor.id,
-        AuthStatus::Unauthorized(err) => return err.into_response(&headers),
+    let proctor_id = match auth_status.require_superuser() {
+        Ok(proctor) => proctor.id,
+        Err(err) => return err.into_response(&headers),
     };
     match live_grade_handler(data, test_index, raw_form, proctor_id).await {
         Ok(graded_test) => {
@@ -271,7 +278,12 @@ pub struct ProctorDashboardTemplate {
 pub async fn get_proctor_dashboard_page(
     State(data): State<Arc<AppState>>,
     headers: axum::http::HeaderMap,
+    Extension(auth_status): Extension<AuthStatus>,
 ) -> impl IntoResponse {
+    if let Err(err) = auth_status.require_superuser() {
+        return err.into_response(&headers);
+    }
+
     let test_names = data.exam_config.test_names.clone();
 
     let template: ProctorDashboardTemplate = ProctorDashboardTemplate {
@@ -280,9 +292,9 @@ pub async fn get_proctor_dashboard_page(
     };
 
     if is_htmx_request(&headers) {
-        (StatusCode::OK, Html(render(template.as_content())))
+        (StatusCode::OK, Html(render(template.as_content()))).into_response()
     } else {
-        (StatusCode::OK, Html(render(template)))
+        (StatusCode::OK, Html(render(template))).into_response()
     }
 }
 
@@ -379,6 +391,39 @@ pub struct QueueQueryParameters {
     pub test_index: usize,
 }
 
+#[derive(Debug, PartialEq, Eq)]
+enum QueueTargetError {
+    InvalidUserId,
+    Forbidden,
+}
+
+/// `"self"` or the caller's own UUID is always allowed. Any other user requires Admin or Proctor.
+fn authorize_queue_target(caller: &User, user_id_param: &str) -> Result<Uuid, QueueTargetError> {
+    match user_id_param.to_lowercase().as_str() {
+        "self" => Ok(caller.id),
+        other => {
+            let uuid = Uuid::parse_str(other).map_err(|_| QueueTargetError::InvalidUserId)?;
+            if uuid == caller.id || caller.is_superuser() {
+                Ok(uuid)
+            } else {
+                Err(QueueTargetError::Forbidden)
+            }
+        }
+    }
+}
+
+fn queue_target_error_response(
+    err: QueueTargetError,
+    headers: &axum::http::HeaderMap,
+) -> axum::http::Response<axum::body::Body> {
+    match err {
+        QueueTargetError::InvalidUserId => {
+            (StatusCode::BAD_REQUEST, "Invalid user ID".into_response()).into_response()
+        }
+        QueueTargetError::Forbidden => AuthError::Forbidden.into_response(headers),
+    }
+}
+
 /// Add a user to the queue.
 ///
 /// Eventually add toasts to give users feedback on whether joining the queue
@@ -386,6 +431,7 @@ pub struct QueueQueryParameters {
 pub async fn post_queue_widget(
     State(data): State<Arc<AppState>>,
     Extension(auth_status): Extension<AuthStatus>,
+    headers: axum::http::HeaderMap,
     Query(form): Query<QueueQueryParameters>,
 ) -> impl IntoResponse {
     let user = match auth_status.require_auth() {
@@ -393,15 +439,9 @@ pub async fn post_queue_widget(
         Err(e) => return e.into_response(),
     };
 
-    let user_id = match form.user_id.to_lowercase().as_str() {
-        "self" => user.id,
-        other => match Uuid::parse_str(other) {
-            Ok(uuid) => uuid,
-            Err(_) => {
-                return (StatusCode::BAD_REQUEST, "Invalid user ID".into_response())
-                    .into_response();
-            }
-        },
+    let user_id = match authorize_queue_target(&user, &form.user_id) {
+        Ok(user_id) => user_id,
+        Err(err) => return queue_target_error_response(err, &headers),
     };
 
     #[allow(clippy::cast_possible_truncation, clippy::cast_possible_wrap)]
@@ -443,15 +483,9 @@ pub async fn delete_queue_widget(
         Err(e) => return e.into_response(),
     };
 
-    let user_id = match form.user_id.to_lowercase().as_str() {
-        "self" => user.id,
-        other => match Uuid::parse_str(other) {
-            Ok(uuid) => uuid,
-            Err(_) => {
-                return (StatusCode::BAD_REQUEST, "Invalid user ID".into_response())
-                    .into_response();
-            }
-        },
+    let user_id = match authorize_queue_target(&user, &form.user_id) {
+        Ok(user_id) => user_id,
+        Err(err) => return queue_target_error_response(err, &headers),
     };
 
     #[allow(clippy::cast_possible_truncation, clippy::cast_possible_wrap)]
@@ -464,10 +498,10 @@ pub async fn delete_queue_widget(
 
     match queue_result {
         Ok(..) => {
-            if is_administer_test_request {
-                if let Ok(Some(user)) = get_user_by_id(&user_id, &data.db).await {
+            if is_administer_test_request && user.is_superuser() {
+                if let Ok(Some(queued_user)) = get_user_by_id(&user_id, &data.db).await {
                     return Redirect::to(
-                        &ROUTES.administer_exam_for_user(&form.test_index, &user.email),
+                        &ROUTES.administer_exam_for_user(&form.test_index, &queued_user.email),
                     )
                     .into_response();
                 }
@@ -498,11 +532,11 @@ pub struct UserInfoWidgetTemplate {
 pub async fn get_user_info_widget(
     State(data): State<Arc<AppState>>,
     Extension(auth_status): Extension<AuthStatus>,
+    headers: axum::http::HeaderMap,
     Query(form): Query<UserEmailForm>,
 ) -> impl IntoResponse {
-    // I tried returning a result type from the function, but it was a PITA
-    if let Err(e) = auth_status.require_auth() {
-        return e.into_response();
+    if let Err(err) = auth_status.require_superuser() {
+        return err.into_response(&headers);
     }
 
     let user = get_user_by_email(&form.email, &data.db).await;
@@ -538,10 +572,11 @@ pub struct UserEmailAutoCompleteTemplate {
 pub async fn get_user_autocomplete(
     State(data): State<Arc<AppState>>,
     Extension(auth_status): Extension<AuthStatus>,
+    headers: axum::http::HeaderMap,
     Query(form): Query<UserEmailForm>,
 ) -> impl IntoResponse {
-    if let Err(e) = auth_status.require_auth() {
-        return e.into_response();
+    if let Err(err) = auth_status.require_superuser() {
+        return err.into_response(&headers);
     }
 
     let users = search_for_users(form.email, &data.db).await;
@@ -643,5 +678,61 @@ pub async fn get_search_tests_widget(
         (StatusCode::OK, Html(render(template.as_content()))).into_response()
     } else {
         (StatusCode::OK, Html(render(template))).into_response()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::auth::models::Roles;
+    use sqlx::types::Json;
+    use std::collections::HashSet;
+
+    fn user_with_roles(roles: HashSet<Roles>) -> User {
+        User {
+            id: Uuid::new_v4(),
+            first_name: "Test".into(),
+            last_name: "User".into(),
+            email: "test@example.com".into(),
+            password: "hash".into(),
+            roles: Json(roles),
+            created_at: None,
+            updated_at: None,
+        }
+    }
+
+    #[test]
+    fn queue_self_is_always_allowed() {
+        let dancer = user_with_roles(HashSet::new());
+        assert_eq!(authorize_queue_target(&dancer, "self").unwrap(), dancer.id);
+        assert_eq!(
+            authorize_queue_target(&dancer, &dancer.id.to_string()).unwrap(),
+            dancer.id
+        );
+    }
+
+    #[test]
+    fn queue_other_user_requires_superuser() {
+        let dancer = user_with_roles(HashSet::new());
+        let other = Uuid::new_v4();
+        assert_eq!(
+            authorize_queue_target(&dancer, &other.to_string()),
+            Err(QueueTargetError::Forbidden)
+        );
+
+        let proctor = user_with_roles(HashSet::from([Roles::Proctor]));
+        assert_eq!(
+            authorize_queue_target(&proctor, &other.to_string()).unwrap(),
+            other
+        );
+    }
+
+    #[test]
+    fn queue_rejects_invalid_user_id() {
+        let dancer = user_with_roles(HashSet::new());
+        assert_eq!(
+            authorize_queue_target(&dancer, "not-a-uuid"),
+            Err(QueueTargetError::InvalidUserId)
+        );
     }
 }
