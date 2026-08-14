@@ -14,7 +14,7 @@
                        viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                       <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"></path>
                   </svg>
-                  <h2 class="text-3xl font-display font-bold text-green-800">
+                  <h2 class="text-3xl font-display font-bold text-green-700 dark:text-green-400">
                       Thank you, {{ checkout_info.customer_name }}!
                   </h2>
               </div>
@@ -23,37 +23,37 @@
                   {% let dollar = (item.amount_total as f64) / 100.0 %}
                   {% let price = format!("${:.2}", dollar.abs()) %}
                   
-                  <div class="my-card border-green-200">
-                      <h3 class="text-2xl font-bold text-gray-900 mb-2">
+                  <div class="my-card border-green-200 dark:border-green-800">
+                      <h3 class="text-2xl font-bold text-ink mb-2">
                           {{ item.description }}
                       </h3>
 
-                      <p class="text-lg text-gray-700 mb-1">
+                      <p class="text-lg text-ink mb-1">
                           Quantity: <span class="font-semibold">{{ item.quantity }}</span>
                       </p>
 
                       <!-- Price in BIG text for the front desk -->
-                      <p class="text-4xl font-extrabold mt-4 {% if item.amount_total > 0 %}text-green-600{% else %}text-red-600{% endif %}">
+                      <p class="text-4xl font-extrabold mt-4 {% if item.amount_total > 0 %}text-green-600 dark:text-green-400{% else %}text-red-600 dark:text-red-400{% endif %}">
                           {{ price }}
                       </p>
 
-                      <p class="text-sm text-gray-500 mt-3">
+                      <p class="text-sm text-muted mt-3">
                           Date: {{ current_time }}
                       </p>
                   </div>
               {% endfor %}
           </div>
         {% else %}
-            <div class="max-w-xl w-full my-card border-red-200">
+            <div class="max-w-xl w-full my-card border-red-200 dark:border-red-800">
                 <div class="flex items-center space-x-4 mb-6">
                     <svg class="w-10 h-10 text-red-500" fill="none" stroke="currentColor" stroke-width="2"
                          viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                         <path stroke-linecap="round" stroke-linejoin="round"
                               d="M6 18L18 6M6 6l12 12"></path>
                     </svg>
-                    <h2 class="text-3xl font-bold text-red-700">Payment Verification Failed</h2>
+                    <h2 class="text-3xl font-bold text-red-700 dark:text-red-400">Payment Verification Failed</h2>
                 </div>
-                <p class="text-gray-700 text-lg">
+                <p class="text-ink text-lg">
                     We couldn’t verify your payment with Stripe. Please visit the front desk for assistance.
                 </p>
             </div>

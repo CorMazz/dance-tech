@@ -47,7 +47,7 @@
           {% for scoring_category in table.scoring_categories %}
             {% let last_scoring_category = loop.last %}
             {% for header in scoring_category.values %}
-              <th class="my-table-cell text-l md:text-xl p-1 wrap-break-word {% if !last_scoring_category && loop.last %}border-r border-gray-300 last:border-0{% endif %}">
+              <th class="my-table-cell text-l md:text-xl p-1 wrap-break-word {% if !last_scoring_category && loop.last %}border-r border-edge last:border-0{% endif %}">
                 {{ header }}
               </th>
             {% endfor %}
@@ -67,7 +67,7 @@
       {% for row in table.rows %}
         <tr class="my-table-row">
           {# Add the Item Name to the Left Column #}
-          <td class="my-table-cell px-2 text-right text-xl border-r border-gray-300">
+          <td class="my-table-cell px-2 text-right text-xl border-r border-edge">
             {{ row.left_label }}
             {% if row.left_label_subtext != "" %}}<br><span class="my-fineprint">{{ row.left_label_subtext }}</span>{% endif %}
           </td>
@@ -75,7 +75,7 @@
           {% for radio_button in row.buttons %}
             {% for radio_option in radio_button.options %}
               {# Add a border between scoring categories for comprehension #}
-                <td class="my-table-cell p-1 w-full {% if loop.last %}border-r border-gray-300 last:border-0{% endif %}">
+                <td class="my-table-cell p-1 w-full {% if loop.last %}border-r border-edge last:border-0{% endif %}">
                   <input 
                     type="radio" 
                     name="competency{{ radio_button.name|json }}"

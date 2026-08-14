@@ -77,7 +77,7 @@
             <input 
               type="submit" 
               value={% if is_demo_mode %}"Submission Disabled for Demo"{% else %}Submit Test{% endif %}
-              class="my-button h-16 mt-10 {% if is_demo_mode %}bg-gray-300 text-gray-900{% endif %}" 
+              class="my-button h-16 mt-10 {% if is_demo_mode %}opacity-50 cursor-not-allowed{% endif %}" 
               {% if is_demo_mode %}disabled{% endif %}
               hx-post={{ rts.administer_exam(test_index) }} hx-target="#primary-content" hx-push-url="true" hx-confirm="Confirm submission" hx-validate="true"
             />  

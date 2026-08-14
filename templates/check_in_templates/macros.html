@@ -10,7 +10,7 @@
             <div class="flex items-start justify-between">
               <h2 id="drawer-title" class="text-lg font-medium text-ink">Shopping cart</h2>
               <div class="ml-3 flex h-7 items-center">
-                <button type="button" command="close" commandfor="drawer" class="relative -m-2 p-2 text-gray-400 hover:text-gray-500">
+                <button type="button" command="close" commandfor="drawer" class="relative -m-2 p-2 text-muted hover:text-ink">
                   <span class="absolute -inset-0.5"></span>
                   <span class="sr-only">Close panel</span>
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" data-slot="icon" aria-hidden="true" class="size-6">
@@ -61,7 +61,7 @@
                   {% if cart.items.is_empty() %}
                     <li class="py-16 text-center">
                       <div class="mx-auto inline-flex items-center justify-center size-12 rounded-full bg-surface">
-                        <svg class="size-6 text-gray-400" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                        <svg class="size-6 text-muted" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
                           <path stroke-linecap="round" stroke-linejoin="round"
                             d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2 9m12-9l2 9m-6 0a1 1 0 11-2 0m2 0a1 1 0 11-2 0" />
                         </svg>
@@ -85,7 +85,7 @@
             <p class="mt-0.5 text-sm text-muted">Taxes calculated at checkout.</p>
             <div class="mt-6">
               <form action="{{ rts.create_checkout_session }}" method="POST">
-                <button {% if cart.items.is_empty() %}disabled{% endif %} class="flex w-full items-center justify-center my-button text-base font-medium text-white">
+                <button {% if cart.items.is_empty() %}disabled{% endif %} class="flex w-full items-center justify-center my-button text-base font-medium">
                  Checkout
                 </button>
               </form>
