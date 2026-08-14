@@ -2,7 +2,7 @@
 
 # Inputs
 
-ARG RUST_VERSION=1.89
+ARG RUST_VERSION=1.97
 ARG APP_NAME=dancetech  # Needs to match the name of the rust binary
 
 ################################################################################
@@ -49,7 +49,7 @@ RUN --mount=type=bind,source=src,target=src \
 # By specifying the "3.22" tag, it will use version 3.22 of alpine. If
 # reproducability is important, consider using a digest
 # (e.g., alpine@sha256:664888ac9cfd28068e062c991ebcff4b4c7307dc8dd4df9e728bedde5c449d91).
-FROM alpine:3.22 AS final
+FROM alpine:3.24 AS final
 
 # Create a non-privileged user that the app will run under.
 # See https://docs.docker.com/go/dockerfile-user-best-practices/

@@ -8,7 +8,7 @@ RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
 
 # USER vscode  # If using vscode devcontainer development, uncomment this line
 ENV RUSTFLAGS="-C link-arg=-fuse-ld=lld"
-ARG RUST_VERSION=1.89
+ARG RUST_VERSION=1.97
 
 # Set the specified Rust toolchain as the default
 RUN rustup default ${RUST_VERSION}
