@@ -47,6 +47,7 @@ pub struct HomeTemplate {
     rts: Routes,
     hero_images: Vec<String>,
     hero_json: String,
+    hero_source: String,
 }
 
 /// Serve the home page template.
@@ -56,12 +57,13 @@ pub async fn get_home_page(
     State(data): State<Arc<AppState>>,
     headers: axum::http::HeaderMap,
 ) -> impl IntoResponse {
-    let hero_images = data.hero_gallery.urls(&data.http_client).await;
+    let hero_images = data.hero_gallery.urls().await;
     let hero_json = serde_json::to_string(&hero_images).unwrap_or_else(|_| "[]".to_string());
     let template: HomeTemplate = HomeTemplate {
         rts: ROUTES,
         hero_images,
         hero_json,
+        hero_source: data.hero_gallery.source_url().to_string(),
     };
 
     if is_htmx_request(&headers) {

@@ -23,13 +23,15 @@
         </div>
         <div class="my-hero aspect-[4/3] max-h-[28rem]">
           {% if !hero_images.is_empty() %}
+            {% if !hero_source.is_empty() %}<a href="{{ hero_source }}" target="_blank" rel="noopener noreferrer" class="block h-full w-full">{% endif %}
             <img
               id="home-hero"
               src="{{ hero_images[0] }}"
               data-heroes="{{ hero_json }}"
               class="my-hero-image"
-              alt="Greenville Westies"
+              alt="Carolina Summer Swing, Shutter Theory Media"
             />
+            {% if !hero_source.is_empty() %}</a>{% endif %}
           {% endif %}
         </div>
       </div>
@@ -63,9 +65,7 @@
       if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
       if (window.__homeHeroTimer) clearInterval(window.__homeHeroTimer);
       window.__homeHeroTimer = setInterval(function () {
-        var next = i;
-        while (next === i) next = Math.floor(Math.random() * urls.length);
-        i = next;
+        i = (i + 1) % urls.length;
         el.classList.add("is-fading");
         setTimeout(function () {
           el.src = urls[i];

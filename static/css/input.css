@@ -217,11 +217,16 @@
 
   .my-button {
     @apply inline-flex items-center justify-center bg-button text-button-fg px-5 py-3 min-h-11 rounded-lg;
-    transition: opacity 150ms ease, filter 150ms ease;
+    transition: transform 150ms ease, box-shadow 150ms ease, background-color 150ms ease;
   }
   .my-button:hover {
-    opacity: 0.92;
-    filter: brightness(1.08);
+    transform: translateY(-1px);
+    background-color: color-mix(in oklab, var(--dt-button) 82%, white);
+    box-shadow: 0 8px 20px color-mix(in oklab, var(--dt-button) 38%, transparent);
+  }
+  .my-button:active {
+    transform: translateY(0);
+    box-shadow: none;
   }
 
   .my-button-ghost {
@@ -328,7 +333,8 @@
     .my-body {
       animation: none;
     }
-    .my-card:hover {
+    .my-card:hover,
+    .my-button:hover {
       transform: none;
     }
   }

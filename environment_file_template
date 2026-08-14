@@ -31,14 +31,12 @@ GOOGLE_OAUTH_CLIENT_SECRET=""
 GOOGLE_OAUTH_AUTH_URI="https://accounts.google.com/o/oauth2/auth"
 GOOGLE_OAUTH_TOKEN_URI="https://oauth2.googleapis.com/token"
 
-# Optional. Public Facebook Page album for the homepage hero rotator.
-# Album ID is the number after `a.` in the album URL:
-#   https://www.facebook.com/media/set/?set=a.123456789
-# Token: Page access token from a Facebook app you control (Graph API cannot
-# read albums anonymously anymore). Leave both blank to use local images in
-# static/images/ instead (logo, pfp, and cart icons are skipped).
-FACEBOOK_ALBUM_ID=
-FACEBOOK_ACCESS_TOKEN=
+# Optional homepage hero gallery (Pixieset). Defaults to Carolina Summer Swing.
+# Set to empty to use local files in static/images/ instead.
+# HERO_GALLERY_SLUG picks a sub-gallery (sneakpeaks, awards, ...). Blank = the
+# gallery Pixieset shows first.
+HERO_GALLERY_URL=https://shuttertheorymedia.pixieset.com/carolinasummerswing/
+HERO_GALLERY_SLUG=
 
 # This is required right now.
 STRIPE_SECRET_KEY=""
