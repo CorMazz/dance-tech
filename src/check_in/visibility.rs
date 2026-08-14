@@ -205,8 +205,7 @@ impl WeeklyWindow {
         if self.start <= self.end {
             day == target && time >= self.start && time <= self.end
         } else {
-            (day == target && time >= self.start)
-                || (day == target.succ() && time <= self.end)
+            (day == target && time >= self.start) || (day == target.succ() && time <= self.end)
         }
     }
 
@@ -282,7 +281,10 @@ pub fn parse_show_schedule(metadata: &HashMap<String, String>) -> ShowSchedule {
 }
 
 fn nonempty(value: Option<&String>) -> Option<&str> {
-    value.map(String::as_str).map(str::trim).filter(|s| !s.is_empty())
+    value
+        .map(String::as_str)
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
 }
 
 fn parse_intervals(raw: &str, tz: Tz) -> Result<Vec<AbsoluteWindow>, String> {
@@ -398,10 +400,7 @@ mod tests {
 
     #[test]
     fn same_day_interval() {
-        let schedule = parse_show_schedule(&meta(&[(
-            "show-interval",
-            "2026-08-14 18:00/22:00",
-        )]));
+        let schedule = parse_show_schedule(&meta(&[("show-interval", "2026-08-14 18:00/22:00")]));
         assert!(schedule.parse_error.is_none());
         assert!(schedule.is_visible(ny(2026, 8, 14, 18, 0)));
         assert!(schedule.is_visible(ny(2026, 8, 14, 21, 59)));
@@ -454,7 +453,11 @@ mod tests {
         let schedule = parse_show_schedule(&meta(&[("show-interval", "thursday evening")]));
         assert!(schedule.parse_error.is_some());
         assert!(!schedule.is_visible(Utc::now()));
-        assert!(schedule.status_label(Utc::now()).starts_with("Hidden (parse error:"));
+        assert!(
+            schedule
+                .status_label(Utc::now())
+                .starts_with("Hidden (parse error:")
+        );
     }
 
     #[test]
@@ -469,10 +472,7 @@ mod tests {
 
     #[test]
     fn dst_gap_fails_closed() {
-        let schedule = parse_show_schedule(&meta(&[(
-            "show-interval",
-            "2026-03-08 02:30/04:00",
-        )]));
+        let schedule = parse_show_schedule(&meta(&[("show-interval", "2026-03-08 02:30/04:00")]));
         assert!(schedule.parse_error.is_some());
         assert!(!schedule.is_visible(ny(2026, 3, 8, 3, 30)));
     }
@@ -498,7 +498,10 @@ mod tests {
         assert!(intervals[0].contains("America/New_York"));
         assert!(intervals[0].contains("UTC"));
         let weeklies = schedule.weekly_summaries();
-        assert_eq!(weeklies, vec!["Thu 18:00 – 23:00 America/New_York".to_string()]);
+        assert_eq!(
+            weeklies,
+            vec!["Thu 18:00 – 23:00 America/New_York".to_string()]
+        );
         assert_eq!(schedule.raw_interval(), "2026-08-14 18:00/22:00");
         assert_eq!(schedule.raw_weekly(), "Thu 18:00-23:00");
     }

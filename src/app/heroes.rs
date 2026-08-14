@@ -9,8 +9,7 @@ use tracing::{info, warn};
 
 const CACHE_TTL: Duration = Duration::from_mins(30);
 const MAX_PAGES: u32 = 10;
-const DEFAULT_GALLERY_URL: &str =
-    "https://shuttertheorymedia.pixieset.com/carolinasummerswing/";
+const DEFAULT_GALLERY_URL: &str = "https://shuttertheorymedia.pixieset.com/carolinasummerswing/";
 /// Pixieset's gallery HTML is behind Cloudflare; this crawler UA is allowed through.
 const GALLERY_USER_AGENT: &str = "WhatsApp/2.0";
 
@@ -56,9 +55,8 @@ struct GalleryMeta {
 impl HeroGallery {
     /// Read `HERO_GALLERY_URL` / `HERO_GALLERY_SLUG` and build the HTTP client.
     pub fn init() -> Self {
-        let gallery_url = std::env::var("HERO_GALLERY_URL").unwrap_or_else(|_| {
-            DEFAULT_GALLERY_URL.to_string()
-        });
+        let gallery_url =
+            std::env::var("HERO_GALLERY_URL").unwrap_or_else(|_| DEFAULT_GALLERY_URL.to_string());
         let gallery_slug = std::env::var("HERO_GALLERY_SLUG").unwrap_or_default();
         if gallery_url.is_empty() {
             info!("Pixieset hero gallery disabled (HERO_GALLERY_URL is empty).");
@@ -97,11 +95,13 @@ impl HeroGallery {
 
         let mut urls = Vec::new();
         if !self.gallery_url.is_empty() {
-            match fetch_pixieset_gallery(&self.client, &self.gallery_url, &self.gallery_slug)
-                .await
+            match fetch_pixieset_gallery(&self.client, &self.gallery_url, &self.gallery_slug).await
             {
                 Ok(remote) if !remote.is_empty() => {
-                    info!("Loaded {} Pixieset photos for the homepage hero", remote.len());
+                    info!(
+                        "Loaded {} Pixieset photos for the homepage hero",
+                        remote.len()
+                    );
                     urls = remote;
                 }
                 Ok(_) => warn!("Pixieset gallery returned no photos; using local images"),
@@ -122,11 +122,7 @@ impl HeroGallery {
 
 fn local_hero_urls() -> Vec<String> {
     let dir = Path::new("static/images");
-    let skip = [
-        "dance_tech_logo",
-        "default_pfp",
-        "shopping_cart_icon",
-    ];
+    let skip = ["dance_tech_logo", "default_pfp", "shopping_cart_icon"];
     let Ok(entries) = std::fs::read_dir(dir) else {
         return Vec::new();
     };
@@ -222,9 +218,7 @@ async fn fetch_pixieset_gallery(
 fn photos_from_content(content: serde_json::Value) -> Result<Vec<PixiePhoto>, String> {
     match content {
         serde_json::Value::String(raw) if raw.is_empty() => Ok(Vec::new()),
-        serde_json::Value::String(raw) => {
-            serde_json::from_str(&raw).map_err(|err| err.to_string())
-        }
+        serde_json::Value::String(raw) => serde_json::from_str(&raw).map_err(|err| err.to_string()),
         serde_json::Value::Array(_) => {
             serde_json::from_value(content).map_err(|err| err.to_string())
         }
@@ -319,7 +313,10 @@ mod tests {
         assert_eq!(meta.collection_id, "119166914");
         assert_eq!(meta.collection_key, "carolinasummerswing");
         assert_eq!(meta.gallery_slug, "sneakpeaks");
-        assert_eq!(js_str_field(INIT, "collectionUrlKey").unwrap(), "carolinasummerswing");
+        assert_eq!(
+            js_str_field(INIT, "collectionUrlKey").unwrap(),
+            "carolinasummerswing"
+        );
         assert_eq!(js_int_field(INIT, "collectionId").unwrap(), "119166914");
     }
 

@@ -99,37 +99,40 @@ pub async fn get_test_page(
         return err.into_response(&headers);
     }
 
-    data.exam_config.tests.get(test_index).map_or_else(
-        || {
-            let template = ErrorTemplate {
-                error_message: "There is no test with that ID number.".to_string(),
-                rts: ROUTES,
-            };
+    data.exam_config
+        .tests
+        .get(test_index)
+        .map_or_else(
+            || {
+                let template = ErrorTemplate {
+                    error_message: "There is no test with that ID number.".to_string(),
+                    rts: ROUTES,
+                };
 
-            if is_htmx_request(&headers) {
-                (StatusCode::OK, Html(render(template.as_content())))
-            } else {
-                (StatusCode::OK, Html(render(template)))
-            }
-        },
-        |test| {
-            let template = AdministerExamTemplate {
-                test: test.clone(),
-                test_index,
-                is_demo_mode: data.app_config.is_demo_mode,
-                // email_functionality_active: data.smtp_config.is_some(),
-                testee_email: testee_email.email,
-                rts: ROUTES,
-            };
+                if is_htmx_request(&headers) {
+                    (StatusCode::OK, Html(render(template.as_content())))
+                } else {
+                    (StatusCode::OK, Html(render(template)))
+                }
+            },
+            |test| {
+                let template = AdministerExamTemplate {
+                    test: test.clone(),
+                    test_index,
+                    is_demo_mode: data.app_config.is_demo_mode,
+                    // email_functionality_active: data.smtp_config.is_some(),
+                    testee_email: testee_email.email,
+                    rts: ROUTES,
+                };
 
-            if is_htmx_request(&headers) {
-                (StatusCode::OK, Html(render(template.as_content())))
-            } else {
-                (StatusCode::OK, Html(render(template)))
-            }
-        },
-    )
-    .into_response()
+                if is_htmx_request(&headers) {
+                    (StatusCode::OK, Html(render(template.as_content())))
+                } else {
+                    (StatusCode::OK, Html(render(template)))
+                }
+            },
+        )
+        .into_response()
 }
 
 /// Handles parsing the test form, saving the graded test to the database, and emailing test results to the testee.
