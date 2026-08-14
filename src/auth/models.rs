@@ -52,8 +52,7 @@ pub trait DisplayRoles {
 }
 
 impl DisplayRoles for HashSet<Roles> {
-    /// Doing this because Askama was a bitch and wouldn't let me easily format my roles
-    /// with ',' between them. It kept telling me that loop.last wasn't valid syntax
+    /// Askama does not support `loop.last`, so join roles here.
     fn display_roles(&self) -> String {
         let mut roles: Vec<String> = self.iter().map(std::string::ToString::to_string).collect();
         roles.sort();

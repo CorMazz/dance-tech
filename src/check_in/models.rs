@@ -138,10 +138,10 @@ impl ShoppingCart {
 ///
 /// Used to let us direct users to Stripe to enact payment.
 ///
-/// The full response looks like this:
+/// The full response looks like this (anonymized test-mode fixture):
 /// ```
 /// {
-///   "id": "cs_test_a1xDgt75iRy0gfNypidMbbgeDm2C5FBZUmKNHMsMRgPU2ntor9i7bsKmJA",
+///   "id": "cs_test_a1ExampleCheckoutSessionId00000000000000000000000000",
 ///   "object": "checkout.session",
 ///   "adaptive_pricing": {
 ///     "enabled": true
@@ -200,7 +200,7 @@ impl ShoppingCart {
 ///   "payment_link": null,
 ///   "payment_method_collection": "if_required",
 ///   "payment_method_configuration_details": {
-///     "id": "pmc_1RWqgNQ2wtFMkx0YuoIH56VJ",
+///     "id": "pmc_1AAAAExamplePaymentMethodConfig",
 ///     "parent": null
 ///   },
 ///   "payment_method_options": {
@@ -236,10 +236,7 @@ impl ShoppingCart {
 ///     "amount_tax": 0
 ///   },
 ///   "ui_mode": "hosted",
-///   "url": "https://checkout.stripe.com/c/pay/cs_test_a1xDgt75iRy0gfNypidMbbgeDm2C5FBZUmKNHMsMRgPU2ntor9i7bsKmJA#fidkdWxOYHwnP
-/// yd1blpxYHZxWjA0V1J0Y3RUN3JxQ0hufTVcQ2ZyU2pAPX18UnFkS0JCYzNwTXVsREBCbk51XWB2Q1JnT2B2UkB8PXB8Z3xPd11JblNxQ0FNVVJGZ2pkdzNjSn1QZ
-/// mc3UmtqNTVLXUJoVzB%2FTScpJ2N3amhWYHdzYHcnP3F3cGApJ2lkfGpwcVF8dWAnPyd2bGtiaWBabHFgaCcpJ2BrZGdpYFVpZGZgbWppYWB3dic%2FcXdwYHgl"
-/// ,
+///   "url": "https://checkout.stripe.com/c/pay/cs_test_a1ExampleCheckoutSessionId00000000000000000000000000",
 ///   "wallet_options": null
 /// }
 /// ```
@@ -253,10 +250,10 @@ pub struct CheckoutSessionResponse {
 ///
 /// Used to let us ensure users have paid.
 ///
-/// The response to the request here looks like this:
+/// The response to the request here looks like this (anonymized test-mode fixture):
 /// ```
 /// {
-///   "id": "cs_test_b1vh2rtcq0dqyOLKqQDIhEEh9Hb43ankyYnnt13zSdPZb7pzlSzz6BvNuu",
+///   "id": "cs_test_b1ExamplePaidSessionId00000000000000000000000000000",
 ///   "object": "checkout.session",
 ///   "adaptive_pricing": {
 ///     "enabled": true
@@ -286,7 +283,7 @@ pub struct CheckoutSessionResponse {
 ///   "client_secret": null,
 ///   "collected_information": {
 ///     "business_name": null,
-///     "individual_name": "Corrado Mazzarelli",
+///     "individual_name": "Alex Rivera",
 ///     "shipping_details": null
 ///   },
 ///   "consent": {
@@ -315,9 +312,9 @@ pub struct CheckoutSessionResponse {
 ///   "customer_details": {
 ///     "address": null,
 ///     "business_name": null,
-///     "email": "corrado@mazzarelli.biz",
-///     "individual_name": "Corrado Mazzarelli",
-///     "name": "Corrado Mazzarelli",
+///     "email": "alex@example.com",
+///     "individual_name": "Alex Rivera",
+///     "name": "Alex Rivera",
 ///     "phone": null,
 ///     "tax_exempt": "none",
 ///     "tax_ids": []
@@ -326,7 +323,7 @@ pub struct CheckoutSessionResponse {
 ///   "discounts": [
 ///     {
 ///       "coupon": null,
-///       "promotion_code": "promo_1SXPsPQ2wtFMkx0Y2fmEZ9MO"
+///       "promotion_code": "promo_1AAAAExamplePromotionCode"
 ///     }
 ///   ],
 ///   "expires_at": 1764300192,
@@ -347,7 +344,7 @@ pub struct CheckoutSessionResponse {
 ///     "object": "list",
 ///     "data": [
 ///       {
-///         "id": "li_1SXvnYQ2wtFMkx0YI8Hyb20W",
+///         "id": "li_1AAAAExampleLineItem01",
 ///         "object": "item",
 ///         "amount_discount": 500,
 ///         "amount_subtotal": 500,
@@ -356,7 +353,7 @@ pub struct CheckoutSessionResponse {
 ///         "currency": "usd",
 ///         "description": "Social Dance",
 ///         "price": {
-///           "id": "price_1RWqlNQ2wtFMkx0YHyrIPuFM",
+///           "id": "price_1AAAAExamplePriceLesson",
 ///           "object": "price",
 ///           "active": true,
 ///           "billing_scheme": "per_unit",
@@ -367,7 +364,7 @@ pub struct CheckoutSessionResponse {
 ///           "lookup_key": null,
 ///           "metadata": {},
 ///           "nickname": "Standard price for the social dance.",
-///           "product": "prod_SRkFO2xHNexIoT",
+///           "product": "prod_ExampleLesson",
 ///           "recurring": null,
 ///           "tax_behavior": "unspecified",
 ///           "tiers_mode": null,
@@ -379,7 +376,7 @@ pub struct CheckoutSessionResponse {
 ///         "quantity": 1
 ///       },
 ///       {
-///         "id": "li_1SXvnYQ2wtFMkx0Y6t7YjtNA",
+///         "id": "li_1AAAAExampleLineItem02",
 ///         "object": "item",
 ///         "amount_discount": 500,
 ///         "amount_subtotal": 500,
@@ -388,7 +385,7 @@ pub struct CheckoutSessionResponse {
 ///         "currency": "usd",
 ///         "description": "Beginner+ Lesson & Social",
 ///         "price": {
-///           "id": "price_1RYugeQ2wtFMkx0YZv6Jz06E",
+///           "id": "price_1AAAAExamplePriceSocial",
 ///           "object": "price",
 ///           "active": true,
 ///           "billing_scheme": "per_unit",
@@ -399,7 +396,7 @@ pub struct CheckoutSessionResponse {
 ///           "lookup_key": null,
 ///           "metadata": {},
 ///           "nickname": null,
-///           "product": "prod_STsRL6dA7jkiP0",
+///           "product": "prod_ExampleSocial",
 ///           "recurring": null,
 ///           "tax_behavior": "unspecified",
 ///           "tiers_mode": null,
@@ -412,7 +409,7 @@ pub struct CheckoutSessionResponse {
 ///       }
 ///     ],
 ///     "has_more": false,
-///     "url": "/v1/checkout/sessions/cs_test_b1vh2rtcq0dqyOLKqQDIhEEh9Hb43ankyYnnt13zSdPZb7pzlSzz6BvNuu/line_items"
+///     "url": "/v1/checkout/sessions/cs_test_b1ExamplePaidSessionId00000000000000000000000000000/line_items"
 ///   },
 ///   "livemode": false,
 ///   "locale": null,
@@ -429,7 +426,7 @@ pub struct CheckoutSessionResponse {
 ///   "payment_link": null,
 ///   "payment_method_collection": "if_required",
 ///   "payment_method_configuration_details": {
-///     "id": "pmc_1RWqgNQ2wtFMkx0YuoIH56VJ",
+///     "id": "pmc_1AAAAExamplePaymentMethodConfig",
 ///     "parent": null
 ///   },
 ///   "payment_method_options": {
@@ -515,18 +512,18 @@ pub struct StripeProduct {
 /// A struct to deserialize Stripe's search API response when looking for what
 /// products are available.
 ///
-/// The full response looks like this:
+/// The full response looks like this (anonymized test-mode fixture):
 /// ```
 ///{
 ///   "object": "search_result",
 ///   "data": [
 ///     {
-///       "id": "prod_STsRL6dA7jkiP0",
+///       "id": "prod_ExampleSocial",
 ///       "object": "product",
 ///       "active": true,
 ///       "attributes": [],
 ///       "created": 1749671512,
-///       "default_price": "price_1RYugeQ2wtFMkx0YZv6Jz06E",
+///       "default_price": "price_1AAAAExamplePriceSocial",
 ///       "description": "The beginner+ lesson is for dancers who have come to the beginner class for at least 4 weeks and have
 /// grasped the concepts within.",
 ///       "images": [],
@@ -546,12 +543,12 @@ pub struct StripeProduct {
 ///       "url": null
 ///     },
 ///     {
-///       "id": "prod_SRkFO2xHNexIoT",
+///       "id": "prod_ExampleLesson",
 ///       "object": "product",
 ///       "active": true,
 ///       "attributes": [],
 ///       "created": 1749179773,
-///       "default_price": "price_1RWqlNQ2wtFMkx0YHyrIPuFM",
+///       "default_price": "price_1AAAAExamplePriceLesson",
 ///       "description": "The beginner lesson is free, with the social dance. Or vice versa. Whatever floats your boat :)",
 ///       "images": [],
 ///       "livemode": false,
@@ -593,7 +590,7 @@ pub struct StripeProductSearchResponse {
 /// These objects look like this:
 /// ```
 ///{
-///   "id": "price_1RYugeQ2wtFMkx0YZv6Jz06E",
+///   "id": "price_1AAAAExamplePriceSocial",
 ///   "object": "price",
 ///   "active": true,
 ///   "billing_scheme": "per_unit",
@@ -604,7 +601,7 @@ pub struct StripeProductSearchResponse {
 ///   "lookup_key": null,
 ///   "metadata": {},
 ///   "nickname": null,
-///   "product": "prod_STsRL6dA7jkiP0",
+///   "product": "prod_ExampleSocial",
 ///   "recurring": null,
 ///   "tax_behavior": "unspecified",
 ///   "tiers_mode": null,
@@ -630,7 +627,7 @@ pub struct StripePrice {
 ///   "object": "list",
 ///   "data": [
 ///     {
-///       "id": "price_1RYugeQ2wtFMkx0YZv6Jz06E",
+///       "id": "price_1AAAAExamplePriceSocial",
 ///       "object": "price",
 ///       "active": true,
 ///       "billing_scheme": "per_unit",
@@ -641,7 +638,7 @@ pub struct StripePrice {
 ///       "lookup_key": null,
 ///       "metadata": {},
 ///       "nickname": null,
-///       "product": "prod_STsRL6dA7jkiP0",
+///       "product": "prod_ExampleSocial",
 ///       "recurring": null,
 ///       "tax_behavior": "unspecified",
 ///       "tiers_mode": null,
@@ -651,7 +648,7 @@ pub struct StripePrice {
 ///       "unit_amount_decimal": "500"
 ///     },
 ///     {
-///       "id": "price_1RYtlHQ2wtFMkx0YncfpRB4h",
+///       "id": "price_1AAAAExamplePriceAlt",
 ///       "object": "price",
 ///       "active": true,
 ///       "billing_scheme": "per_unit",
@@ -662,7 +659,7 @@ pub struct StripePrice {
 ///       "lookup_key": null,
 ///       "metadata": {},
 ///       "nickname": "Nice price",
-///       "product": "prod_SRkFO2xHNexIoT",
+///       "product": "prod_ExampleLesson",
 ///       "recurring": null,
 ///       "tax_behavior": "unspecified",
 ///       "tiers_mode": null,
@@ -672,7 +669,7 @@ pub struct StripePrice {
 ///       "unit_amount_decimal": "6900"
 ///     },
 ///     {
-///       "id": "price_1RWqnPQ2wtFMkx0YXDSw4GiG",
+///       "id": "price_1AAAAExamplePriceDropin",
 ///       "object": "price",
 ///       "active": true,
 ///       "billing_scheme": "per_unit",
@@ -683,7 +680,7 @@ pub struct StripePrice {
 ///       "lookup_key": null,
 ///       "metadata": {},
 ///       "nickname": "Standard fee for the pro lesson.",
-///       "product": "prod_SRkHmJL8FGGjTF",
+///       "product": "prod_ExampleDropin",
 ///       "recurring": null,
 ///       "tax_behavior": "unspecified",
 ///       "tiers_mode": null,
@@ -693,7 +690,7 @@ pub struct StripePrice {
 ///       "unit_amount_decimal": "1000"
 ///     },
 ///     {
-///       "id": "price_1RWqlNQ2wtFMkx0YHyrIPuFM",
+///       "id": "price_1AAAAExamplePriceLesson",
 ///       "object": "price",
 ///       "active": true,
 ///       "billing_scheme": "per_unit",
@@ -704,7 +701,7 @@ pub struct StripePrice {
 ///       "lookup_key": null,
 ///       "metadata": {},
 ///       "nickname": "Standard price for the social dance.",
-///       "product": "prod_SRkFO2xHNexIoT",
+///       "product": "prod_ExampleLesson",
 ///       "recurring": null,
 ///       "tax_behavior": "unspecified",
 ///       "tiers_mode": null,

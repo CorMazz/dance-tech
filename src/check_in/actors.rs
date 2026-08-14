@@ -1,7 +1,4 @@
-//! A module containing actors that will run in separate threads and maintain state that may change
-//! as the application runs. I am implementing the actor pattern because it eliminates the
-//! potential for lock contention, and it is a shiny new thing that I just learned.
-//! Resume-driven-development ftw!
+//! Actors that hold mutable runtime state on their own tasks to avoid lock contention.
 
 use crate::AppState;
 use crate::auth::models::Roles;
@@ -34,8 +31,7 @@ use tracing::warn;
 /// products immediately
 /// The secret key is from Stripe
 ///
-/// If the clone to send the product request gets too expensive, perhaps use a `RwLock` instead.
-/// In the meantime, FISI
+/// If cloning the product list for each request gets expensive, consider an `RwLock`.
 #[instrument(skip(product_request_rx, trigger_update_rx, app_state))]
 pub async fn product_manager_actor_runtime(
     mut product_request_rx: mpsc::Receiver<oneshot::Sender<Vec<Product>>>,

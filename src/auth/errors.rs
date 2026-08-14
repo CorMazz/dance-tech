@@ -18,7 +18,7 @@ pub enum AuthError {
     #[error("Invalid email or password.")]
     InvalidEmailOrPassword,
 
-    /// Used on the sign-up page. Could probably do this with just a toast instead but oh well.
+    /// Used on the sign-up page.
     #[error("Passwords do not match.")]
     PasswordsDoNotMatch,
 

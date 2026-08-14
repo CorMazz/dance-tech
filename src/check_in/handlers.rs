@@ -108,12 +108,8 @@ pub async fn update_cart(
 
 /// Use Stripe's checkout API to direct the user to a payment page.
 ///
-/// It looks like stripe doesn't actually need the requested product, just the price.
-///
-/// I'm leaving it because I'm lazy. I wonder why clippy isn't complaining.
-///
-/// Perhaps in the future I could have a TOS page tied to each specific product. For the moment,
-/// I'm just making it global for the whole application via `env_var`.
+/// Stripe only needs price IDs on the session. Product data is still attached
+/// so a per-product TOS can be added later. TOS is currently global via env.
 #[tracing::instrument(skip(data))]
 pub async fn create_stripe_checkout_session(
     data: &AppState,

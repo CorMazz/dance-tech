@@ -206,8 +206,8 @@ pub struct TestConfig {
     pub live_grading: bool,
     /// Show point values while the test is being proctored
     pub show_point_values: bool,
-    /// Passing this test grants the following roles to the testee
-    /// I could've made this natively a `HashSet`, but that'd be a PITA
+    /// Passing this test grants the following roles to the testee.
+    /// YAML is easier as a `Vec`; convert with `get_granted_roles`.
     #[serde(default)]
     pub grants_roles: Vec<String>,
 }
@@ -308,8 +308,7 @@ pub struct RadioName {
 /// A single button within a `RadioItem`
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct RadioOption {
-    /// Must be unique for each element, is used to assign `<label>` element to the button (which
-    /// makes the button prettier than a stupid looking filled circle from 1985).
+    /// Unique id pairing the `<label>` with the radio input.
     pub id: String,
     /// This is the value that gets sent with the key, which is a serialized string containing the
     /// point value and the index of that score within the `CsvTestTable`

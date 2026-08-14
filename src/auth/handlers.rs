@@ -246,15 +246,15 @@ pub async fn google_oauth_callback_handler(
             AuthError::OAuthError
         })?;
 
-    // The following request returns this upon success
+    // Successful userinfo payload (anonymized fixture):
     // {
-    //     "email": String("corrado@mazzarelli.biz"),
+    //     "email": String("alex@example.com"),
     //     "email_verified": Bool(true),
-    //     "family_name": String("Mazzarelli"),
-    //     "given_name": String("Corrado"),
-    //     "name": String("Corrado “Cory” Mazzarelli"),
-    //     "picture": String("https://lh3.googleusercontent.com/a/ACg8ocJ-vpjiao2CsPCixOZKm7Oc1U2SecYPxdmhW1hNCL0WaQayvA=s96-c"),
-    //     "sub": String("123520143226431893380"),
+    //     "family_name": String("Rivera"),
+    //     "given_name": String("Alex"),
+    //     "name": String("Alex Rivera"),
+    //     "picture": String("https://lh3.googleusercontent.com/a/example-profile-photo=s96-c"),
+    //     "sub": String("100000000000000000000"),
     // }
     let user_info = data
         .http_client
