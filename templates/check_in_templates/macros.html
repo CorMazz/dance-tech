@@ -5,10 +5,10 @@
 
     <div tabindex="0" class="absolute inset-0 pl-10 focus:outline-none sm:pl-16">
       <el-dialog-panel class="ml-auto block size-full max-w-md transform transition duration-500 ease-in-out data-closed:translate-x-full sm:duration-700">
-        <div class="flex h-full flex-col overflow-y-auto bg-white shadow-xl">
+        <div class="flex h-full flex-col overflow-y-auto my-drawer-panel shadow-xl">
           <div class="flex-1 overflow-y-auto px-4 py-6 sm:px-6">
             <div class="flex items-start justify-between">
-              <h2 id="drawer-title" class="text-lg font-medium text-gray-900">Shopping cart</h2>
+              <h2 id="drawer-title" class="text-lg font-medium text-ink">Shopping cart</h2>
               <div class="ml-3 flex h-7 items-center">
                 <button type="button" command="close" commandfor="drawer" class="relative -m-2 p-2 text-gray-400 hover:text-gray-500">
                   <span class="absolute -inset-0.5"></span>
@@ -22,18 +22,18 @@
 
             <div class="mt-8">
               <div class="flow-root">
-                <ul role="list" class="-my-6 divide-y divide-gray-200">
+                <ul role="list" class="-my-6 divide-y divide-edge">
                   {% for (product, quantity) in cart.items.values() %}
                     {% let i = ((loop.index - 1) % 6)  + 1 %}
                     {% let price = format!("${:.2}", product.dollar_price) %}
                     <li class="flex py-6">
-                      <div class="size-24 shrink-0 overflow-hidden rounded-md border border-gray-200">
+                      <div class="size-24 shrink-0 overflow-hidden rounded-md border border-edge">
                         <img src="/static/images/shopping_cart_icon_{{ i }}.png" alt="Two people dancing icon" class="size-full object-cover" />
                       </div>
 
                       <div class="ml-4 flex flex-1 flex-col">
                         <div>
-                          <div class="flex justify-between text-base font-medium text-gray-900">
+                          <div class="flex justify-between text-base font-medium text-ink">
                             <h3>
                               {{ product.name }}
                             </h3>
@@ -42,11 +42,11 @@
                           {# <p class="mt-1 text-sm text-gray-500">Salmon</p> #}
                         </div>
                         <div class="flex flex-1 items-end justify-between text-sm">
-                          <p class="text-gray-500">Qty {{ quantity }}</p>
+                          <p class="text-muted">Qty {{ quantity }}</p>
                           <div class="flex">
                             <button
                               type="button"
-                              class="font-medium text-primary-300 hover:text-primary:600"
+                              class="font-medium text-primary-400 hover:text-primary-500"
                               hx-post="{{ rts.update_cart }}"
                               hx-vals='{"product_id": "{{ product.id }}", "quantity": 0}'
                               hx-target="#{{ ids.shopping_cart_container }}"
@@ -60,14 +60,14 @@
                   {% endfor %}
                   {% if cart.items.is_empty() %}
                     <li class="py-16 text-center">
-                      <div class="mx-auto inline-flex items-center justify-center size-12 rounded-full bg-gray-100">
+                      <div class="mx-auto inline-flex items-center justify-center size-12 rounded-full bg-surface">
                         <svg class="size-6 text-gray-400" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
                           <path stroke-linecap="round" stroke-linejoin="round"
                             d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2 9m12-9l2 9m-6 0a1 1 0 11-2 0m2 0a1 1 0 11-2 0" />
                         </svg>
                       </div>
-                      <p class="mt-4 text-gray-600 font-medium">Your cart is empty.</p>
-                      <p class="mt-1 text-sm text-gray-400">Add items to get started.</p>
+                      <p class="mt-4 text-ink font-medium">Your cart is empty.</p>
+                      <p class="mt-1 text-sm text-muted">Add items to get started.</p>
                     </li>
                   {% endif %}
                 </ul>
@@ -75,14 +75,14 @@
             </div>
           </div>
 
-          <div class="border-t border-gray-200 px-4 py-6 sm:px-6">
-            <div class="flex justify-between text-base font-medium text-gray-900">
+          <div class="border-t border-edge px-4 py-6 sm:px-6">
+            <div class="flex justify-between text-base font-medium text-ink">
               <p>Subtotal</p>
               {% let subtotal_float = cart.subtotal() %}
               {% let subtotal = format!("${:.2}", subtotal_float.abs() ) %}
               <p>{{ subtotal }}</p>
             </div>
-            <p class="mt-0.5 text-sm text-gray-500">Taxes calculated at checkout.</p>
+            <p class="mt-0.5 text-sm text-muted">Taxes calculated at checkout.</p>
             <div class="mt-6">
               <form action="{{ rts.create_checkout_session }}" method="POST">
                 <button {% if cart.items.is_empty() %}disabled{% endif %} class="flex w-full items-center justify-center my-button text-base font-medium text-white">
@@ -90,10 +90,10 @@
                 </button>
               </form>
             </div>
-            <div class="mt-6 flex justify-center text-center text-sm text-gray-500">
+            <div class="mt-6 flex justify-center text-center text-sm text-muted">
               <p>
                 or
-                <button type="button" command="close" commandfor="drawer" class="font-medium text-primary-300 hover:text-primary-600">
+                <button type="button" command="close" commandfor="drawer" class="font-medium text-primary-400 hover:text-primary-500">
                   Continue Shopping
                   <span aria-hidden="true"> &rarr;</span>
                 </button>
@@ -114,7 +114,7 @@
   <button 
       command="show-modal" 
       commandfor="drawer"
-      class="fixed bottom-12 right-12 z-50 rounded-full bg-blue-600 text-white px-4 py-3 shadow-lg hover:bg-blue-700 transition"
+      class="my-cart-fab"
   >
       <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="h-8 w-8">
         <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 00-3 3h15.75m-12.75-3h11.218c1.121-2.3 2.1-4.684 2.924-7.138a60.114 60.114 0 00-16.536-1.84M7.5 14.25L5.106 5.272M6 20.25a.75.75 0 11-1.5 0 .75.75 0 011.5 0zm12.75 0a.75.75 0 11-1.5 0 .75.75 0 011.5 0z" />

@@ -1,36 +1,63 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 @theme {
-  /* Primary colors */
   --color-primary-100: #84CEA0;
   --color-primary-200: #54B277;
   --color-primary-300: #339959;
   --color-primary-400: #1C8342;
   --color-primary-500: #09682C;
 
-  /* Secondary colors */
   --color-secondary-100: #7CABBD;
   --color-secondary-200: #4C849A;
   --color-secondary-300: #306D84;
   --color-secondary-400: #1C5A71;
   --color-secondary-500: #0B445A;
 
-  /* Accent colors */
   --color-accent-100: #CAF099;
   --color-accent-200: #ACDF69;
   --color-accent-300: #89C041;
   --color-accent-400: #6DA523;
   --color-accent-500: #4F830B;
 
-  --font-sans: "Inter", sans-serif;
+  --color-surface: var(--dt-surface);
+  --color-card: var(--dt-card);
+  --color-ink: var(--dt-ink);
+  --color-muted: var(--dt-muted);
+  --color-edge: var(--dt-edge);
+  --color-button: var(--dt-button);
+  --color-button-fg: var(--dt-button-fg);
 
+  --font-sans: "Inter", sans-serif;
+  --font-display: "Inter", sans-serif;
+}
+
+:root {
+  color-scheme: light;
+  --dt-surface: #fafafa;
+  --dt-card: #ffffff;
+  --dt-ink: #18181b;
+  --dt-muted: #71717a;
+  --dt-edge: #e4e4e7;
+  --dt-button: #1a3036;
+  --dt-button-fg: #ffffff;
+}
+
+.dark {
+  color-scheme: dark;
+  --dt-surface: #0c1214;
+  --dt-card: #141c1f;
+  --dt-ink: #f4f4f5;
+  --dt-muted: #a1a1aa;
+  --dt-edge: #2a3538;
+  --dt-button: #84cea0;
+  --dt-button-fg: #0c1214;
 }
 
 
 @layer components {
-
-  /* Animation */
 
   @keyframes fade-in-opacity {
     from { opacity: 0; }
@@ -38,175 +65,244 @@
   }
 
   .animate-fade-in-opacity {
-    animation: fade-in-opacity 0.5s ease-out forwards;
+    animation: fade-in-opacity 0.35s ease-out forwards;
   }
 
   @keyframes fade-in-opacity-translation {
-    from { opacity: 0; transform: translateY(-10px); }
+    from { opacity: 0; transform: translateY(-6px); }
     to { opacity: 1; transform: translateY(0); }
   }
   .animate-fade-in {
-    animation: fade-in-opacity-translation 0.5s ease-out forwards;
+    animation: fade-in-opacity-translation 0.35s ease-out forwards;
   }
 
-  /* Container Classes */
+  @media (prefers-reduced-motion: reduce) {
+    .animate-fade-in,
+    .animate-fade-in-opacity {
+      animation: none;
+    }
+  }
 
-  /* The overall container used on the #primary-content class */
-  /* Limits the width of the content on the page. */
-  /* Should not be used anywhere else */
+  .my-body {
+    @apply m-0 min-h-dvh flex flex-col bg-surface text-ink antialiased;
+  }
+
   .my-container {
-    @apply container min-h-screen mx-auto px-6 py-10;
+    @apply container mx-auto px-4 sm:px-6 py-8 sm:py-10;
   }
 
-  /* The sections used to delineate different blocks of content */
-  /* For instance, widgets should be contained within a section */
+  .my-hero {
+    @apply relative isolate overflow-hidden rounded-2xl;
+  }
+
+  .my-hero-compact {
+    @apply min-h-[12rem];
+  }
+
+  .my-hero-image {
+    @apply h-full w-full object-cover object-[80%_center];
+  }
+
+  .my-hero-overlay {
+    @apply hidden;
+  }
+
+  .my-hero-content {
+    @apply relative;
+  }
+
+  .my-hero-title {
+    @apply text-4xl sm:text-5xl font-bold tracking-tight text-ink mb-4;
+  }
+
   .my-section {
-    @apply bg-white rounded-2xl px-2 py-8 md:px-8 shadow-lg mt-10 transition hover:shadow-xl;
-  }
-  
-  /* A fixed one or two column grid. Used to organize cards. */
-  .my-grid {
-    @apply grid grid-cols-1 md:grid-cols-2 gap-6;
+    @apply bg-card rounded-xl px-4 py-6 md:px-8 shadow-none border border-edge mt-8;
   }
 
-  /* A dynamically sized flexbox. */
+  .my-grid {
+    @apply grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4;
+  }
+
   .my-flexbox {
     @apply flex flex-col md:flex-row md:flex-wrap justify-center items-center gap-4 mt-4 h-full;
   }
 
   .my-card {
-    @apply bg-white p-6 rounded-2xl shadow-lg border border-gray-200 hover:shadow-2xl hover:scale-[1.01] transition-all duration-300;
+    @apply bg-card p-5 sm:p-6 rounded-xl border border-edge;
   }
 
-  /* Text Classes */
+  .my-kicker {
+    @apply text-xs font-semibold uppercase tracking-[0.18em] text-muted mb-3;
+  }
 
   .my-title {
-    @apply text-3xl lg:text-5xl font-bold text-gray-900 tracking-tight mb-6;
+    @apply text-2xl sm:text-3xl font-semibold text-ink tracking-tight mb-2;
   }
 
   .my-paragraph {
-    @apply text-lg text-gray-600 leading-relaxed;
+    @apply text-base text-muted leading-relaxed;
   }
 
   .my-fineprint {
-    @apply text-sm text-gray-500 leading-snug;
+    @apply text-sm text-muted leading-snug;
   }
 
-  /* Navbar Classes */
+  .my-link {
+    @apply underline decoration-edge underline-offset-2 hover:text-ink;
+  }
+
+  .my-price {
+    @apply text-xl font-semibold text-ink tabular-nums;
+  }
+
   .my-navbar {
-    @apply bg-primary-300/5 backdrop-blur-md shadow-md sticky top-0 z-50;
+    @apply bg-surface/90 backdrop-blur-md border-b border-edge sticky top-0 z-50;
   }
 
   .my-nav-button {
-    @apply block md:mx-auto py-2 px-3 text-gray-900 font-bold rounded-sm md:hover:bg-transparent md:hover:text-primary-500 md:p-0;
+    @apply block py-2 px-3 text-sm font-medium text-muted rounded-md hover:text-ink hover:bg-card md:px-0 md:hover:bg-transparent;
   }
 
+  .my-nav-cta {
+    @apply inline-flex items-center justify-center bg-button text-button-fg px-3 py-2 min-h-10 text-sm font-medium rounded-lg hover:opacity-90;
+  }
 
-  /* Form Classes */
+  .my-theme-toggle {
+    @apply inline-flex items-center justify-center size-10 rounded-lg text-ink border border-edge hover:bg-card;
+  }
+
+  .my-nav-menu > summary {
+    @apply list-none cursor-pointer inline-flex items-center justify-center size-10 rounded-lg text-ink hover:bg-card;
+  }
+
+  .my-nav-menu > summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .my-footer {
+    @apply mt-auto border-t border-edge bg-surface text-muted;
+  }
+
   .my-input {
-    @apply block border border-gray-300 w-full p-3 rounded-lg mb-4 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-400 focus:border-primary-400;
+    @apply block border border-edge bg-card w-full p-3 rounded-lg mb-4 text-ink placeholder-muted focus:outline-none focus:ring-2 focus:ring-button focus:border-button;
   }
 
   .my-button {
-    @apply bg-primary-300 text-white px-6 py-2 rounded-xl shadow-md hover:scale-105 hover:shadow-xl transition-all duration-300 ease-in-out;
+    @apply inline-flex items-center justify-center bg-button text-button-fg px-5 py-3 min-h-11 rounded-lg hover:opacity-90 transition-opacity duration-150;
+  }
+
+  .my-button-ghost {
+    @apply inline-flex items-center justify-center border border-edge text-ink px-5 py-3 min-h-11 rounded-lg hover:bg-card transition-colors duration-150;
   }
 
   .my-button-glass {
-    @apply bg-white/20 backdrop-blur-md border border-white/30 text-gray-900 px-6 py-2 rounded-full shadow hover:bg-white/30 transition;
+    @apply bg-card border border-edge text-ink px-6 py-2 rounded-full hover:opacity-90 transition;
   }
 
-  /* These are for the special forms on the exam */
   .my-exam-radio-label {
-    @apply inline-flex items-center justify-center w-full h-12 p-2 text-sm font-semibold text-gray-900
-           bg-white border-2 border-gray-300 rounded-lg cursor-pointer shadow-sm
-           peer-checked:bg-gradient-to-r peer-checked:from-primary-300 peer-checked:to-secondary-300
-           peer-checked:text-white peer-checked:border-transparent 
-           hover:bg-primary-200 hover:text-white hover:shadow-lg hover:scale-105
-           transition-all duration-500 ease-in-out;
+    @apply inline-flex items-center justify-center w-full h-12 p-2 text-sm font-semibold text-ink
+           bg-card border-2 border-edge rounded-lg cursor-pointer
+           peer-checked:bg-button peer-checked:text-button-fg peer-checked:border-transparent
+           hover:border-button
+           transition-colors duration-150 ease-in-out;
   }
 
-    /* Table wrapper */
   .my-table-container {
-    @apply overflow-x-auto rounded-lg shadow border border-gray-200;
+    @apply overflow-x-auto rounded-lg border border-edge;
   }
 
-  /* Table styling */
   .my-table {
-    @apply min-w-full divide-y divide-gray-200 text-sm text-gray-700;
+    @apply min-w-full divide-y divide-edge text-sm text-ink;
   }
   .my-table-head {
-    @apply bg-gray-100/50 hover:bg-gray-100 text-left font-semibold rounded-t-xl;
+    @apply bg-surface text-left font-semibold;
   }
   .my-table-cell {
-    @apply px-6 py-3;
+    @apply px-4 py-3 sm:px-6;
   }
   .my-table-body {
-    @apply divide-y divide-gray-200;
+    @apply divide-y divide-edge;
   }
   .my-table-row {
-    @apply hover:bg-gray-50 transition;
+    @apply hover:bg-surface transition;
   }
 
-  /* Role badge */
   .my-badge {
-    @apply flex items-center gap-2 bg-secondary-100/40 text-secondary-500 text-sm px-2 py-1 rounded-full;
+    @apply flex items-center gap-2 bg-surface text-ink text-sm px-2 py-1 rounded-full border border-edge;
   }
   .my-badge-remove {
     @apply text-red-500 hover:text-red-700 text-xs;
   }
 
-  /* Small form input for inline actions */
   .my-input-sm {
-    @apply border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-primary-300;
+    @apply border border-edge bg-card rounded px-2 py-1 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-button;
   }
 
-  /* Small button variations */
   .my-button-sm {
     @apply text-sm px-3 py-1 rounded transition;
   }
 
   .my-button-primary-sm {
-    @apply text-sm px-3 py-1 rounded transition bg-primary-300 text-white hover:bg-primary-400;
+    @apply text-sm px-3 py-1 rounded transition bg-button text-button-fg hover:opacity-90;
   }
-  
+
   .my-button-danger-sm {
     @apply text-sm px-3 py-1 rounded transition bg-red-500 text-white hover:bg-red-600;
   }
 
-  /* Classes for the Dashboards */
-
-  /* Dashboard page wrapper */
   .my-dashboard {
-    @apply min-h-[100dvh] rounded-2xl space-y-12 py-8;
+    @apply space-y-8 py-4;
   }
 
-  /* Dashboard section wrapper with subtle tint */
   .my-dashboard-gradient {
-    @apply odd:bg-gradient-to-br odd:from-primary-100/40 odd:to-secondary-100/20 odd:border-none even:bg-gradient-to-br even:from-secondary-100/15 even:to-primary-100/5 even:border-none;
+    /* Kept so templates compile. No pastel tint. */
   }
 
-  /* Dashboard section header */
   .my-section-header {
-    @apply flex items-center justify-between mb-6;
+    @apply flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-6;
   }
 
   .my-section-title {
-    @apply text-2xl font-bold text-gray-800 tracking-tight;
+    @apply text-lg sm:text-xl font-semibold text-ink tracking-tight;
   }
 
-  /* Optional action button in section header */
   .my-section-action {
-    @apply text-sm px-3 py-1 rounded transition bg-primary-300 text-white hover:bg-primary-400;
+    @apply text-sm px-3 py-2 rounded-lg bg-button text-button-fg hover:opacity-90 self-start;
   }
 
-
-  /* Misc Classes */
   .my-spinner {
-    @apply border-4 border-gray-300 border-t-primary-300 rounded-full w-6 h-6 animate-spin;
+    @apply border-4 border-edge border-t-button rounded-full w-6 h-6 animate-spin;
   }
 
   .my-error-icon {
     @apply h-12 w-12 text-red-600;
   }
 
+  .my-cart-fab {
+    @apply fixed z-50 rounded-full bg-button text-button-fg p-4 shadow-lg hover:opacity-90 min-h-14 min-w-14;
+    bottom: max(1.25rem, env(safe-area-inset-bottom));
+    right: max(1rem, env(safe-area-inset-right));
+  }
+
+  .my-drawer-panel {
+    @apply bg-card text-ink;
+  }
+
 }
+
+/* Outside @layer so Flowbite's prefers-color-scheme `dark:` utilities cannot pin the icon. */
+.theme-icon-sun {
+  display: none !important;
+}
+.theme-icon-moon {
+  display: block !important;
+}
+html.dark .theme-icon-sun,
+html[data-theme="dark"] .theme-icon-sun {
+  display: block !important;
+}
+html.dark .theme-icon-moon,
+html[data-theme="dark"] .theme-icon-moon {
+  display: none !important;
+}
+

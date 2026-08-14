@@ -2,7 +2,8 @@ use crate::{
     AppState,
     app::views::{
         delete_user_roles_widget, error_404_page, get_admin_dashboard, get_contact_page,
-        get_home_page, get_user_roles_widget, post_user_roles_widget,
+        get_home_page, get_privacy_page, get_terms_page, get_user_roles_widget,
+        post_user_roles_widget,
     },
     auth::{
         middleware::{check_auth_middleware, require_auth_middleware},
@@ -71,6 +72,8 @@ pub struct Routes {
     pub search_users: &'static str,
     pub user_roles: &'static str,
     pub contact: &'static str,
+    pub terms: &'static str,
+    pub privacy: &'static str,
 }
 
 impl Routes {
@@ -169,6 +172,8 @@ pub const ROUTES: Routes = Routes {
     search_users: "/widgets/search-users",
     user_roles: "/widgets/user-roles",
     contact: "/contact",
+    terms: "/terms",
+    privacy: "/privacy",
 };
 
 pub fn create_router(app_state: Arc<AppState>) -> Router {
@@ -224,6 +229,8 @@ pub fn create_router(app_state: Arc<AppState>) -> Router {
         .route(ROUTES.google_oauth_callback, get(get_google_oauth_callback))
         .route(&ROUTES.graded_exam("{test_id}"), get(get_graded_test_page))
         .route(ROUTES.contact, get(get_contact_page))
+        .route(ROUTES.terms, get(get_terms_page))
+        .route(ROUTES.privacy, get(get_privacy_page))
         .route(ROUTES.root, get(get_home_page))
         .route(ROUTES.update_cart, post(post_update_cart))
         .route(

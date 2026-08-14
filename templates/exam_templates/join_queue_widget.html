@@ -14,7 +14,7 @@
           hx-on::after-request="document.querySelector('#{{ ids.queue_reload_handler }}')?.dispatchEvent(new CustomEvent('{{ ids.refresh_queue_event }}', { bubbles: true }))"
           class="my-card"
         >
-          <h5 class="my-title">{{ test_name }}</h5>
+          <h5 class="my-section-title">{{ test_name }}</h5>
         </button>
       {% endfor %}
     </div>

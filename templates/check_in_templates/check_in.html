@@ -11,51 +11,49 @@
     {% call macros::render_shopping_cart(shopping_cart) %}
   </div>
   <div class="animate-fade-in">
-    <div id="bg-image" class="absolute inset-0 -z-10">
-      <img src="/static/images/hero_banner_2.png" 
-           class="w-full h-auto object-cover rounded-b-4xl" 
-           alt="Hero background" />
-    </div>
-
-    <div class="my-container">
-      <div class="my-grid mt-64 lg:mt-128">
+    <div class="my-container pb-28">
+      <p class="my-kicker">Door</p>
+      <h1 class="my-title">Check In</h1>
+      <p class="my-paragraph mb-8 max-w-xl">
+        Pick a lesson or social, add it to your cart, and pay.
+      </p>
+      <div class="my-grid">
         {% for product in products %}
           {% let price = format!("${:.2}", product.dollar_price) %}
           {% let has_permission = is_admin || product.requires_roles.is_subset(roles) %}
 
           {# Only show if user has permission or show_preview is true #}
           {% if has_permission || product.show_preview %}
-            <div class="my-card bg-white/92 {% if !has_permission %}opacity-60{% endif %} flex flex-col">
-              <div class="p-6 flex-grow flex flex-col">
+            <div class="my-card {% if !has_permission %}opacity-60{% endif %} flex flex-col sm:flex-row sm:items-center gap-4">
+              <div class="flex-1 min-w-0">
                 <h2 class="my-section-title">{{ product.name }}</h2>
-                <p class="my-paragraph mb-2 flex-grow">
+                <p class="my-fineprint mt-1">
                   {{ product.description }}
                   {% if !has_permission %}
-                    <span class="block text-red-500 mt-2">
+                    <span class="block text-red-600 dark:text-red-400 mt-2">
                       You don't have access to this product yet.
                     </span>
                   {% endif %}
                 </p>
-                <div class="mt-auto">
-                  {% if has_permission %}
-                    <form 
-                      hx-post="{{ rts.update_cart }}"
-                      hx-target="#{{ ids.shopping_cart_container }}"
-                    >
-                      <input type="hidden" name="product_id" value="{{ product.id }}">
-                      <input type="hidden" name="quantity" value="1">
-                      <button type="submit" class="my-button">
-                        Add to Cart - {{ price }}
-                      </button>
-                    </form>
-                  {% else %}
-                    <form>
-                      <button disabled class="my-button">
-                        Add to Cart - {{ price }}
-                      </button>
-                    </form>
-                  {% endif %}
-                </div>
+              </div>
+              <div class="flex items-center justify-between sm:justify-end gap-4 shrink-0">
+                <span class="my-price">{{ price }}</span>
+                {% if has_permission %}
+                  <form
+                    hx-post="{{ rts.update_cart }}"
+                    hx-target="#{{ ids.shopping_cart_container }}"
+                  >
+                    <input type="hidden" name="product_id" value="{{ product.id }}">
+                    <input type="hidden" name="quantity" value="1">
+                    <button type="submit" class="my-button">
+                      Add
+                    </button>
+                  </form>
+                {% else %}
+                  <button disabled class="my-button opacity-50 cursor-not-allowed">
+                    Add
+                  </button>
+                {% endif %}
               </div>
             </div>
           {% endif %}
@@ -65,7 +63,7 @@
 
       {% if !something_is_displayed %}
         <div class="my-section">
-          <div class="my-fineprint text-lg text-center">
+          <div class="my-fineprint text-center">
             There are no products available for you to select. If you think this is an error, contact an administrator.
           </div>
         </div>
@@ -73,5 +71,3 @@
     </div>
   </div>
 {% endblock %}
-
-

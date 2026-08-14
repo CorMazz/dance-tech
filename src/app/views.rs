@@ -223,6 +223,38 @@ pub async fn get_contact_page(headers: axum::http::HeaderMap) -> impl IntoRespon
     }
 }
 
+#[derive(Template)]
+#[template(path = "./app_templates/terms.html", blocks = ["content"])]
+pub struct TermsTemplate {
+    rts: Routes,
+}
+
+pub async fn get_terms_page(headers: axum::http::HeaderMap) -> impl IntoResponse {
+    let template = TermsTemplate { rts: ROUTES };
+
+    if is_htmx_request(&headers) {
+        (StatusCode::OK, Html(render(template.as_content()))).into_response()
+    } else {
+        (StatusCode::OK, Html(render(template))).into_response()
+    }
+}
+
+#[derive(Template)]
+#[template(path = "./app_templates/privacy.html", blocks = ["content"])]
+pub struct PrivacyTemplate {
+    rts: Routes,
+}
+
+pub async fn get_privacy_page(headers: axum::http::HeaderMap) -> impl IntoResponse {
+    let template = PrivacyTemplate { rts: ROUTES };
+
+    if is_htmx_request(&headers) {
+        (StatusCode::OK, Html(render(template.as_content()))).into_response()
+    } else {
+        (StatusCode::OK, Html(render(template))).into_response()
+    }
+}
+
 /// Serve the error 404 not found page
 pub async fn error_404_page() -> impl IntoResponse {
     let template: ErrorTemplate = ErrorTemplate {

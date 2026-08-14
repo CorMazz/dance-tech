@@ -1,0 +1,45 @@
+{% extends "../extensible_templates/main_nav.html" %}
+
+{% block title %}Privacy Policy{% endblock %}
+
+{% block content %}
+  <div class="my-container animate-fade-in">
+    <article class="my-card max-w-3xl mx-auto space-y-4">
+      <p class="my-kicker">Legal</p>
+      <h1 class="my-title">Privacy Policy</h1>
+      <p class="my-fineprint">Last updated August 13, 2026</p>
+
+      <p class="my-paragraph">
+        DanceTech stores the minimum we need to run check-in, payments, and advancement exams for
+        Greenville Westies.
+      </p>
+
+      <h2 class="my-section-title pt-4">What we keep</h2>
+      <ul class="my-paragraph list-disc pl-6 space-y-2">
+        <li>Name, email, and password hash (or Google account id if you sign in with Google).</li>
+        <li>Class roles used to decide which products you can buy.</li>
+        <li>Exam scores, proctor, date, and pass/fail.</li>
+        <li>Shopping cart contents in Redis until they expire or you check out.</li>
+        <li>Payment details on Stripe's side. We do not store card numbers.</li>
+      </ul>
+
+      <h2 class="my-section-title pt-4">Who sees it</h2>
+      <p class="my-paragraph">
+        You see your own exam history. Proctors and admins see queues, scores, and roles so they can
+        run class. Stripe sees payment data. We do not sell personal information.
+      </p>
+
+      <h2 class="my-section-title pt-4">How long</h2>
+      <p class="my-paragraph">
+        Account and exam records stay while you are part of the community, unless you ask us to delete
+        them. Carts expire after about a day.
+      </p>
+
+      <h2 class="my-section-title pt-4">Contact</h2>
+      <p class="my-paragraph">
+        Privacy questions or deletion requests:
+        <a href="mailto:corrado@mazzarelli.biz" class="my-link text-primary-400">corrado@mazzarelli.biz</a>.
+      </p>
+    </article>
+  </div>
+{% endblock %}

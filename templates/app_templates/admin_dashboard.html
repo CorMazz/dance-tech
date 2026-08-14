@@ -90,7 +90,7 @@
         <div class="my-grid">
           {% for test in tests %}
             <a href={{ rts.administer_exam(loop.index0) }} hx-boost="true" hx-target="#primary-content" hx-swap="innerHTML show:none" class="my-card w-full">
-              <h5 class="my-title">{{ test.metadata.test_name }}</h5>
+              <h5 class="my-section-title">{{ test.metadata.test_name }}</h5>
               <p class="my-paragraph">Min Passing Percent: {{ test.metadata.minimum_percent }}%</p>
               <p class="my-paragraph">Max Possible Score: {{ test.metadata.max_score }} Points</p>
               <p class="my-paragraph">

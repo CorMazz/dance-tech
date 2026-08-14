@@ -11,19 +11,19 @@
               data-dropdown-toggle="user-dropdown" 
               data-dropdown-placement="bottom">
         <span class="sr-only">Open user menu</span>
-        <img class="w-8 h-8 rounded-full border border-gray-200 shadow-sm" src="{{ pfp_url }}" alt="user photo">
+        <img class="w-8 h-8 rounded-full border border-edge" src="{{ pfp_url }}" alt="user photo">
       </button>
 
       {# Dropdown Menu #}
       <div id="user-dropdown" 
-           class="z-50 hidden my-4 text-base list-none bg-white border border-gray-200 rounded-xl shadow-lg animate-fade-in-opacity">
+           class="z-50 hidden my-4 text-base list-none bg-card border border-edge rounded-xl shadow-lg animate-fade-in-opacity">
         
         <!-- User info -->
         <div class="px-4 py-3">
-          <span class="block text-sm font-semibold text-gray-900">
+          <span class="block text-sm font-semibold text-ink">
             {{ data.first_name }} {{ data.last_name }}
           </span>
-          <span class="block text-sm text-gray-500 truncate">
+          <span class="block text-sm text-muted truncate">
             {{ data.email }}
           </span>
         </div>
@@ -32,14 +32,14 @@
         <ul class="py-2" aria-labelledby="user-menu-button">
           <li>
             <a href={{ rts.root }} hx-boost="true" hx-target="#primary-content" hx-swap="innerHTML"
-               class="block px-4 py-2 text-sm text-gray-700 hover:bg-primary-100/40 hover:text-primary-500 transition">
+               class="block px-4 py-2 text-sm text-ink hover:bg-surface transition">
               Home
             </a>
           </li>
           {% if is_proctor %}
           <li>
             <a href={{ rts.proctor_dashboard }} hx-boost="true" hx-target="#primary-content" hx-swap="innerHTML"
-               class="block px-4 py-2 text-sm text-gray-700 hover:bg-primary-100/40 hover:text-primary-500 transition">
+               class="block px-4 py-2 text-sm text-ink hover:bg-surface transition">
               Proctor Dashboard
             </a>
           </li>
@@ -47,7 +47,7 @@
           {% if is_admin %}
           <li>
             <a href={{ rts.admin_dashboard }} hx-boost="true" hx-target="#primary-content" hx-swap="innerHTML show:none"
-               class="block px-4 py-2 text-sm text-gray-700 hover:bg-primary-100/40 hover:text-primary-500 transition">
+               class="block px-4 py-2 text-sm text-ink hover:bg-surface transition">
               Admin Dashboard
             </a>
           </li>
@@ -55,9 +55,9 @@
         </ul>
 
         <!-- Logout -->
-        <div class="py-2 border-t border-gray-200">
+        <div class="py-2 border-t border-edge">
           <a href={{ rts.logout }} 
-             class="block px-4 py-2 text-sm text-gray-700 hover:bg-primary-100/40 hover:text-primary-500 transition">
+             class="block px-4 py-2 text-sm text-ink hover:bg-surface transition">
             Logout
           </a>
         </div>
@@ -68,12 +68,12 @@
     <div class="flex items-center">
       <a href={{ rts.login }} hx-boost="true" hx-target="#primary-content" hx-swap="innerHTML show:none">
         <!-- Tiny screens -->
-        <button type="button" class="sm:hidden my-button">
+        <button type="button" class="sm:hidden my-nav-cta">
           Login
         </button>
         <!-- Larger screens -->
-        <button type="button" class="hidden sm:block my-button">
-          Sign In / Sign Up
+        <button type="button" class="hidden sm:inline-flex my-nav-cta">
+          Sign In
         </button>
       </a>
     </div>

@@ -1,0 +1,54 @@
+{% extends "../extensible_templates/main_nav.html" %}
+
+{% block title %}Terms of Service{% endblock %}
+
+{% block content %}
+  <div class="my-container animate-fade-in">
+    <article class="my-card max-w-3xl mx-auto space-y-4">
+      <p class="my-kicker">Legal</p>
+      <h1 class="my-title">Terms of Service</h1>
+      <p class="my-fineprint">Last updated August 13, 2026</p>
+
+      <p class="my-paragraph">
+        DanceTech is the check-in, payment, and advancement-exam site for the Greenville Westies community.
+        By creating an account or using the site, you agree to these terms.
+      </p>
+
+      <h2 class="my-section-title pt-4">Accounts</h2>
+      <p class="my-paragraph">
+        You are responsible for the email and password you use to sign in. Do not share an account
+        that is tied to exam results or class roles.
+      </p>
+
+      <h2 class="my-section-title pt-4">Payments</h2>
+      <p class="my-paragraph">
+        Lesson and social purchases are processed by Stripe. Prices shown on Check In are the prices
+        charged. Refunds are handled by the event organizers, not automatically by this site.
+      </p>
+
+      <h2 class="my-section-title pt-4">Liability waiver</h2>
+      <p class="my-paragraph">
+        Paying for a dance, lesson, or social may also require agreeing to a separate liability waiver
+        at Stripe checkout. That waiver is not these terms. Read it before you pay.
+      </p>
+
+      <h2 class="my-section-title pt-4">Exams and roles</h2>
+      <p class="my-paragraph">
+        Advancement exams are scored by proctors. Passing an exam can grant class roles that unlock
+        products on Check In. Organizers can correct roles if a result was recorded wrong.
+      </p>
+
+      <h2 class="my-section-title pt-4">Acceptable use</h2>
+      <p class="my-paragraph">
+        Do not try to buy products you are not eligible for, tamper with exam scoring, or use someone
+        else's account. Organizers can suspend access.
+      </p>
+
+      <h2 class="my-section-title pt-4">Contact</h2>
+      <p class="my-paragraph">
+        Questions:
+        <a href="mailto:corrado@mazzarelli.biz" class="my-link text-primary-400">corrado@mazzarelli.biz</a>.
+      </p>
+    </article>
+  </div>
+{% endblock %}

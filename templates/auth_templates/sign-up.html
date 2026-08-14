@@ -6,8 +6,8 @@
 
 {% block content %}
   <div class="my-container animate-fade-in">
-    <div class="my-flexbox text-center min-h-[75dvh]">
-      <div class="my-card">
+    <div class="flex justify-center py-12 sm:py-16">
+      <div class="my-card max-w-md w-full text-center">
         <h1 class="my-title">Sign Up</h1>
         <form method="post" hx-boost="true" hx-target="#primary-content" hx-swap="innerHTML show:none" hx-push-url="true">
 
@@ -34,16 +34,16 @@
 
         <div class="my-fineprint text-center mt-4">
           By signing up, you agree to the 
-          <a class="underline" href="https://www.youtube.com/watch?v=dQw4w9WgXcQ">
+          <a class="my-link" href={{ rts.terms }} hx-boost="true" hx-target="#primary-content" hx-swap="innerHTML show:none">
             Terms of Service
-          </a> and 
-          <a class="underline" href="https://www.youtube.com/watch?v=dQw4w9WgXcQ">
+          </a> and
+          <a class="my-link" href={{ rts.privacy }} hx-boost="true" hx-target="#primary-content" hx-swap="innerHTML show:none">
             Privacy Policy
           </a>
         </div>
         <div class="my-fineprint text-center mt-4">
           Already have an account? 
-          <a class="underline" href={{ rts.login}} hx-boost="true" hx-target="#primary-content" hx-swap="innerHTML show:none">
+          <a class="my-link" href={{ rts.login}} hx-boost="true" hx-target="#primary-content" hx-swap="innerHTML show:none">
             Log in
           </a>.
         </div>

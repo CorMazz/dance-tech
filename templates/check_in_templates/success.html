@@ -14,7 +14,7 @@
                        viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                       <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"></path>
                   </svg>
-                  <h2 class="text-3xl font-bold text-green-700">
+                  <h2 class="text-3xl font-display font-bold text-green-800">
                       Thank you, {{ checkout_info.customer_name }}!
                   </h2>
               </div>
@@ -23,7 +23,7 @@
                   {% let dollar = (item.amount_total as f64) / 100.0 %}
                   {% let price = format!("${:.2}", dollar.abs()) %}
                   
-                  <div class="bg-white border border-green-200 shadow-lg rounded-2xl p-8">
+                  <div class="my-card border-green-200">
                       <h3 class="text-2xl font-bold text-gray-900 mb-2">
                           {{ item.description }}
                       </h3>
@@ -44,7 +44,7 @@
               {% endfor %}
           </div>
         {% else %}
-            <div class="max-w-xl w-full bg-white border border-red-200 shadow-lg rounded-2xl p-8">
+            <div class="max-w-xl w-full my-card border-red-200">
                 <div class="flex items-center space-x-4 mb-6">
                     <svg class="w-10 h-10 text-red-500" fill="none" stroke="currentColor" stroke-width="2"
                          viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">

@@ -4,42 +4,38 @@
 
 {% block content %}
   <div class="my-container animate-fade-in">
-    <div class="my-card">
+    <div class="my-card max-w-3xl">
+      <p class="my-kicker">Hello</p>
       <h2 class="my-title">Contact</h2>
       <p class="my-paragraph mb-4">
-        Dancexam was built by <strong>Corrado “Cory” Mazzarelli</strong>.
+        DanceTech was built by <strong>Corrado “Cory” Mazzarelli</strong> for the Greenville Westies community.
       </p>
       <p class="my-paragraph">
-        Have a question, comment, or concern?  
-        Send me an email at  
-        <a href="mailto:corrado@mazzarelli.biz" class="text-primary-400 hover:underline">
-          corrado@mazzarelli.biz.
-        </a>
+        Question, comment, or something broken?
+        Email
+        <a href="mailto:corrado@mazzarelli.biz" class="my-link text-primary-400">
+          corrado@mazzarelli.biz
+        </a>.
       </p>
     </div>
     <div class="my-section my-dashboard-gradient">
       <div class="my-section-header">
-        <h2 class="my-section-title">About</h2>
+        <h2 class="my-section-title">What this site does</h2>
       </div>
       
       <div class="my-grid">
         <div class="my-card">
-          <h2 class="my-title">What it Does</h2>
-          <p class="my-paragraph mb-4">
-            Dancexam simplifies the grading process. Instructors can easily log in, select the testee, and digitally input scores for each dance level. The platform automatically calculates final grades and provides instant feedback, making it easier to track progress and ensure consistent evaluation.
+          <h2 class="my-section-title mb-3">At the door</h2>
+          <p class="my-paragraph">
+            Check in for lessons and socials, pay through Stripe, and skip the cash-box shuffle.
           </p>
         </div>
 
         <div class="my-card">
-          <h2 class="my-title">Architecture</h2>
-          <p class="my-paragraph mb-4">
-            This application is:
+          <h2 class="my-section-title mb-3">On the floor</h2>
+          <p class="my-paragraph">
+            Advancement exams are graded here. Pass, pick up the next role, and move into the next class.
           </p>
-          <ul class="my-paragraph list-disc pl-6">
-            <li>Hosted on Linode</li>
-            <li>Containerized</li>
-            <li>Built on an Askama, Axum, HTMX stack in Rust</li>
-          </ul>
         </div>
       </div>
     </div>

@@ -3,35 +3,42 @@
 {% block title %}Home{% endblock %}
 
 {% block content %}
-  <div class=animate-fade-in>
-    <div id="bg-image" class="absolute inset-0 -z-10">
-      <img src="/static/images/hero_banner_1.png" 
-           class="w-full h-auto object-cover rounded-b-4xl" 
-           alt="Hero background" />
-    </div>
-
+  <div class="animate-fade-in">
     <div class="my-container">
-      <div class="my-grid mt-64 lg:mt-128 xl:mt-200">
-        <div class="my-card bg-white/92">
-          <h2 class="my-title">Welcome</h2>
-          <p class="my-paragraph mb-4">
-            Hello and welcome! DanceTech is your digital companion for keeping track of progress, grading tests, and enhancing the dance experience for the Greenville Westies community.
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12 items-center">
+        <div>
+          <p class="my-kicker">Greenville Westies</p>
+          <h1 class="my-hero-title">Show up. Check in. Dance.</h1>
+          <p class="my-paragraph mb-8 max-w-md">
+            Pay for lessons and socials, take advancement exams, and keep your progress in one place.
           </p>
+          <div class="flex flex-wrap gap-3">
+            <a href={{ rts.check_in }} hx-boost="true" hx-target="#primary-content" hx-swap="innerHTML show:none" class="my-button">
+              Check In
+            </a>
+            <a href={{ rts.user_dashboard }} hx-boost="true" hx-target="#primary-content" hx-swap="innerHTML show:none" class="my-button-ghost">
+              Advancement Exam
+            </a>
+          </div>
         </div>
+        <div class="my-hero aspect-[4/3] max-h-[28rem]">
+          <img src="/static/images/hero_banner_1.png" class="my-hero-image" alt="West Coast Swing dancers" />
+        </div>
+      </div>
 
-        <div class="my-card bg-white/92">
-          <h2 class="my-title">Our Purpose</h2>
-          <p class="my-paragraph mb-4">
-            DanceTech was originally built to provide a seamless workflow for community members to navigate our lessons as they progress from beginner+ lessons to advanced levels. It ensures consistency, clarity, and efficiency for both instructors and dancers.
-          </p>
-        </div>
-
-        <div class="my-card bg-white/92">
-          <h2 class="my-title">Mission Statement</h2>
-          <p class="my-paragraph mb-4">
-            Our mission is to foster a welcoming and supportive dance community where everyone can grow, learn, and achieve their goals. Through technology, we make grading, tracking, and celebrating achievements simple and enjoyable.
-          </p>
-        </div>
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-12">
+        <a href={{ rts.check_in }} hx-boost="true" hx-target="#primary-content" hx-swap="innerHTML show:none" class="my-card block">
+          <h2 class="my-section-title mb-2">Check In</h2>
+          <p class="my-fineprint">Buy tonight's lesson or social at the door.</p>
+        </a>
+        <a href={{ rts.user_dashboard }} hx-boost="true" hx-target="#primary-content" hx-swap="innerHTML show:none" class="my-card block">
+          <h2 class="my-section-title mb-2">Advance</h2>
+          <p class="my-fineprint">Queue for a test and unlock the next class.</p>
+        </a>
+        <a href={{ rts.contact }} hx-boost="true" hx-target="#primary-content" hx-swap="innerHTML show:none" class="my-card block">
+          <h2 class="my-section-title mb-2">Community</h2>
+          <p class="my-fineprint">Questions? Reach the people who run it.</p>
+        </a>
       </div>
     </div>
   </div>

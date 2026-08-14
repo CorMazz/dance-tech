@@ -1,22 +1,46 @@
  <!doctype html>
- <html lang="en">
+ <html lang="en" class="scroll-smooth">
    <head>
+      <script>
+        (function () {
+          var key = "dancetech-theme";
+          function apply(theme) {
+            var dark = theme === "dark";
+            document.documentElement.classList.toggle("dark", dark);
+            document.documentElement.setAttribute("data-theme", theme);
+            var meta = document.querySelector('meta[name="theme-color"]');
+            if (meta) meta.setAttribute("content", dark ? "#0c1214" : "#fafafa");
+          }
+          var stored = localStorage.getItem(key);
+          var theme = stored || (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+          apply(theme);
+          window.__toggleTheme = function () {
+            var next = document.documentElement.classList.contains("dark") ? "light" : "dark";
+            localStorage.setItem(key, next);
+            apply(next);
+          };
+        })();
+      </script>
 
-      <!-- Title Block -->
-      <title>{% block title %}{% endblock %}</title>
+      <title>{% block title %}{% endblock %} · DanceTech</title>
 
      <meta charset="UTF-8" />
      <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-     {# Doesn't work for some reason <meta name="htmx-config" content='{"scrollIntoViewOnBoost":"false"}'>#}
-     <link href="/static/css/output.css" rel="stylesheet">
+     <meta name="description" content="Check in, pay, and track West Coast Swing progress for Greenville Westies." />
+     <meta name="theme-color" content="#fafafa" />
+     <meta property="og:title" content="DanceTech" />
+     <meta property="og:description" content="Check in, pay, and track West Coast Swing progress for Greenville Westies." />
+     <meta property="og:image" content="/static/images/hero_banner_1.png" />
+     <link rel="icon" href="/static/images/dance_tech_logo.png" type="image/png" />
+     <link rel="apple-touch-icon" href="/static/images/dance_tech_logo.png" />
      <link href="/static/css/flowbite.min.css"  rel="stylesheet" />
+     <link href="/static/css/output.css?v=theme-icons" rel="stylesheet">
      <script src="/static/js/htmx.min.js"></script>
      <script>
       htmx.onLoad(function(content) {
           initFlowbite();
       });
     </script>
-      <!-- Close Nav Dropdown When Clicking Nav Links Script -->
       <script>
         document.addEventListener('DOMContentLoaded', function() {
            function closeUserDropdown() {
@@ -26,28 +50,37 @@
               }
            }
 
-           // Close the dropdown after HTMX request
            document.body.addEventListener('htmx:afterSwap', function(evt) {
               closeUserDropdown();
+              var menu = document.getElementById('mobile-nav');
+              if (menu) menu.removeAttribute('open');
            });
         });
      </script>
    </head>
 
-   <body class="m-0 p-0">
+   <body class="my-body">
       <script src="/static/js/flowbite.min.js"></script>
 
       {% block primary_navbar %}
       {% endblock %}
 
-      <div id="primary-content">
+      <div id="primary-content" class="flex-1">
         {% block content %}
         {% endblock %}
       </div>
+
+      <footer class="my-footer">
+        <div class="max-w-screen-xl mx-auto px-4 sm:px-6 py-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between text-sm">
+          <p>DanceTech · Greenville Westies</p>
+          <nav class="flex flex-wrap gap-x-4 gap-y-2">
+            <a href={{ rts.check_in }} hx-boost="true" hx-target="#primary-content" hx-swap="innerHTML show:none" class="hover:text-ink">Check In</a>
+            <a href={{ rts.user_dashboard }} hx-boost="true" hx-target="#primary-content" hx-swap="innerHTML show:none" class="hover:text-ink">Exam</a>
+            <a href={{ rts.contact }} hx-boost="true" hx-target="#primary-content" hx-swap="innerHTML show:none" class="hover:text-ink">Contact</a>
+            <a href={{ rts.terms }} hx-boost="true" hx-target="#primary-content" hx-swap="innerHTML show:none" class="hover:text-ink">Terms</a>
+            <a href={{ rts.privacy }} hx-boost="true" hx-target="#primary-content" hx-swap="innerHTML show:none" class="hover:text-ink">Privacy</a>
+          </nav>
+        </div>
+      </footer>
    </body>
  </html>
-
-
- 
-
-
