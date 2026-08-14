@@ -59,7 +59,7 @@ pub async fn get_user_dropdown(
     let is_admin = user.as_ref().is_some_and(super::models::User::is_admin);
 
     let pfp_url = cookie_jar.get("profile_picture").map_or_else(
-        || "static/images/default_pfp.jpg".to_string(),
+        || "/static/images/default_pfp.svg".to_string(),
         |c| c.value().to_string(),
     );
 
