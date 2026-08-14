@@ -11,6 +11,7 @@ use crate::check_in::models::StripePrice;
 use crate::check_in::models::StripePriceList;
 use crate::check_in::models::StripeProduct;
 use crate::check_in::models::StripeProductSearchResponse;
+use crate::check_in::visibility::parse_show_schedule;
 use std::collections::HashMap;
 use std::collections::HashSet;
 use std::sync::Arc;
@@ -89,6 +90,7 @@ pub async fn product_manager_actor_runtime(
 /// Will also grab the metadata key "requires-roles":"["advanced-leader", etc...]"
 /// Will also grab the metadata key "show-preview": "true"
 /// Will also grab the metadata key `"sort-level": <int>` and sort products by level and then name.
+/// Will also grab optional `show-timezone`, `show-interval`, and `show-weekly` tags.
 ///
 /// See the Stripe Dashboard for setting metadata.
 #[tracing::instrument(skip(client, secret_key))]
@@ -154,6 +156,7 @@ pub async fn get_stripe_products(
                 requires_roles,
                 show_preview,
                 sort_level,
+                show_schedule: parse_show_schedule(&p.metadata),
             })
         })
         .collect();

@@ -21,14 +21,20 @@
         {% for product in products %}
           {% let price = format!("${:.2}", product.dollar_price) %}
           {% let has_permission = is_admin || product.requires_roles.is_subset(roles) %}
+          {% let live = product.is_live() %}
 
-          {# Only show if user has permission or show_preview is true #}
-          {% if has_permission || product.show_preview %}
-            <div class="my-card {% if !has_permission %}opacity-60{% endif %} flex flex-col sm:flex-row sm:items-center gap-4">
+          {# Students only see live products. Admins see hidden ones with a badge. #}
+          {% if is_admin || ((has_permission || product.show_preview) && live) %}
+            <div class="my-card {% if !has_permission || !live %}opacity-60{% endif %} flex flex-col sm:flex-row sm:items-center gap-4">
               <div class="flex-1 min-w-0">
                 <h2 class="my-section-title">{{ product.name }}</h2>
                 <p class="my-fineprint mt-1">
                   {{ product.description }}
+                  {% if is_admin && !live %}
+                    <span class="block mt-2 font-medium text-ink">
+                      {{ product.visibility_status() }}
+                    </span>
+                  {% endif %}
                   {% if !has_permission %}
                     <span class="block text-red-600 dark:text-red-400 mt-2">
                       You don't have access to this product yet.
@@ -38,7 +44,7 @@
               </div>
               <div class="flex items-center justify-between sm:justify-end gap-4 shrink-0">
                 <span class="my-price">{{ price }}</span>
-                {% if has_permission %}
+                {% if has_permission && live %}
                   <form
                     hx-post="{{ rts.update_cart }}"
                     hx-target="#{{ ids.shopping_cart_container }}"

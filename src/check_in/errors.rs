@@ -27,6 +27,9 @@ pub enum CheckInError {
     #[error("Invalid product. Please clear your cookies and try again.")]
     InvalidProductError,
 
+    #[error("This item is not available to purchase right now.")]
+    ProductNotAvailable,
+
     #[error("An error occurred when communicating with the Stripe API")]
     /// We purposefully do not include more information to avoid leaking secrets to users.
     StripeApiError,

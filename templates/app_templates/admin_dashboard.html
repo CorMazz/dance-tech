@@ -33,6 +33,9 @@
               <p class="my-fineprint mt-2">
                 Sort Level = {{ product.sort_level }}
               </p>
+              <p class="my-fineprint mt-2">
+                {{ product.visibility_status() }}
+              </p>
               <form>
                 <button type="submit" disabled class="my-button mt-4">
                   {{ price }}
@@ -78,6 +81,18 @@
             </li>
             <li>
               <code>sort-level</code>: Set to an integer to change the order with which the products appear. Smaller numbers appear first. Products with the same sort level are sorted alphabetically.
+            </li>
+            <li>
+              <code>show-timezone</code>: IANA timezone for the windows below. Defaults to <code>America/New_York</code>.
+            </li>
+            <li>
+              <code>show-interval</code>: One-shot windows, comma-separated. Same day: <code>2026-08-14 18:00/22:00</code>. Multi-day: <code>2026-08-14 18:00/2026-08-15 01:00</code>.
+            </li>
+            <li>
+              <code>show-weekly</code>: Recurring weekly windows, comma-separated, e.g. <code>Thu 18:00-23:00, Fri 18:00-23:59</code>.
+            </li>
+            <li>
+              If both interval tags are omitted, the product is always shown (same as today). A typo hides the product (fail closed) and the parse error appears on this page.
             </li>
           </ul>
         </div>

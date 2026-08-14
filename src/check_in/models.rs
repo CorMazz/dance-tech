@@ -1,4 +1,5 @@
 use crate::auth::models::Roles;
+use crate::check_in::visibility::ShowSchedule;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
@@ -28,6 +29,26 @@ pub struct Product {
     /// If a product doesn't have it specified, the default is 0. All products on the same level
     /// are sorted lexicographically.
     pub sort_level: i32,
+    /// Optional Stripe `show-interval` / `show-weekly` windows. Empty means always visible.
+    #[serde(default)]
+    pub show_schedule: ShowSchedule,
+}
+
+impl Product {
+    /// Whether this product can be purchased at `now`.
+    pub fn is_live_at(&self, now: DateTime<Utc>) -> bool {
+        self.show_schedule.is_visible(now)
+    }
+
+    /// Whether this product can be purchased right now.
+    pub fn is_live(&self) -> bool {
+        self.is_live_at(Utc::now())
+    }
+
+    /// Admin-facing Live / Hidden until … / parse error label.
+    pub fn visibility_status(&self) -> String {
+        self.show_schedule.status_label(Utc::now())
+    }
 }
 
 /// Store a hashmap of `product_id`: (product, quantity) pairs.

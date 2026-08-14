@@ -77,6 +77,9 @@ pub async fn update_cart(
     let (jar, cart_id, cart) = get_or_create_cart(data, cookie_jar).await?;
 
     if let Some(product) = products.iter().find(|p| p.id.as_str() == product_id) {
+        if quantity > 0 && !product.is_live() {
+            return Err(CheckInError::ProductNotAvailable);
+        }
         // 5️⃣ Update cart
         let mut updated_cart = cart;
         updated_cart.add_item(product_id, product.clone(), quantity);
@@ -116,6 +119,17 @@ pub async fn create_stripe_checkout_session(
     data: &AppState,
     shopping_cart: &ShoppingCart,
 ) -> Result<Redirect, CheckInError> {
+    let catalog = get_products_from_actor(data).await?;
+    for (product, _) in shopping_cart.items.values() {
+        let live = catalog
+            .iter()
+            .find(|item| item.id == product.id)
+            .is_some_and(Product::is_live);
+        if !live {
+            return Err(CheckInError::ProductNotAvailable);
+        }
+    }
+
     let mut success_url = data.app_config.site_url.clone();
     success_url.set_path(ROUTES.stripe_success_callback);
     success_url.set_query(Some("session_id={CHECKOUT_SESSION_ID}"));

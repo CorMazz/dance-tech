@@ -94,7 +94,10 @@ pub async fn get_check_in_page(
     };
 
     let something_is_displayed = products.iter().any(|product| {
-        is_admin || product.requires_roles.is_subset(&roles) || product.show_preview
+        if is_admin {
+            return true;
+        }
+        product.is_live() && (product.requires_roles.is_subset(&roles) || product.show_preview)
     });
 
     let (cookie_jar, _, shopping_cart) = match get_or_create_cart(&data, cookie_jar).await {
