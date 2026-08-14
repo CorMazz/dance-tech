@@ -10,14 +10,14 @@
     {% call macros::render_shopping_cart_button(shopping_cart.items.len()) %}
     {% call macros::render_shopping_cart(shopping_cart) %}
   </div>
-  <div class="animate-fade-in">
+  <div>
     <div class="my-container pb-28">
       <p class="my-kicker">Door</p>
       <h1 class="my-title">Check In</h1>
       <p class="my-paragraph mb-8 max-w-xl">
         Pick a lesson or social, add it to your cart, and pay.
       </p>
-      <div class="my-grid">
+      <div class="my-grid my-stagger">
         {% for product in products %}
           {% let price = format!("${:.2}", product.dollar_price) %}
           {% let has_permission = is_admin || product.requires_roles.is_subset(roles) %}

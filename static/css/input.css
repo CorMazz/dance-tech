@@ -76,15 +76,21 @@
     animation: fade-in-opacity-translation 0.35s ease-out forwards;
   }
 
-  @media (prefers-reduced-motion: reduce) {
-    .animate-fade-in,
-    .animate-fade-in-opacity {
-      animation: none;
-    }
+  .my-body {
+    @apply m-0 min-h-dvh flex flex-col text-ink antialiased overflow-x-hidden;
+    background-color: var(--dt-surface);
+    background-image:
+      radial-gradient(ellipse 70% 55% at 20% 15%, color-mix(in oklab, var(--dt-button) 22%, transparent), transparent 58%),
+      radial-gradient(ellipse 60% 50% at 85% 80%, color-mix(in oklab, var(--color-secondary-200) 20%, transparent), transparent 55%);
+    background-repeat: no-repeat;
+    background-size: 160% 160%;
+    background-attachment: fixed;
+    animation: drift 40s ease-in-out infinite alternate;
   }
 
-  .my-body {
-    @apply m-0 min-h-dvh flex flex-col bg-surface text-ink antialiased;
+  @keyframes drift {
+    from { background-position: 0% 0%, 100% 100%; }
+    to   { background-position: 70% 35%, 15% 25%; }
   }
 
   .my-container {
@@ -123,12 +129,29 @@
     @apply grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4;
   }
 
+  .my-stagger > * {
+    animation: fade-in-opacity-translation 0.4s ease-out both;
+  }
+  .my-stagger > *:nth-child(1) { animation-delay: 0ms; }
+  .my-stagger > *:nth-child(2) { animation-delay: 60ms; }
+  .my-stagger > *:nth-child(3) { animation-delay: 120ms; }
+  .my-stagger > *:nth-child(4) { animation-delay: 180ms; }
+  .my-stagger > *:nth-child(5) { animation-delay: 240ms; }
+  .my-stagger > *:nth-child(6) { animation-delay: 300ms; }
+  .my-stagger > *:nth-child(n+7) { animation-delay: 300ms; }
+
   .my-flexbox {
     @apply flex flex-col md:flex-row md:flex-wrap justify-center items-center gap-4 mt-4 h-full;
   }
 
   .my-card {
     @apply bg-card p-5 sm:p-6 rounded-xl border border-edge;
+    transition: transform 150ms ease, border-color 150ms ease, box-shadow 150ms ease;
+  }
+  .my-card:hover {
+    transform: translateY(-2px);
+    border-color: color-mix(in oklab, var(--dt-ink) 28%, var(--dt-edge));
+    box-shadow: 0 8px 24px color-mix(in oklab, var(--dt-ink) 8%, transparent);
   }
 
   .my-kicker {
@@ -156,11 +179,12 @@
   }
 
   .my-navbar {
-    @apply bg-surface/90 backdrop-blur-md border-b border-edge sticky top-0 z-50;
+    @apply bg-surface/80 backdrop-blur-md border-b border-edge sticky top-0 z-50;
   }
 
   .my-nav-button {
     @apply block py-2 px-3 text-sm font-medium text-muted rounded-md hover:text-ink hover:bg-card md:px-0 md:hover:bg-transparent;
+    transition: color 150ms ease, background-color 150ms ease;
   }
 
   .my-nav-cta {
@@ -180,7 +204,7 @@
   }
 
   .my-footer {
-    @apply mt-auto border-t border-edge bg-surface text-muted;
+    @apply mt-auto border-t border-edge bg-surface/80 backdrop-blur-md text-muted;
   }
 
   .my-input {
@@ -188,7 +212,12 @@
   }
 
   .my-button {
-    @apply inline-flex items-center justify-center bg-button text-button-fg px-5 py-3 min-h-11 rounded-lg hover:opacity-90 transition-opacity duration-150;
+    @apply inline-flex items-center justify-center bg-button text-button-fg px-5 py-3 min-h-11 rounded-lg;
+    transition: opacity 150ms ease, filter 150ms ease;
+  }
+  .my-button:hover {
+    opacity: 0.92;
+    filter: brightness(1.08);
   }
 
   .my-button-ghost {
@@ -286,6 +315,18 @@
 
   .my-drawer-panel {
     @apply bg-card text-ink;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .animate-fade-in,
+    .animate-fade-in-opacity,
+    .my-stagger > *,
+    .my-body {
+      animation: none;
+    }
+    .my-card:hover {
+      transform: none;
+    }
   }
 
 }
