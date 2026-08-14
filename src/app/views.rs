@@ -45,13 +45,24 @@ pub const IDS: Ids = Ids {
 #[template(path = "./app_templates/home.html", blocks = ["content"])]
 pub struct HomeTemplate {
     rts: Routes,
+    hero_images: Vec<String>,
+    hero_json: String,
 }
 
 /// Serve the home page template.
 ///
 /// If the request is an HTMX request, it will return just the content block.
-pub async fn get_home_page(headers: axum::http::HeaderMap) -> impl IntoResponse {
-    let template: HomeTemplate = HomeTemplate { rts: ROUTES };
+pub async fn get_home_page(
+    State(data): State<Arc<AppState>>,
+    headers: axum::http::HeaderMap,
+) -> impl IntoResponse {
+    let hero_images = data.hero_gallery.urls(&data.http_client).await;
+    let hero_json = serde_json::to_string(&hero_images).unwrap_or_else(|_| "[]".to_string());
+    let template: HomeTemplate = HomeTemplate {
+        rts: ROUTES,
+        hero_images,
+        hero_json,
+    };
 
     if is_htmx_request(&headers) {
         (StatusCode::OK, Html(render(template.as_content())))

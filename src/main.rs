@@ -52,6 +52,8 @@ pub struct AppState {
     google_oauth_config: Option<GoogleOAuthConfig>,
     /// An HTTP client used to make requests to the Stripe API and Google OAuth endpoints.
     http_client: reqwest::Client,
+    /// Optional Facebook album (or local `static/images/`) for the homepage hero.
+    hero_gallery: crate::app::heroes::HeroGallery,
 }
 
 #[tokio::main]
@@ -131,6 +133,7 @@ async fn main() {
         google_oauth_config,
         http_client,
         redis_client,
+        hero_gallery: crate::app::heroes::HeroGallery::init(),
     });
 
     let actor_app_state = app_state.clone();

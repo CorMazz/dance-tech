@@ -106,7 +106,11 @@
   }
 
   .my-hero-image {
-    @apply h-full w-full object-cover object-[80%_center];
+    @apply h-full w-full object-cover object-center;
+    transition: opacity 0.4s ease;
+  }
+  .my-hero-image.is-fading {
+    opacity: 0;
   }
 
   .my-hero-overlay {

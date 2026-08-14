@@ -22,7 +22,15 @@
           </div>
         </div>
         <div class="my-hero aspect-[4/3] max-h-[28rem]">
-          <img src="/static/images/hero_banner_1.png" class="my-hero-image" alt="West Coast Swing dancers" />
+          {% if !hero_images.is_empty() %}
+            <img
+              id="home-hero"
+              src="{{ hero_images[0] }}"
+              data-heroes="{{ hero_json }}"
+              class="my-hero-image"
+              alt="Greenville Westies"
+            />
+          {% endif %}
         </div>
       </div>
 
@@ -42,4 +50,28 @@
       </div>
     </div>
   </div>
+  <script>
+    (function () {
+      var el = document.getElementById("home-hero");
+      if (!el) return;
+      var urls;
+      try { urls = JSON.parse(el.getAttribute("data-heroes") || "[]"); } catch (e) { return; }
+      if (!urls.length) return;
+      var i = Math.floor(Math.random() * urls.length);
+      el.src = urls[i];
+      if (urls.length < 2) return;
+      if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+      if (window.__homeHeroTimer) clearInterval(window.__homeHeroTimer);
+      window.__homeHeroTimer = setInterval(function () {
+        var next = i;
+        while (next === i) next = Math.floor(Math.random() * urls.length);
+        i = next;
+        el.classList.add("is-fading");
+        setTimeout(function () {
+          el.src = urls[i];
+          el.classList.remove("is-fading");
+        }, 400);
+      }, 8000);
+    })();
+  </script>
 {% endblock %}
