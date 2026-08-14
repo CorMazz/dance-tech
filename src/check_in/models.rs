@@ -49,6 +49,36 @@ impl Product {
     pub fn visibility_status(&self) -> String {
         self.show_schedule.status_label(Utc::now())
     }
+
+    /// Timezone used to interpret window tags.
+    pub fn admin_timezone(&self) -> String {
+        self.show_schedule.timezone_display()
+    }
+
+    /// Parsed one-shot windows for the admin dashboard.
+    pub fn admin_intervals(&self) -> Vec<String> {
+        self.show_schedule.interval_summaries()
+    }
+
+    /// Parsed weekly windows for the admin dashboard.
+    pub fn admin_weeklies(&self) -> Vec<String> {
+        self.show_schedule.weekly_summaries()
+    }
+
+    /// Raw Stripe `show-timezone` tag, if present.
+    pub fn admin_raw_timezone(&self) -> &str {
+        self.show_schedule.raw_timezone()
+    }
+
+    /// Raw Stripe `show-interval` tag, if present.
+    pub fn admin_raw_interval(&self) -> &str {
+        self.show_schedule.raw_interval()
+    }
+
+    /// Raw Stripe `show-weekly` tag, if present.
+    pub fn admin_raw_weekly(&self) -> &str {
+        self.show_schedule.raw_weekly()
+    }
 }
 
 /// Store a hashmap of `product_id`: (product, quantity) pairs.

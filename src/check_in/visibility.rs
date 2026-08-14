@@ -22,6 +22,12 @@ pub struct ShowSchedule {
     /// Set when Stripe metadata could not be parsed. Product is hidden.
     #[serde(default)]
     pub parse_error: Option<String>,
+    #[serde(default)]
+    raw_timezone: Option<String>,
+    #[serde(default)]
+    raw_interval: Option<String>,
+    #[serde(default)]
+    raw_weekly: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
@@ -41,13 +47,6 @@ struct WeeklyWindow {
 impl ShowSchedule {
     fn always() -> Self {
         Self::default()
-    }
-
-    fn invalid(message: impl Into<String>) -> Self {
-        Self {
-            parse_error: Some(message.into()),
-            ..Self::default()
-        }
     }
 
     fn tz(&self) -> Tz {
@@ -88,6 +87,91 @@ impl ShowSchedule {
                 format!("Hidden until {}", local.format("%a %H:%M"))
             },
         )
+    }
+
+    /// True when no interval tags were set.
+    pub fn is_unrestricted(&self) -> bool {
+        self.parse_error.is_none() && self.windows.is_empty() && self.weekly.is_empty()
+    }
+
+    /// Timezone the windows were interpreted in, plus whether it was the default.
+    pub fn timezone_display(&self) -> String {
+        if self.is_unrestricted() {
+            return "n/a (always visible)".to_string();
+        }
+        if let Some(err) = &self.parse_error
+            && err.starts_with("unknown timezone")
+        {
+            return self
+                .raw_timezone
+                .clone()
+                .unwrap_or_else(|| "invalid".to_string());
+        }
+        if self.timezone.is_empty() {
+            return DEFAULT_TZ.to_string();
+        }
+        if self.raw_timezone.is_none() {
+            format!("{} (default)", self.timezone)
+        } else {
+            self.timezone.clone()
+        }
+    }
+
+    /// One-shot windows in the product timezone, with UTC alongside.
+    pub fn interval_summaries(&self) -> Vec<String> {
+        let tz = self.tz();
+        self.windows
+            .iter()
+            .map(|window| {
+                let start = window.start.with_timezone(&tz);
+                let end = window.end.with_timezone(&tz);
+                format!(
+                    "{} – {} {} (UTC {} – {})",
+                    start.format("%a %Y-%m-%d %H:%M"),
+                    end.format("%a %Y-%m-%d %H:%M"),
+                    tz,
+                    window.start.format("%Y-%m-%d %H:%M"),
+                    window.end.format("%Y-%m-%d %H:%M")
+                )
+            })
+            .collect()
+    }
+
+    /// Recurring weekly windows in the product timezone.
+    pub fn weekly_summaries(&self) -> Vec<String> {
+        let tz_name = if self.timezone.is_empty() {
+            DEFAULT_TZ
+        } else {
+            self.timezone.as_str()
+        };
+        self.weekly
+            .iter()
+            .map(|window| {
+                let day = WeeklyWindow::weekday(window.weekday)
+                    .map(|day| day.to_string())
+                    .unwrap_or_else(|| "?".to_string());
+                format!(
+                    "{day} {} – {} {tz_name}",
+                    window.start.format("%H:%M"),
+                    window.end.format("%H:%M")
+                )
+            })
+            .collect()
+    }
+
+    /// Raw `show-timezone` from Stripe, or empty.
+    pub fn raw_timezone(&self) -> &str {
+        self.raw_timezone.as_deref().unwrap_or("")
+    }
+
+    /// Raw `show-interval` from Stripe, or empty.
+    pub fn raw_interval(&self) -> &str {
+        self.raw_interval.as_deref().unwrap_or("")
+    }
+
+    /// Raw `show-weekly` from Stripe, or empty.
+    pub fn raw_weekly(&self) -> &str {
+        self.raw_weekly.as_deref().unwrap_or("")
     }
 
     fn next_start(&self, now: DateTime<Utc>) -> Option<DateTime<Utc>> {
@@ -155,32 +239,43 @@ fn min_dt(current: Option<DateTime<Utc>>, candidate: DateTime<Utc>) -> DateTime<
 
 /// Read `show-timezone`, `show-interval`, and `show-weekly` from Stripe metadata.
 pub fn parse_show_schedule(metadata: &HashMap<String, String>) -> ShowSchedule {
-    let interval_raw = nonempty(metadata.get("show-interval"));
-    let weekly_raw = nonempty(metadata.get("show-weekly"));
+    let interval_raw = nonempty(metadata.get("show-interval")).map(str::to_string);
+    let weekly_raw = nonempty(metadata.get("show-weekly")).map(str::to_string);
+    let timezone_raw = nonempty(metadata.get("show-timezone")).map(str::to_string);
     if interval_raw.is_none() && weekly_raw.is_none() {
         return ShowSchedule::always();
     }
 
-    let tz_name = nonempty(metadata.get("show-timezone")).unwrap_or(DEFAULT_TZ);
-    let Ok(tz) = Tz::from_str(tz_name) else {
-        return ShowSchedule::invalid(format!("unknown timezone {tz_name}"));
-    };
-
+    let tz_name = timezone_raw.as_deref().unwrap_or(DEFAULT_TZ);
     let mut schedule = ShowSchedule {
         timezone: tz_name.to_string(),
+        raw_timezone: timezone_raw.clone(),
+        raw_interval: interval_raw.clone(),
+        raw_weekly: weekly_raw.clone(),
         ..ShowSchedule::default()
     };
 
-    if let Some(raw) = interval_raw {
+    let Ok(tz) = Tz::from_str(tz_name) else {
+        schedule.parse_error = Some(format!("unknown timezone {tz_name}"));
+        return schedule;
+    };
+
+    if let Some(raw) = &interval_raw {
         match parse_intervals(raw, tz) {
             Ok(windows) => schedule.windows = windows,
-            Err(err) => return ShowSchedule::invalid(err),
+            Err(err) => {
+                schedule.parse_error = Some(err);
+                return schedule;
+            }
         }
     }
-    if let Some(raw) = weekly_raw {
+    if let Some(raw) = &weekly_raw {
         match parse_weekly(raw) {
             Ok(weekly) => schedule.weekly = weekly,
-            Err(err) => return ShowSchedule::invalid(err),
+            Err(err) => {
+                schedule.parse_error = Some(err);
+                return schedule;
+            }
         }
     }
     schedule
@@ -388,5 +483,23 @@ mod tests {
         let wednesday = ny(2026, 8, 12, 12, 0);
         assert!(!schedule.is_visible(wednesday));
         assert_eq!(schedule.status_label(wednesday), "Hidden until Thu 18:00");
+    }
+
+    #[test]
+    fn admin_summaries_show_timezone_and_parsed_windows() {
+        let schedule = parse_show_schedule(&meta(&[
+            ("show-interval", "2026-08-14 18:00/22:00"),
+            ("show-weekly", "Thu 18:00-23:00"),
+        ]));
+        assert_eq!(schedule.timezone_display(), "America/New_York (default)");
+        let intervals = schedule.interval_summaries();
+        assert_eq!(intervals.len(), 1);
+        assert!(intervals[0].contains("2026-08-14 18:00"));
+        assert!(intervals[0].contains("America/New_York"));
+        assert!(intervals[0].contains("UTC"));
+        let weeklies = schedule.weekly_summaries();
+        assert_eq!(weeklies, vec!["Thu 18:00 – 23:00 America/New_York".to_string()]);
+        assert_eq!(schedule.raw_interval(), "2026-08-14 18:00/22:00");
+        assert_eq!(schedule.raw_weekly(), "Thu 18:00-23:00");
     }
 }

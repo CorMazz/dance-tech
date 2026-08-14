@@ -34,8 +34,48 @@
                 Sort Level = {{ product.sort_level }}
               </p>
               <p class="my-fineprint mt-2">
+                Stripe id <code>{{ product.id }}</code>
+                · price <code>{{ product.price_id }}</code>
+              </p>
+              <p class="my-fineprint mt-2 font-medium text-ink">
                 {{ product.visibility_status() }}
               </p>
+              <p class="my-fineprint mt-2">
+                Timezone: <code>{{ product.admin_timezone() }}</code>
+                {% if !product.admin_raw_timezone().is_empty() %}
+                  · raw <code>{{ product.admin_raw_timezone() }}</code>
+                {% endif %}
+              </p>
+              <div class="my-fineprint mt-2">
+                <span class="font-medium text-ink">show-interval</span>
+                {% if product.admin_intervals().is_empty() %}
+                  <span class="block">None parsed</span>
+                {% else %}
+                  <ul class="list-disc list-inside mt-1">
+                    {% for line in product.admin_intervals() %}
+                      <li><code>{{ line }}</code></li>
+                    {% endfor %}
+                  </ul>
+                {% endif %}
+                {% if !product.admin_raw_interval().is_empty() %}
+                  <span class="block mt-1">raw <code>{{ product.admin_raw_interval() }}</code></span>
+                {% endif %}
+              </div>
+              <div class="my-fineprint mt-2">
+                <span class="font-medium text-ink">show-weekly</span>
+                {% if product.admin_weeklies().is_empty() %}
+                  <span class="block">None parsed</span>
+                {% else %}
+                  <ul class="list-disc list-inside mt-1">
+                    {% for line in product.admin_weeklies() %}
+                      <li><code>{{ line }}</code></li>
+                    {% endfor %}
+                  </ul>
+                {% endif %}
+                {% if !product.admin_raw_weekly().is_empty() %}
+                  <span class="block mt-1">raw <code>{{ product.admin_raw_weekly() }}</code></span>
+                {% endif %}
+              </div>
               <form>
                 <button type="submit" disabled class="my-button mt-4">
                   {{ price }}
