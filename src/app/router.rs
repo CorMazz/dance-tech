@@ -5,7 +5,7 @@ use crate::{
         views::{
             delete_user_roles_widget, error_404_page, get_admin_dashboard, get_contact_page,
             get_home_page, get_privacy_page, get_terms_page, get_user_roles_widget,
-            post_user_roles_widget,
+            post_user_roles_bulk, post_user_roles_widget,
         },
     },
     auth::{
@@ -77,6 +77,7 @@ pub struct Routes {
     pub export_user_roles: &'static str,
     pub search_users: &'static str,
     pub user_roles: &'static str,
+    pub user_roles_bulk: &'static str,
     pub contact: &'static str,
     pub terms: &'static str,
     pub privacy: &'static str,
@@ -180,6 +181,7 @@ pub const ROUTES: Routes = Routes {
     export_user_roles: "/admin-dashboard/export/user-roles",
     search_users: "/widgets/search-users",
     user_roles: "/widgets/user-roles",
+    user_roles_bulk: "/widgets/user-roles/bulk-grant",
     contact: "/contact",
     terms: "/terms",
     privacy: "/privacy",
@@ -202,6 +204,7 @@ pub fn create_router(app_state: Arc<AppState>) -> Router {
                 .post(post_user_roles_widget)
                 .delete(delete_user_roles_widget),
         )
+        .route(ROUTES.user_roles_bulk, post(post_user_roles_bulk))
         .route(
             &ROUTES.administer_exam("{test_index}"),
             get(get_test_page).post(post_test_form),

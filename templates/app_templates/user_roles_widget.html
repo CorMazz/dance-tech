@@ -4,83 +4,137 @@
 
 <div class="my-container">
   {% block content %}
-    <div class="my-section my-dashboard-gradient">
-      <div class="my-section-header">
-        <h1 class="my-section-title">Manage User Roles</h1>
+    <div class="space-y-8">
+      <div class="my-section my-dashboard-gradient">
+        <div class="my-section-header">
+          <h1 class="my-section-title">Bulk Grant Roles</h1>
+        </div>
+        <p class="my-fineprint">
+          Paste emails and grant one role to every matching account. Unknown emails are listed and skipped. Custom roles such as <code>frozen</code> are allowed so you can mark people to ignore on the next export.
+        </p>
+
+        <form
+          hx-post="{{ rts.user_roles_bulk }}"
+          hx-target="#bulk-grant-result"
+          hx-swap="innerHTML"
+          hx-confirm="Grant this role to every matching account in the list?"
+          class="mt-4"
+        >
+          <label class="my-fineprint" for="bulk-grant-emails">Paste emails</label>
+          <textarea
+            id="bulk-grant-emails"
+            name="emails"
+            rows="5"
+            required
+            placeholder="one per line, or comma-separated"
+            class="my-input mt-2"
+          ></textarea>
+          <div class="flex flex-wrap items-end gap-2 mt-2">
+            <div>
+              <label class="my-fineprint" for="bulk-grant-role">Role</label>
+              <input
+                id="bulk-grant-role"
+                list="known-roles"
+                type="text"
+                name="role"
+                placeholder="e.g. frozen"
+                class="my-input-sm mt-2"
+                required
+              >
+              <datalist id="known-roles">
+                {% for role in known_roles %}
+                  <option value="{{ role }}"></option>
+                {% endfor %}
+              </datalist>
+            </div>
+            <button type="submit" class="my-button-primary-sm">Grant to pasted emails</button>
+          </div>
+          <div id="bulk-grant-result" class="mt-3"></div>
+        </form>
       </div>
 
-      <p class="my-fineprint">Roles 'admin' and 'proctor' are keywords and grant additional privileges. All other roles simply grant access to Stripe Products.</p>
+      <div class="my-section my-dashboard-gradient">
+        <div class="my-section-header">
+          <h1 class="my-section-title">Individual Role Management</h1>
+        </div>
+        <p class="my-fineprint">
+          Search for one person to add or remove roles. <code>admin</code> and <code>proctor</code> are keywords and grant additional privileges. All other roles simply grant access to Stripe products.
+        </p>
 
-      <form
-        id="{{ ids.user_role_form }}"  
-        hx-get="{{ rts.user_roles }}"
-        hx-target="#{{ ids.user_table_body }}"
-        hx-swap="outerHTML"
-        hx-push-url="false"
-        hx-trigger="input changed delay:500ms"
-        class="mb-6 grid grid-cols-1 md:grid-cols-3 gap-4"
-      >
-        <input
-          type="text"
-          name="query"
-          placeholder="User name or email"
-          class="my-input mt-4"
-        />
-      </form>
+        <form
+          id="{{ ids.user_role_form }}"
+          hx-get="{{ rts.user_roles }}"
+          hx-target="#{{ ids.user_table_body }}"
+          hx-swap="outerHTML"
+          hx-push-url="false"
+          hx-trigger="input changed delay:500ms"
+          class="mb-6 grid grid-cols-1 md:grid-cols-3 gap-4"
+        >
+          <input
+            type="text"
+            name="query"
+            placeholder="User name or email"
+            class="my-input mt-4"
+          />
+        </form>
 
-      <div class="my-table-container">
-        <table class="my-table">
-          <thead class="my-table-head">
-            <tr>
-              <th class="my-table-cell">User</th>
-              <th class="my-table-cell">Current Roles</th>
-              <th class="my-table-cell">Add Role</th>
-            </tr>
-          </thead>
-          {% block table_body %}
-          <tbody id="{{ ids.user_table_body }}" class="my-table-body">
-            {% for user in users %}
-            <tr id="id-{{ user.id }}" class="my-table-row">
-              <td class="my-table-cell font-medium text-gray-900">{{ user.email }}</td>
+        <div class="my-table-container">
+          <table class="my-table">
+            <thead class="my-table-head">
+              <tr>
+                <th class="my-table-cell">User</th>
+                <th class="my-table-cell">Current Roles</th>
+                <th class="my-table-cell">Add Role</th>
+              </tr>
+            </thead>
+            {% block table_body %}
+            <tbody id="{{ ids.user_table_body }}" class="my-table-body">
+              {% for user in users %}
+              <tr id="id-{{ user.id }}" class="my-table-row">
+                <td class="my-table-cell font-medium text-ink">
+                  {{ user.first_name }} {{ user.last_name }}
+                  <div class="my-fineprint">{{ user.email }}</div>
+                </td>
 
-              <td class="my-table-cell">
-                <ul class="flex flex-wrap gap-2">
-                  {% for role in user.roles.0 %}
-                  <li class="my-badge">
-                    {{ role }}
-                    <form
-                      hx-delete="{{ rts.user_roles }}"
-                      hx-vals='{"user_id": "{{ user.id }}", "role": "{{ role }}"}'
-                      hx-target="closest li"
-                      hx-swap="outerHTML"
-                      hx-confirm="Are you sure you wish to remove role '{{ role }}' from '{{ user.email }}'?"
-                    >
-                      <button type="submit" class="my-badge-remove">✕</button>
-                    </form>
-                  </li>
-                  {% endfor %}
-                </ul>
-              </td>
+                <td class="my-table-cell">
+                  <ul class="flex flex-wrap gap-2">
+                    {% for role in user.roles.0 %}
+                    <li class="my-badge">
+                      {{ role }}
+                      <form
+                        hx-delete="{{ rts.user_roles }}"
+                        hx-vals='{"user_id": "{{ user.id }}", "role": "{{ role }}"}'
+                        hx-target="closest li"
+                        hx-swap="outerHTML"
+                        hx-confirm="Are you sure you wish to remove role '{{ role }}' from '{{ user.email }}'?"
+                      >
+                        <button type="submit" class="my-badge-remove">✕</button>
+                      </form>
+                    </li>
+                    {% endfor %}
+                  </ul>
+                </td>
 
-              <td class="my-table-cell">
-                <form
-                  hx-post="{{ rts.user_roles }}"
-                  hx-target="closest tr"
-                  hx-swap="outerHTML"
-                  hx-select="#id-{{ user.id }}"
-                  method="post"
-                  class="flex items-center gap-2"
-                >
-                  <input type="hidden" name="user_id" value="{{ user.id }}">
-                  <input type="text" name="role" placeholder="e.g. admin" class="my-input-sm" required>
-                  <button type="submit" class="my-button-primary-sm">Add</button>
-                </form>
-              </td>
-            </tr>
-            {% endfor %}
-          </tbody>
-          {% endblock %}
-        </table>
+                <td class="my-table-cell">
+                  <form
+                    hx-post="{{ rts.user_roles }}"
+                    hx-target="closest tr"
+                    hx-swap="outerHTML"
+                    hx-select="#id-{{ user.id }}"
+                    method="post"
+                    class="flex items-center gap-2"
+                  >
+                    <input type="hidden" name="user_id" value="{{ user.id }}">
+                    <input type="text" name="role" placeholder="e.g. admin" class="my-input-sm" required>
+                    <button type="submit" class="my-button-primary-sm">Add</button>
+                  </form>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+            {% endblock %}
+          </table>
+        </div>
       </div>
     </div>
   {% endblock %}

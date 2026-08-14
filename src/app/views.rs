@@ -22,6 +22,8 @@ use std::sync::Arc;
 use uuid::Uuid;
 
 use super::handlers::delete_user_roles_widget_handler;
+use super::handlers::known_grantable_roles;
+use super::handlers::post_user_roles_bulk_handler;
 use super::handlers::post_user_roles_widget_handler;
 use crate::app::router::ROUTES;
 use crate::app::router::Routes;
@@ -118,6 +120,7 @@ pub struct UserRolesTemplate {
     rts: Routes,
     ids: Ids,
     users: Vec<User>,
+    known_roles: Vec<String>,
 }
 
 #[derive(serde::Deserialize)]
@@ -153,6 +156,7 @@ pub async fn get_user_roles_widget(
         rts: ROUTES,
         ids: IDS,
         users,
+        known_roles: known_grantable_roles(&data.exam_config.tests),
     };
 
     if matches!(headers.get("HX-Trigger"), Some(div_id) if div_id == IDS.user_role_form) {
@@ -169,6 +173,47 @@ pub async fn get_user_roles_widget(
 pub struct ModifyUserQuery {
     pub user_id: Uuid,
     pub role: String,
+}
+
+/// Pasted emails plus the role to grant to every matching account.
+#[derive(serde::Deserialize, Debug)]
+pub struct BulkGrantForm {
+    pub emails: String,
+    pub role: String,
+}
+
+#[derive(Template)]
+#[template(path = "./app_templates/bulk_grant_result.html")]
+struct BulkGrantResultTemplate {
+    summary: String,
+    not_found: Vec<String>,
+    invalid: Vec<String>,
+}
+
+/// Grant one role to every matching email in a pasted list.
+pub async fn post_user_roles_bulk(
+    State(data): State<Arc<AppState>>,
+    headers: axum::http::HeaderMap,
+    Extension(auth_status): Extension<AuthStatus>,
+    Form(form): Form<BulkGrantForm>,
+) -> impl IntoResponse {
+    if matches!(auth_status, AuthStatus::Unauthorized(..))
+        || matches!(auth_status, AuthStatus::Authorized(user) if !user.is_admin())
+    {
+        return Redirect::to(ROUTES.login).into_response();
+    }
+
+    match post_user_roles_bulk_handler(form, &data.db).await {
+        Ok(outcome) => {
+            let template = BulkGrantResultTemplate {
+                summary: outcome.summary,
+                not_found: outcome.not_found,
+                invalid: outcome.invalid,
+            };
+            (StatusCode::OK, Html(render(template))).into_response()
+        }
+        Err(e) => e.into_response(&headers),
+    }
 }
 
 /// This widget minimally allows admins to see user roles and add/remove roles from users.
@@ -213,6 +258,7 @@ pub async fn post_user_roles_widget(
                 rts: ROUTES,
                 ids: IDS,
                 users,
+                known_roles: known_grantable_roles(&data.exam_config.tests),
             };
             (StatusCode::OK, Html(render(template.as_table_body()))).into_response()
         }

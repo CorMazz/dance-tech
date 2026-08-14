@@ -1,0 +1,17 @@
+<p class="my-paragraph">{{ summary }}</p>
+{% if !not_found.is_empty() %}
+  <p class="my-fineprint mt-2">No account for:</p>
+  <ul class="my-fineprint list-disc list-inside">
+    {% for email in not_found %}
+      <li><code>{{ email }}</code></li>
+    {% endfor %}
+  </ul>
+{% endif %}
+{% if !invalid.is_empty() %}
+  <p class="my-fineprint mt-2">Skipped (not an email):</p>
+  <ul class="my-fineprint list-disc list-inside">
+    {% for token in invalid %}
+      <li><code>{{ token }}</code></li>
+    {% endfor %}
+  </ul>
+{% endif %}
