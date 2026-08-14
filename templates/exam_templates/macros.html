@@ -139,9 +139,9 @@
 {# Renders a `TestGrade` object #}
 {% macro render_grade(grade, taken_at) %}
   {% if grade.is_passing %}
-    <div class="my-section hidden sm:block bg-green-100 hover:bg-green-200 text-center">
+    <div class="my-section hidden sm:block my-grade-pass text-center">
   {% else %}
-    <div class="my-section hidden sm:block bg-red-100 hover:bg-red-200 text-center">
+    <div class="my-section hidden sm:block my-grade-fail text-center">
   {% endif %}
 
     <div class="my-section-header">
@@ -156,12 +156,12 @@
       {% if grade.is_passing %}
         <p class="font-semibold text-xl"></p>
           Status: 
-          <span class="font-bold text-green-700">Passing</span>
+          <span class="my-grade-status-pass">Passing</span>
         </p>
       {% else %} 
         <p class="font-semibold text-xl">
           Status:
-          <span class="font-bold text-red-700">Failing</span> 
+          <span class="my-grade-status-fail">Failing</span> 
         </p>
 
         {% if !grade.failure_explanations.is_empty() %}
@@ -170,12 +170,12 @@
               <li>
               {% match failure_explanation %}
                 {% when FailureExplanation::Score %}
-                  <span class="font-medium">Your score of <span class="text-red-600">{{ "{:.0}"|format(grade.achieved_percent) }}</span> is lower than the minimum passing score of <span class="text-red-600">{{ "{:.0}"|format(grade.minimum_percent) }}</span></span>
+                  <span class="font-medium">Your score of <span class="my-grade-emphasis">{{ "{:.0}"|format(grade.achieved_percent) }}</span> is lower than the minimum passing score of <span class="my-grade-emphasis">{{ "{:.0}"|format(grade.minimum_percent) }}</span></span>
                   {% when FailureExplanation::Competency with { competency_name, scoring_category_name, scoring_category_value } %}
                   {% if scoring_category_name == "" %}
-                    <span class="font-medium">Competency <span class="text-red-600">'{{ competency_name }}'</span> is failing the test because a label of <span class="text-red-600">'{{ scoring_category_value }}'</span> was achieved.</span>
+                    <span class="font-medium">Competency <span class="my-grade-emphasis">'{{ competency_name }}'</span> is failing the test because a label of <span class="my-grade-emphasis">'{{ scoring_category_value }}'</span> was achieved.</span>
                   {% else %}
-                    <span class="font-medium">Competency <span class="text-red-600">'{{ competency_name }}'</span> is failing the test because a label of <span class="text-red-600">'{{ scoring_category_value }}'</span> was achieved for the <span class="text-red-600">'{{ scoring_category_name }}'</span> category.</span>
+                    <span class="font-medium">Competency <span class="my-grade-emphasis">'{{ competency_name }}'</span> is failing the test because a label of <span class="my-grade-emphasis">'{{ scoring_category_value }}'</span> was achieved for the <span class="my-grade-emphasis">'{{ scoring_category_name }}'</span> category.</span>
                   {% endif %}
               {% endmatch %}
 

@@ -17,6 +17,7 @@
     --color-red-700: oklch(50.5% 0.213 27.518);
     --color-red-800: oklch(44.4% 0.177 26.899);
     --color-red-900: oklch(39.6% 0.141 25.723);
+    --color-red-950: oklch(25.8% 0.092 26.042);
     --color-orange-50: oklch(98% 0.016 73.684);
     --color-orange-100: oklch(95.4% 0.038 75.164);
     --color-orange-200: oklch(90.1% 0.076 70.697);
@@ -52,6 +53,7 @@
     --color-green-700: oklch(52.7% 0.154 150.069);
     --color-green-800: oklch(44.8% 0.119 151.328);
     --color-green-900: oklch(39.3% 0.095 152.535);
+    --color-green-950: oklch(26.6% 0.065 152.934);
     --color-emerald-600: oklch(59.6% 0.145 163.225);
     --color-teal-50: oklch(98.4% 0.014 180.72);
     --color-teal-100: oklch(95.3% 0.051 180.801);
@@ -971,14 +973,8 @@
       background-color: color-mix(in oklab, var(--color-gray-900) 50%, transparent);
     }
   }
-  .bg-green-100 {
-    background-color: var(--color-green-100);
-  }
   .bg-primary-300 {
     background-color: var(--color-primary-300);
-  }
-  .bg-red-100 {
-    background-color: var(--color-red-100);
   }
   .bg-red-500 {
     background-color: var(--color-red-500);
@@ -1160,9 +1156,6 @@
   .text-green-600 {
     color: var(--color-green-600);
   }
-  .text-green-700 {
-    color: var(--color-green-700);
-  }
   .text-green-800 {
     color: var(--color-green-800);
   }
@@ -1300,20 +1293,6 @@
     &:hover {
       @media (hover: hover) {
         background-color: var(--color-gray-100);
-      }
-    }
-  }
-  .hover\:bg-green-200 {
-    &:hover {
-      @media (hover: hover) {
-        background-color: var(--color-green-200);
-      }
-    }
-  }
-  .hover\:bg-red-200 {
-    &:hover {
-      @media (hover: hover) {
-        background-color: var(--color-red-200);
       }
     }
   }
@@ -2433,6 +2412,64 @@
       @media (hover: hover) {
         opacity: 90%;
       }
+    }
+  }
+  .my-grade-pass {
+    background-color: var(--color-green-100);
+    &:hover {
+      @media (hover: hover) {
+        background-color: var(--color-green-200);
+      }
+    }
+    &:where(.dark, .dark *) {
+      background-color: var(--color-green-950);
+    }
+    &:where(.dark, .dark *) {
+      &:hover {
+        @media (hover: hover) {
+          background-color: var(--color-green-900);
+        }
+      }
+    }
+  }
+  .my-grade-fail {
+    background-color: var(--color-red-100);
+    &:hover {
+      @media (hover: hover) {
+        background-color: var(--color-red-200);
+      }
+    }
+    &:where(.dark, .dark *) {
+      background-color: var(--color-red-950);
+    }
+    &:where(.dark, .dark *) {
+      &:hover {
+        @media (hover: hover) {
+          background-color: var(--color-red-900);
+        }
+      }
+    }
+  }
+  .my-grade-status-pass {
+    --tw-font-weight: var(--font-weight-bold);
+    font-weight: var(--font-weight-bold);
+    color: var(--color-green-700);
+    &:where(.dark, .dark *) {
+      color: var(--color-green-400);
+    }
+  }
+  .my-grade-status-fail {
+    --tw-font-weight: var(--font-weight-bold);
+    font-weight: var(--font-weight-bold);
+    color: var(--color-red-700);
+    &:where(.dark, .dark *) {
+      color: var(--color-red-400);
+    }
+  }
+  .my-grade-emphasis {
+    color: var(--color-red-600);
+    &:where(.dark, .dark *) {
+      color: var(--color-red-400);
     }
   }
   .my-spinner {
