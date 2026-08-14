@@ -1,7 +1,7 @@
 use crate::{
     AppState,
     app::{
-        exports::{get_export_exams, get_export_users},
+        exports::{get_export_exams, get_export_user_roles, get_export_users},
         views::{
             delete_user_roles_widget, error_404_page, get_admin_dashboard, get_contact_page,
             get_home_page, get_privacy_page, get_terms_page, get_user_roles_widget,
@@ -74,6 +74,7 @@ pub struct Routes {
     pub admin_dashboard: &'static str,
     pub export_users: &'static str,
     pub export_exams: &'static str,
+    pub export_user_roles: &'static str,
     pub search_users: &'static str,
     pub user_roles: &'static str,
     pub contact: &'static str,
@@ -176,6 +177,7 @@ pub const ROUTES: Routes = Routes {
     admin_dashboard: "/admin-dashboard",
     export_users: "/admin-dashboard/export/users",
     export_exams: "/admin-dashboard/export/exams",
+    export_user_roles: "/admin-dashboard/export/user-roles",
     search_users: "/widgets/search-users",
     user_roles: "/widgets/user-roles",
     contact: "/contact",
@@ -193,6 +195,7 @@ pub fn create_router(app_state: Arc<AppState>) -> Router {
         .route(ROUTES.admin_dashboard, get(get_admin_dashboard))
         .route(ROUTES.export_users, get(get_export_users))
         .route(ROUTES.export_exams, get(get_export_exams))
+        .route(ROUTES.export_user_roles, get(get_export_user_roles))
         .route(
             ROUTES.user_roles,
             get(get_user_roles_widget)

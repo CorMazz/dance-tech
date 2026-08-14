@@ -143,11 +143,12 @@
           <h1 class="my-section-title">Exports</h1>
         </div>
         <p class="my-paragraph">
-          Download spreadsheets of every account and every exam sitting. Open in Google Sheets or Excel. Times are Eastern.
+          Download spreadsheets of every account, every exam sitting, and each current role with the exam that earned it (blank date if the role was granted by hand). Open in Google Sheets or Excel. Times are Eastern.
         </p>
         <div class="flex flex-wrap gap-3 mt-4">
           <a href="{{ rts.export_users }}" class="my-button">Download users</a>
           <a href="{{ rts.export_exams }}" class="my-button">Download exam history</a>
+          <a href="{{ rts.export_user_roles }}" class="my-button">Download roles</a>
         </div>
       </div>
 
