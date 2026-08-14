@@ -73,32 +73,32 @@
                   {% let testee = info.testee %}
                   {% let proctor = info.proctor %}
                   <tr class="my-table-row">
-                    <td class="my-table-cell font-medium text-gray-900">
+                    <td class="my-table-cell font-medium text-ink">
                       <a href="{{ rts.graded_exam(exam.id) }}" hx-boost="true" hx-target="#primary-content" class="block w-full h-full">
                         {{ exam.test.metadata.test_name }}
                       </a>
                     </td>
-                    <td class="my-table-cell font-medium text-gray-900">
+                    <td class="my-table-cell font-medium text-ink">
                       <a href="{{ rts.graded_exam(exam.id) }}" hx-boost="true" hx-target="#primary-content" class="block w-full h-full">
                         {{ testee.first_name }} {{ testee.last_name }}
                       </a>
                     </td>
-                    <td class="my-table-cell font-medium text-gray-900">
+                    <td class="my-table-cell font-medium text-ink">
                       <a href="{{ rts.graded_exam(exam.id) }}" hx-boost="true" hx-target="#primary-content" class="block w-full h-full">
                         {{ proctor.first_name }} {{ proctor.last_name }}
                       </a>
                     </td>
-                    <td class="my-table-cell font-medium text-gray-900">
+                    <td class="my-table-cell font-medium text-ink">
                       <a href="{{ rts.graded_exam(exam.id) }}" hx-boost="true" hx-target="#primary-content" class="block w-full h-full">
                         {{ exam.grade.achieved_score }}
                       </a>
                     </td>
-                    <td class="my-table-cell font-medium text-gray-900">
+                    <td class="my-table-cell font-medium text-ink">
                       <a href="{{ rts.graded_exam(exam.id) }}" hx-boost="true" hx-target="#primary-content" class="block w-full h-full">
                         {{ info.taken_at.format("%B %d, %Y") }}
                       </a>
                     </td>
-                    <td class="my-table-cell font-medium text-gray-900">
+                    <td class="my-table-cell font-medium text-ink">
                       <a href="{{ rts.graded_exam(exam.id) }}" hx-boost="true" hx-target="#primary-content" class="block w-full h-full">
                         {% if exam.grade.is_passing %}
                           ✅ Passed
