@@ -507,49 +507,80 @@ pub async fn query_filtered_exams(
 
     let mut results = Vec::new();
     for row in rows {
-        let json_value: serde_json::Value = row.try_get("test_data").map_err(|err| {
-            error!(%err, "Error retrieving test data from row.");
-            ExamError::DatabaseError
-        })?;
-        let graded_test: GradedTest = serde_json::from_value(json_value).map_err(|err| {
-            error!(%err, "Error deserializing graded test.");
-            ExamError::FatalInternalServerError
-        })?;
-
-        trace!("Row: {row:#?}");
-
-        let json_value: serde_json::Value = row.try_get("testee_user").map_err(|err| {
-            error!(%err, "Error retrieving testee data from row.");
-            ExamError::DatabaseError
-        })?;
-
-        let testee: User = serde_json::from_value(json_value).map_err(|err| {
-            error!(%err, "Error deserializing testee.");
-            ExamError::FatalInternalServerError
-        })?;
-
-        let json_value: serde_json::Value = row.try_get("proctor_user").map_err(|err| {
-            error!(%err, "Error retrieving proctor data from row.");
-            ExamError::DatabaseError
-        })?;
-
-        let proctor: User = serde_json::from_value(json_value).map_err(|err| {
-            error!(%err, "Error deserializing proctor.");
-            ExamError::FatalInternalServerError
-        })?;
-        let created_at_option: Option<DateTime<Utc>> =
-            row.try_get("created_at").map_err(|err| {
-                error!(%err, "Error retrieving created_at from row.");
-                ExamError::DatabaseError
-            })?;
-        let created_at = created_at_option.unwrap_or_else(Utc::now);
-        results.push(FilteredExamResult {
-            test: graded_test,
-            testee,
-            proctor,
-            taken_at: created_at,
-        });
+        results.push(filtered_exam_from_row(&row)?);
     }
 
     Ok(results)
+}
+
+/// Every graded sitting, unpaginated. Ordered by testee name then date taken.
+#[instrument(skip(db))]
+pub async fn query_all_graded_exams(
+    db: &Pool<Postgres>,
+) -> Result<Vec<FilteredExamResult>, ExamError> {
+    let rows = sqlx::query(
+        r"
+        SELECT
+          graded_exams.test_data,
+          graded_exams.created_at,
+          row_to_json(testee_user.*) AS testee_user,
+          row_to_json(proctor_user.*) AS proctor_user
+        FROM graded_exams
+        JOIN users AS testee_user ON testee_user.id = (graded_exams.test_data->>'testee_id')::uuid
+        JOIN users AS proctor_user ON proctor_user.id = (graded_exams.test_data->>'proctor_id')::uuid
+        ORDER BY testee_user.last_name, testee_user.first_name, graded_exams.created_at
+        ",
+    )
+    .fetch_all(db)
+    .await
+    .map_err(|err| {
+        error!(%err, "Error retrieving all graded exams.");
+        ExamError::DatabaseError
+    })?;
+
+    rows.iter().map(filtered_exam_from_row).collect()
+}
+
+fn filtered_exam_from_row(row: &sqlx::postgres::PgRow) -> Result<FilteredExamResult, ExamError> {
+    let json_value: serde_json::Value = row.try_get("test_data").map_err(|err| {
+        error!(%err, "Error retrieving test data from row.");
+        ExamError::DatabaseError
+    })?;
+    let graded_test: GradedTest = serde_json::from_value(json_value).map_err(|err| {
+        error!(%err, "Error deserializing graded test.");
+        ExamError::FatalInternalServerError
+    })?;
+
+    trace!("Row: {row:#?}");
+
+    let json_value: serde_json::Value = row.try_get("testee_user").map_err(|err| {
+        error!(%err, "Error retrieving testee data from row.");
+        ExamError::DatabaseError
+    })?;
+
+    let testee: User = serde_json::from_value(json_value).map_err(|err| {
+        error!(%err, "Error deserializing testee.");
+        ExamError::FatalInternalServerError
+    })?;
+
+    let json_value: serde_json::Value = row.try_get("proctor_user").map_err(|err| {
+        error!(%err, "Error retrieving proctor data from row.");
+        ExamError::DatabaseError
+    })?;
+
+    let proctor: User = serde_json::from_value(json_value).map_err(|err| {
+        error!(%err, "Error deserializing proctor.");
+        ExamError::FatalInternalServerError
+    })?;
+    let created_at_option: Option<DateTime<Utc>> = row.try_get("created_at").map_err(|err| {
+        error!(%err, "Error retrieving created_at from row.");
+        ExamError::DatabaseError
+    })?;
+    let created_at = created_at_option.unwrap_or_else(Utc::now);
+    Ok(FilteredExamResult {
+        test: graded_test,
+        testee,
+        proctor,
+        taken_at: created_at,
+    })
 }

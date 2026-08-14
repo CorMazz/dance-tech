@@ -140,6 +140,19 @@
 
       <div class="my-section my-dashboard-gradient">
         <div class="my-section-header">
+          <h1 class="my-section-title">Exports</h1>
+        </div>
+        <p class="my-paragraph">
+          Download spreadsheets of every account and every exam sitting. Open in Google Sheets or Excel. Times are Eastern.
+        </p>
+        <div class="flex flex-wrap gap-3 mt-4">
+          <a href="{{ rts.export_users }}" class="my-button">Download users</a>
+          <a href="{{ rts.export_exams }}" class="my-button">Download exam history</a>
+        </div>
+      </div>
+
+      <div class="my-section my-dashboard-gradient">
+        <div class="my-section-header">
           <h1 class="my-section-title">Tests</h1>
         </div>
         <div class="my-grid">

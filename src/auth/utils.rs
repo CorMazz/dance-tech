@@ -232,6 +232,34 @@ pub async fn search_for_users(query: String, db: &Pool<Postgres>) -> Result<Vec<
     })
 }
 
+/// Every account, sorted by last name then first name. Includes `password` on the struct;
+/// callers must not write that field to exports.
+#[instrument(skip(db))]
+pub async fn list_all_users(db: &Pool<Postgres>) -> Result<Vec<User>, AuthError> {
+    sqlx::query_as!(
+        User,
+        r#"
+        SELECT
+            id,
+            email,
+            first_name,
+            last_name,
+            roles as "roles: Json<HashSet<Roles>>",
+            password,
+            created_at,
+            updated_at
+        FROM users
+        ORDER BY last_name, first_name, email
+        "#
+    )
+    .fetch_all(db)
+    .await
+    .map_err(|err| {
+        error!(%err, "Error listing all users");
+        AuthError::DatabaseError
+    })
+}
+
 #[instrument(skip(data))]
 pub async fn login_user(
     user: User,
