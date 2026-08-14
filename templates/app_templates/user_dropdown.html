@@ -79,3 +79,21 @@
     </div>
 
 {% endmatch %}
+
+<div id="staff-nav-desktop" hx-swap-oob="innerHTML">
+  {% if is_proctor %}
+    <a href={{ rts.proctor_dashboard }} hx-boost="true" hx-target="#primary-content" hx-swap="innerHTML show:none" class="my-nav-button">Proctor</a>
+  {% endif %}
+  {% if is_admin %}
+    <a href={{ rts.admin_dashboard }} hx-boost="true" hx-target="#primary-content" hx-swap="innerHTML show:none" class="my-nav-button">Admin</a>
+  {% endif %}
+</div>
+<div id="staff-nav-mobile" hx-swap-oob="innerHTML">
+  {% if is_proctor %}
+    <a href={{ rts.proctor_dashboard }} hx-boost="true" hx-target="#primary-content" hx-swap="innerHTML show:none" class="my-nav-button">Proctor</a>
+  {% endif %}
+  {% if is_admin %}
+    <a href={{ rts.admin_dashboard }} hx-boost="true" hx-target="#primary-content" hx-swap="innerHTML show:none" class="my-nav-button">Admin</a>
+  {% endif %}
+</div>
+
