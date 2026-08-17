@@ -1,0 +1,35 @@
+<div id="admin-test-{{ test_index }}" class="my-card w-full">
+  <a href={{ rts.administer_exam(test_index) }} hx-boost="true" hx-target="#primary-content" hx-swap="innerHTML show:none">
+    <h5 class="my-section-title">{{ test.metadata.test_name }}</h5>
+  </a>
+  <p class="my-paragraph">Min Passing Percent: {{ test.metadata.minimum_percent }}%</p>
+  <p class="my-paragraph">Max Possible Score: {{ test.metadata.max_score }} Points</p>
+  <div class="flex flex-col gap-2 mt-3">
+    <button
+      type="button"
+      class="my-paragraph text-left cursor-pointer hover:underline"
+      hx-post="{{ rts.toggle_test_display(test_index) }}"
+      hx-vals='{"flag": "live_grading"}'
+      hx-target="#admin-test-{{ test_index }}"
+      hx-swap="outerHTML"
+    >
+      {% if test.metadata.config.live_grading %}✅{% else %}❌{% endif %} Live Grading
+    </button>
+    <button
+      type="button"
+      class="my-paragraph text-left cursor-pointer hover:underline"
+      hx-post="{{ rts.toggle_test_display(test_index) }}"
+      hx-vals='{"flag": "show_point_values"}'
+      hx-target="#admin-test-{{ test_index }}"
+      hx-swap="outerHTML"
+    >
+      {% if test.metadata.config.show_point_values %}✅{% else %}❌{% endif %} Show Points
+    </button>
+  </div>
+  <p class="my-paragraph text-sm mt-2">
+    Grants Roles:
+    {% for role in test.metadata.config.grants_roles %}
+      <code>{{ role }}</code>
+    {% endfor %}
+  </p>
+</div>

@@ -7,10 +7,12 @@ use crate::auth::models::User;
 use crate::auth::utils::search_for_users;
 use crate::check_in::handlers::get_products_from_actor;
 use crate::check_in::models::Product;
+use crate::exam::config::TestDisplayFlag;
 use crate::exam::models::Test;
 use askama::Template;
 use axum::Extension;
 use axum::Form;
+use axum::extract::Path;
 use axum::extract::Query;
 use axum::extract::State;
 use axum::response::Redirect;
@@ -28,6 +30,7 @@ use super::handlers::post_user_roles_widget_handler;
 use crate::app::router::ROUTES;
 use crate::app::router::Routes;
 use crate::app::utils::ErrorTemplate;
+use crate::exam::errors::ExamError;
 
 /// The one absolute truth for html element IDs that are used across multiple templates
 pub struct Ids {
@@ -103,7 +106,7 @@ pub async fn get_admin_dashboard(
 
     let template = AdminDashboardTemplate {
         rts: ROUTES,
-        tests: data.exam_config.tests.clone(),
+        tests: data.exam_config.runtime_tests(),
         products,
     };
 
@@ -112,6 +115,45 @@ pub async fn get_admin_dashboard(
     } else {
         (StatusCode::OK, Html(render(template))).into_response()
     }
+}
+
+#[derive(Template)]
+#[template(path = "./app_templates/admin_test_card.html")]
+struct AdminTestCardTemplate {
+    rts: Routes,
+    test: Test,
+    test_index: usize,
+}
+
+#[derive(serde::Deserialize)]
+pub struct ToggleTestDisplayForm {
+    flag: TestDisplayFlag,
+}
+
+/// Flip live grading or show points on a test for this process only.
+pub async fn post_toggle_test_display(
+    State(data): State<Arc<AppState>>,
+    Path(test_index): Path<usize>,
+    headers: axum::http::HeaderMap,
+    Extension(auth_status): Extension<AuthStatus>,
+    Form(form): Form<ToggleTestDisplayForm>,
+) -> impl IntoResponse {
+    if matches!(auth_status, AuthStatus::Unauthorized(..))
+        || matches!(auth_status, AuthStatus::Authorized(user) if !user.is_admin())
+    {
+        return Redirect::to(ROUTES.login).into_response();
+    }
+
+    let Some(test) = data.exam_config.toggle_display(test_index, form.flag) else {
+        return ExamError::TestIndexError.into_response(&headers);
+    };
+
+    let template = AdminTestCardTemplate {
+        rts: ROUTES,
+        test,
+        test_index,
+    };
+    (StatusCode::OK, Html(render(template))).into_response()
 }
 
 #[derive(Template)]

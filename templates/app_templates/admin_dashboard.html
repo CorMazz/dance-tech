@@ -156,25 +156,13 @@
         <div class="my-section-header">
           <h1 class="my-section-title">Tests</h1>
         </div>
+        <p class="my-fineprint mb-4">
+          Live grading and show points can be toggled for this process only. A restart restores the YAML defaults.
+        </p>
         <div class="my-grid">
           {% for test in tests %}
-            <a href={{ rts.administer_exam(loop.index0) }} hx-boost="true" hx-target="#primary-content" hx-swap="innerHTML show:none" class="my-card w-full">
-              <h5 class="my-section-title">{{ test.metadata.test_name }}</h5>
-              <p class="my-paragraph">Min Passing Percent: {{ test.metadata.minimum_percent }}%</p>
-              <p class="my-paragraph">Max Possible Score: {{ test.metadata.max_score }} Points</p>
-              <p class="my-paragraph">
-                {% if test.metadata.config.live_grading %}✅{% else %}❌{% endif %} Live Grading
-              </p>
-              <p class="my-paragraph">
-                {% if test.metadata.config.show_point_values %}✅{% else %}❌{% endif %} Show Points
-              </p>
-              <p class="my-paragraph text-sm">
-                Grants Roles:
-                {% for role in test.metadata.config.grants_roles %}
-                  <code>{{ role }}</code>
-                {% endfor %}
-              </p>
-            </a>
+            {% let test_index = loop.index0 %}
+            {% include "./admin_test_card.html" %}
           {% endfor %}
         </div>
       </div>

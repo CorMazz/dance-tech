@@ -100,8 +100,7 @@ pub async fn get_test_page(
     }
 
     data.exam_config
-        .tests
-        .get(test_index)
+        .runtime_test(test_index)
         .map_or_else(
             || {
                 let template = ErrorTemplate {
@@ -117,7 +116,7 @@ pub async fn get_test_page(
             },
             |test| {
                 let template = AdministerExamTemplate {
-                    test: test.clone(),
+                    test,
                     test_index,
                     is_demo_mode: data.app_config.is_demo_mode,
                     // email_functionality_active: data.smtp_config.is_some(),

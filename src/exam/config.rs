@@ -1,12 +1,30 @@
 use crate::exam::models::Test;
 use crate::exam::models::deserialize::TestYaml;
 use glob::glob;
+use serde::Deserialize;
+use std::sync::atomic::{AtomicBool, Ordering};
 use tracing::{error, info};
 
+/// In-memory display flags an admin can flip without rewriting YAML.
+#[derive(Debug, Clone, Copy, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum TestDisplayFlag {
+    LiveGrading,
+    ShowPointValues,
+}
+
+struct DisplayFlags {
+    live_grading: AtomicBool,
+    show_point_values: AtomicBool,
+}
+
 pub struct ExamConfig {
+    /// YAML-loaded tests. Display flags on these structs stay as the file defined them.
     pub tests: Vec<Test>,
     pub test_names: Vec<String>,
     pub queue_length: usize,
+    /// Live grading / show points for this process. Restart reloads YAML into this.
+    display: Vec<DisplayFlags>,
 }
 
 impl ExamConfig {
@@ -60,10 +78,90 @@ impl ExamConfig {
             .unwrap_or_else(|_| "15".to_string())
             .parse::<usize>()
             .unwrap_or(15);
+        let display = tests
+            .iter()
+            .map(|test| DisplayFlags {
+                live_grading: AtomicBool::new(test.metadata.config.live_grading),
+                show_point_values: AtomicBool::new(test.metadata.config.show_point_values),
+            })
+            .collect();
         Self {
             tests,
             test_names,
             queue_length,
+            display,
         }
+    }
+
+    /// Clone of a test with this process's live-grading / show-points flags applied.
+    pub fn runtime_test(&self, index: usize) -> Option<Test> {
+        let over = self.display.get(index)?;
+        let mut test = self.tests.get(index)?.clone();
+        test.metadata.config.live_grading = over.live_grading.load(Ordering::Relaxed);
+        test.metadata.config.show_point_values = over.show_point_values.load(Ordering::Relaxed);
+        Some(test)
+    }
+
+    /// Every test with this process's display flags. YAML structs are not mutated.
+    pub fn runtime_tests(&self) -> Vec<Test> {
+        (0..self.tests.len())
+            .filter_map(|index| self.runtime_test(index))
+            .collect()
+    }
+
+    /// Flip one display flag. Returns the test after the change.
+    pub fn toggle_display(&self, index: usize, flag: TestDisplayFlag) -> Option<Test> {
+        let over = self.display.get(index)?;
+        match flag {
+            TestDisplayFlag::LiveGrading => {
+                over.live_grading.fetch_xor(true, Ordering::Relaxed);
+            }
+            TestDisplayFlag::ShowPointValues => {
+                over.show_point_values.fetch_xor(true, Ordering::Relaxed);
+            }
+        }
+        self.runtime_test(index)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{ExamConfig, TestDisplayFlag};
+
+    #[test]
+    fn toggle_display_is_in_memory_only() {
+        let config = ExamConfig::init();
+        let yaml_live = config.tests[0].metadata.config.live_grading;
+        let yaml_points = config.tests[0].metadata.config.show_point_values;
+        assert_eq!(
+            config.runtime_test(0).unwrap().metadata.config.live_grading,
+            yaml_live
+        );
+
+        config
+            .toggle_display(0, TestDisplayFlag::LiveGrading)
+            .unwrap();
+        config
+            .toggle_display(0, TestDisplayFlag::ShowPointValues)
+            .unwrap();
+
+        let runtime = config.runtime_test(0).unwrap();
+        assert_ne!(runtime.metadata.config.live_grading, yaml_live);
+        assert_ne!(runtime.metadata.config.show_point_values, yaml_points);
+        assert_eq!(config.tests[0].metadata.config.live_grading, yaml_live);
+        assert_eq!(
+            config.tests[0].metadata.config.show_point_values,
+            yaml_points
+        );
+    }
+
+    #[test]
+    fn toggle_display_rejects_unknown_index() {
+        let config = ExamConfig::init();
+        assert!(
+            config
+                .toggle_display(config.tests.len(), TestDisplayFlag::LiveGrading)
+                .is_none()
+        );
     }
 }

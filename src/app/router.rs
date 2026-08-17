@@ -5,7 +5,7 @@ use crate::{
         views::{
             delete_user_roles_widget, error_404_page, get_admin_dashboard, get_contact_page,
             get_home_page, get_privacy_page, get_terms_page, get_user_roles_widget,
-            post_user_roles_bulk, post_user_roles_widget,
+            post_toggle_test_display, post_user_roles_bulk, post_user_roles_widget,
         },
     },
     auth::{
@@ -78,6 +78,7 @@ pub struct Routes {
     pub search_users: &'static str,
     pub user_roles: &'static str,
     pub user_roles_bulk: &'static str,
+    pub toggle_test_display_root: &'static str,
     pub contact: &'static str,
     pub terms: &'static str,
     pub privacy: &'static str,
@@ -109,6 +110,10 @@ impl Routes {
 
     pub fn live_grading(&self, exam_id: &(impl ToString + ?Sized)) -> String {
         format!("{}/{}", self.live_grading_root, exam_id.to_string())
+    }
+
+    pub fn toggle_test_display(&self, exam_id: &(impl ToString + ?Sized)) -> String {
+        format!("{}/{}", self.toggle_test_display_root, exam_id.to_string())
     }
 
     /// Used for post and delete methods on the queue.
@@ -182,6 +187,7 @@ pub const ROUTES: Routes = Routes {
     search_users: "/widgets/search-users",
     user_roles: "/widgets/user-roles",
     user_roles_bulk: "/widgets/user-roles/bulk-grant",
+    toggle_test_display_root: "/admin-dashboard/tests",
     contact: "/contact",
     terms: "/terms",
     privacy: "/privacy",
@@ -205,6 +211,10 @@ pub fn create_router(app_state: Arc<AppState>) -> Router {
                 .delete(delete_user_roles_widget),
         )
         .route(ROUTES.user_roles_bulk, post(post_user_roles_bulk))
+        .route(
+            &ROUTES.toggle_test_display("{test_index}"),
+            post(post_toggle_test_display),
+        )
         .route(
             &ROUTES.administer_exam("{test_index}"),
             get(get_test_page).post(post_test_form),
