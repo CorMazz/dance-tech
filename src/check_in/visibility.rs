@@ -73,6 +73,23 @@ impl ShowSchedule {
         self.weekly.iter().any(|window| window.contains(local))
     }
 
+    /// True when the product is not for sale, but a time-preview may still list it.
+    ///
+    /// One-shot windows: only before a future start (never after the last end).
+    /// Weekly windows: whenever it is not currently in a purchase window.
+    pub fn is_before_purchase_window(&self, now: DateTime<Utc>) -> bool {
+        if self.parse_error.is_some() || self.is_visible(now) {
+            return false;
+        }
+        if !self.weekly.is_empty() {
+            return true;
+        }
+        if !self.windows.is_empty() {
+            return self.next_start(now).is_some();
+        }
+        false
+    }
+
     /// Short admin label: Live, Hidden until …, or parse error.
     pub fn status_label(&self, now: DateTime<Utc>) -> String {
         if let Some(err) = &self.parse_error {
@@ -88,6 +105,19 @@ impl ShowSchedule {
                 format!("Hidden until {}", local.format("%a %H:%M"))
             },
         )
+    }
+
+    /// When purchase opens next, in the product timezone. Empty if live or no upcoming window.
+    pub fn next_available_label(&self, now: DateTime<Utc>) -> String {
+        if self.is_visible(now) {
+            return String::new();
+        }
+        self.next_start(now)
+            .map(|start| {
+                let local = start.with_timezone(&self.tz());
+                format!("{}", local.format("%A, %b %e at %H:%M"))
+            })
+            .unwrap_or_default()
     }
 
     /// True when no interval tags were set.
@@ -491,6 +521,15 @@ mod tests {
         let wednesday = ny(2026, 8, 12, 12, 0);
         assert!(!schedule.is_visible(wednesday));
         assert_eq!(schedule.status_label(wednesday), "Hidden until Thu 18:00");
+        assert_eq!(
+            schedule.next_available_label(wednesday),
+            "Thursday, Aug 13 at 18:00"
+        );
+        assert!(
+            schedule
+                .next_available_label(ny(2026, 8, 13, 19, 0))
+                .is_empty()
+        );
     }
 
     #[test]
@@ -512,5 +551,31 @@ mod tests {
         );
         assert_eq!(schedule.raw_interval(), "2026-08-14 18:00/22:00");
         assert_eq!(schedule.raw_weekly(), "Thu 18:00-23:00");
+    }
+
+    #[test]
+    fn interval_before_window_is_previewable_after_is_not() {
+        let schedule = parse_show_schedule(&meta(&[(
+            STRIPE_KEYS.show_interval,
+            "2026-08-14 18:00/22:00",
+        )]));
+        assert!(schedule.is_before_purchase_window(ny(2026, 8, 14, 17, 0)));
+        assert!(!schedule.is_before_purchase_window(ny(2026, 8, 14, 19, 0)));
+        assert!(!schedule.is_before_purchase_window(ny(2026, 8, 14, 22, 1)));
+    }
+
+    #[test]
+    fn weekly_is_previewable_whenever_not_live() {
+        let schedule = parse_show_schedule(&meta(&[(STRIPE_KEYS.show_weekly, "Thu 18:00-23:00")]));
+        assert!(schedule.is_before_purchase_window(ny(2026, 8, 12, 12, 0)));
+        assert!(!schedule.is_before_purchase_window(ny(2026, 8, 13, 19, 0)));
+        assert!(schedule.is_before_purchase_window(ny(2026, 8, 14, 12, 0)));
+    }
+
+    #[test]
+    fn parse_error_is_never_previewable() {
+        let schedule =
+            parse_show_schedule(&meta(&[(STRIPE_KEYS.show_interval, "thursday evening")]));
+        assert!(!schedule.is_before_purchase_window(Utc::now()));
     }
 }

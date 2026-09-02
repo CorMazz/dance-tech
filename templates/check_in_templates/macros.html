@@ -138,7 +138,12 @@
       <h2 class="my-section-title">{{ product.name }}</h2>
       <p class="my-fineprint mt-1">
         {{ product.description }}
-        {% if is_admin && !live %}
+        {% let when = product.available_from_label() %}
+        {% if !when.is_empty() %}
+          <span class="block mt-2 font-medium text-ink">
+            This product is available {{ when }}.
+          </span>
+        {% else if is_admin && !live %}
           <span class="block mt-2 font-medium text-ink">
             {{ product.visibility_status() }}
           </span>

@@ -23,9 +23,14 @@ pub struct Product {
     pub price_id: String,
     /// The roles a user must have to view this item on the `check-in` page.
     pub requires_roles: HashSet<Roles>,
-    /// Show a greyed out preview of the product to people who don't yet have
-    /// the requisite roles. The default is `false`.
-    pub show_preview: bool,
+    /// Show a greyed-out preview to people who don't yet have the requisite roles.
+    /// Default `false`.
+    #[serde(default)]
+    pub show_role_preview: bool,
+    /// Show a greyed-out preview before a one-shot window starts, not after it ends.
+    /// Weekly windows preview whenever the product is not currently for sale. Default `false`.
+    #[serde(default)]
+    pub show_time_preview: bool,
     /// A higher number puts this product further down the list on the check-in page.
     /// If a product doesn't have it specified, the default is 0. All products on the same level
     /// are sorted lexicographically. When `category` is set, this order applies inside that group.
@@ -55,6 +60,12 @@ impl Product {
     /// Admin-facing Live / Hidden until … / parse error label.
     pub fn visibility_status(&self) -> String {
         self.show_schedule.status_label(Utc::now())
+    }
+
+    /// When this product can next be purchased, for the Check In preview note.
+    /// Empty if it is live or there is no upcoming window.
+    pub fn available_from_label(&self) -> String {
+        self.show_schedule.next_available_label(Utc::now())
     }
 
     /// Timezone used to interpret window tags.
@@ -87,9 +98,25 @@ impl Product {
         self.show_schedule.raw_weekly()
     }
 
+    /// Whether Check In should list this product for the given viewer at `now`.
+    pub fn visible_to_at(
+        &self,
+        is_admin: bool,
+        roles: &HashSet<Roles>,
+        now: DateTime<Utc>,
+    ) -> bool {
+        if is_admin {
+            return true;
+        }
+        let role_ok = self.requires_roles.is_subset(roles) || self.show_role_preview;
+        let time_ok = self.is_live_at(now)
+            || (self.show_time_preview && self.show_schedule.is_before_purchase_window(now));
+        role_ok && time_ok
+    }
+
     /// Whether Check In should list this product for the given viewer.
     pub fn visible_to(&self, is_admin: bool, roles: &HashSet<Roles>) -> bool {
-        is_admin || (self.is_live() && (self.requires_roles.is_subset(roles) || self.show_preview))
+        self.visible_to_at(is_admin, roles, Utc::now())
     }
 }
 
@@ -811,7 +838,8 @@ mod tests {
             dollar_price: 5.0,
             price_id: "price".into(),
             requires_roles: HashSet::new(),
-            show_preview: false,
+            show_role_preview: false,
+            show_time_preview: false,
             sort_level,
             category: category.into(),
             category_sort_level,
@@ -898,6 +926,8 @@ mod tests {
         let product: Product = serde_json::from_str(json).unwrap();
         assert!(product.category.is_empty());
         assert_eq!(product.category_sort_level, 0);
+        assert!(!product.show_role_preview);
+        assert!(!product.show_time_preview);
     }
 
     #[test]
@@ -906,7 +936,84 @@ mod tests {
         gated.requires_roles.insert(Roles::new("advanced"));
         assert!(gated.visible_to(true, &HashSet::new()));
         assert!(!gated.visible_to(false, &HashSet::new()));
-        gated.show_preview = true;
+        gated.show_role_preview = true;
         assert!(gated.visible_to(false, &HashSet::new()));
+    }
+
+    #[test]
+    fn visible_to_time_preview_before_not_after_interval() {
+        use crate::check_in::visibility::parse_show_schedule;
+        use chrono::TimeZone;
+
+        let mut item = product("Night", 0, "", 0);
+        item.show_time_preview = true;
+        item.show_schedule = parse_show_schedule(&HashMap::from([(
+            STRIPE_KEYS.show_interval.to_string(),
+            "2026-08-14 18:00/22:00".into(),
+        )]));
+        let ny = |hour, min| {
+            chrono_tz::America::New_York
+                .with_ymd_and_hms(2026, 8, 14, hour, min, 0)
+                .single()
+                .unwrap()
+                .with_timezone(&Utc)
+        };
+        let none = HashSet::new();
+        assert!(item.visible_to_at(false, &none, ny(17, 0)));
+        assert!(item.visible_to_at(false, &none, ny(19, 0)));
+        assert!(!item.visible_to_at(false, &none, ny(22, 1)));
+        item.show_time_preview = false;
+        assert!(!item.visible_to_at(false, &none, ny(17, 0)));
+    }
+
+    #[test]
+    fn visible_to_weekly_time_preview_outside_window() {
+        use crate::check_in::visibility::parse_show_schedule;
+        use chrono::TimeZone;
+
+        let mut item = product("Class", 0, "", 0);
+        item.show_time_preview = true;
+        item.show_schedule = parse_show_schedule(&HashMap::from([(
+            STRIPE_KEYS.show_weekly.to_string(),
+            "Thu 18:00-23:00".into(),
+        )]));
+        let wednesday = chrono_tz::America::New_York
+            .with_ymd_and_hms(2026, 8, 12, 12, 0, 0)
+            .single()
+            .unwrap()
+            .with_timezone(&Utc);
+        let thursday_live = chrono_tz::America::New_York
+            .with_ymd_and_hms(2026, 8, 13, 19, 0, 0)
+            .single()
+            .unwrap()
+            .with_timezone(&Utc);
+        let none = HashSet::new();
+        assert!(item.visible_to_at(false, &none, wednesday));
+        assert!(item.visible_to_at(false, &none, thursday_live));
+        item.show_time_preview = false;
+        assert!(!item.visible_to_at(false, &none, wednesday));
+    }
+
+    #[test]
+    fn visible_to_requires_both_preview_flags_when_both_gated() {
+        use crate::check_in::visibility::parse_show_schedule;
+        use chrono::TimeZone;
+
+        let mut item = product("Adv", 0, "", 0);
+        item.requires_roles.insert(Roles::new("advanced"));
+        item.show_schedule = parse_show_schedule(&HashMap::from([(
+            STRIPE_KEYS.show_interval.to_string(),
+            "2026-08-14 18:00/22:00".into(),
+        )]));
+        let before = chrono_tz::America::New_York
+            .with_ymd_and_hms(2026, 8, 14, 17, 0, 0)
+            .single()
+            .unwrap()
+            .with_timezone(&Utc);
+        let none = HashSet::new();
+        item.show_time_preview = true;
+        assert!(!item.visible_to_at(false, &none, before));
+        item.show_role_preview = true;
+        assert!(item.visible_to_at(false, &none, before));
     }
 }

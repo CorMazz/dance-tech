@@ -8,7 +8,10 @@ pub struct StripeMetadataKeys {
     /// Comma-separated roles required to buy the product.
     pub requires_roles: &'static str,
     /// `"true"` shows a greyed-out preview to users missing `requires_roles`.
-    pub show_preview: &'static str,
+    pub show_role_preview: &'static str,
+    /// `"true"` shows a greyed-out preview before a purchase window (not after it ends).
+    /// Weekly windows preview whenever the product is not currently for sale.
+    pub show_time_preview: &'static str,
     /// Integer order inside a category, or among ungrouped products.
     pub sort_level: &'static str,
     /// Optional Check In group name. Same value = same collapsible section.
@@ -37,7 +40,8 @@ impl StripeMetadataKeys {
 pub const STRIPE_KEYS: StripeMetadataKeys = StripeMetadataKeys {
     show_on_dancetech: "show-on-dancetech",
     requires_roles: "requires-roles",
-    show_preview: "show-preview",
+    show_role_preview: "show-role-preview",
+    show_time_preview: "show-time-preview",
     sort_level: "sort-level",
     category: "category",
     category_sort_level: "category-sort-level",

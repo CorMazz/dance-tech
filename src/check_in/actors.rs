@@ -128,11 +128,14 @@ pub async fn get_stripe_products(
                 })
                 .unwrap_or_default();
 
-            let show_preview = p
+            let show_role_preview = p
                 .metadata
-                .get(STRIPE_KEYS.show_preview)
-                // I don't know if the value will be kept as a string or a bool, so account for
-                // both
+                .get(STRIPE_KEYS.show_role_preview)
+                .is_some_and(|val| val == "true");
+
+            let show_time_preview = p
+                .metadata
+                .get(STRIPE_KEYS.show_time_preview)
                 .is_some_and(|val| val == "true");
 
             let sort_level = p
@@ -150,7 +153,8 @@ pub async fn get_stripe_products(
                 dollar_price,
                 price_id,
                 requires_roles,
-                show_preview,
+                show_role_preview,
+                show_time_preview,
                 sort_level,
                 category,
                 category_sort_level,

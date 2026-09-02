@@ -28,7 +28,10 @@
                 {% endif %}
               </p>
               <p class="my-fineprint mt-2">
-                {% if product.show_preview %}✅{% else %}❌{% endif %} Show Preview
+                {% if product.show_role_preview %}✅{% else %}❌{% endif %} Role Preview
+              </p>
+              <p class="my-fineprint mt-2">
+                {% if product.show_time_preview %}✅{% else %}❌{% endif %} Time Preview
               </p>
               <p class="my-fineprint mt-2">
                 {% if !product.category.is_empty() %}
@@ -125,7 +128,10 @@
               <code>{{ stripe_keys.requires_roles }}</code>: Comma-separated list of roles (case-insensitive) to restrict product access.
             </li>
             <li>
-              <code>{{ stripe_keys.show_preview }}</code>: Set to <code>true</code> to allow users without sufficient permissions to see a preview of the product.
+              <code>{{ stripe_keys.show_role_preview }}</code>: Set to <code>true</code> to show a greyed-out preview to users who do not yet have the required roles. They still cannot buy it.
+            </li>
+            <li>
+              <code>{{ stripe_keys.show_time_preview }}</code>: Set to <code>true</code> to show a greyed-out preview before a one-shot window starts. After the window ends, the product stays hidden. Weekly windows show that preview whenever the product is not currently for sale.
             </li>
             <li>
               <code>{{ stripe_keys.category }}</code>: Optional group name. Products that share the same value appear together in a collapsible section on Check In. Omit to leave the product ungrouped at the top of the page.
