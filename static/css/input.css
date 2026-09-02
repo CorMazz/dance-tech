@@ -345,10 +345,34 @@
     @apply h-12 w-12 text-red-600;
   }
 
+  @keyframes cart-fab-attn {
+    0% { transform: scale(1); }
+    30% { transform: scale(1.16); }
+    55% { transform: scale(0.94); }
+    100% { transform: scale(1); }
+  }
+  @keyframes cart-fab-ping {
+    0% {
+      box-shadow:
+        0 10px 15px -3px rgb(0 0 0 / 0.1),
+        0 4px 6px -4px rgb(0 0 0 / 0.1),
+        0 0 0 0 var(--color-button);
+    }
+    100% {
+      box-shadow:
+        0 10px 15px -3px rgb(0 0 0 / 0.1),
+        0 4px 6px -4px rgb(0 0 0 / 0.1),
+        0 0 0 16px transparent;
+    }
+  }
+
   .my-cart-fab {
     @apply fixed z-50 rounded-full bg-button text-button-fg p-4 shadow-lg hover:opacity-90 min-h-14 min-w-14;
     bottom: max(1.25rem, env(safe-area-inset-bottom));
     right: max(1rem, env(safe-area-inset-right));
+  }
+  .my-cart-fab.my-cart-fab-attn {
+    animation: cart-fab-attn 0.55s ease-out, cart-fab-ping 0.7s ease-out;
   }
   @media (width >= 64rem) {
     .my-cart-fab {
@@ -375,7 +399,8 @@
     .animate-fade-in,
     .animate-fade-in-opacity,
     .my-stagger > *,
-    .my-body {
+    .my-body,
+    .my-cart-fab-attn {
       animation: none;
     }
     .my-card:hover,

@@ -357,6 +357,7 @@ mod tests {
         assert!(html.contains("id=\"drawer\""));
         assert!(html.contains("id=\"cart-drawer-body\""));
         assert!(html.contains("hx-target=\"#cart-drawer-body\""));
+        assert!(html.contains("my-cart-fab-attn"));
         assert!(!html.contains("hx-target=\"#shopping-cart-container\""));
         assert!(!html.contains("hx-swap-oob"));
     }

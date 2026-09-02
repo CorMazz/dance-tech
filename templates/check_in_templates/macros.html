@@ -193,6 +193,7 @@
           hx-post="{{ rts.update_cart }}"
           hx-target="#{{ ids.cart_drawer_body }}"
           hx-swap="outerHTML"
+          hx-on::after-request="if (event.detail.successful) document.querySelector('#shopping-cart-button .my-cart-fab')?.classList.add('my-cart-fab-attn')"
         >
           <input type="hidden" name="product_id" value="{{ product.id }}">
           <input type="hidden" name="quantity" value="1">
