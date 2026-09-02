@@ -1,4 +1,6 @@
 use crate::AppState;
+use crate::app::router::ROUTES;
+use crate::app::router::Routes;
 use crate::app::utils::is_htmx_request;
 use crate::app::utils::render;
 use crate::auth::middleware::AuthStatus;
@@ -6,6 +8,8 @@ use crate::auth::models::DisplayRoles;
 use crate::auth::models::User;
 use crate::auth::utils::search_for_users;
 use crate::check_in::handlers::get_products_from_actor;
+use crate::check_in::metadata::STRIPE_KEYS;
+use crate::check_in::metadata::StripeMetadataKeys;
 use crate::check_in::models::Product;
 use crate::exam::config::TestDisplayFlag;
 use crate::exam::models::Test;
@@ -27,8 +31,6 @@ use super::handlers::delete_user_roles_widget_handler;
 use super::handlers::known_grantable_roles;
 use super::handlers::post_user_roles_bulk_handler;
 use super::handlers::post_user_roles_widget_handler;
-use crate::app::router::ROUTES;
-use crate::app::router::Routes;
 use crate::app::utils::ErrorTemplate;
 use crate::exam::errors::ExamError;
 
@@ -82,6 +84,7 @@ pub async fn get_home_page(
 #[template(path = "./app_templates/admin_dashboard.html", blocks = ["content"])]
 pub struct AdminDashboardTemplate {
     rts: Routes,
+    stripe_keys: StripeMetadataKeys,
     tests: Vec<Test>,
     products: Vec<Product>,
 }
@@ -106,6 +109,7 @@ pub async fn get_admin_dashboard(
 
     let template = AdminDashboardTemplate {
         rts: ROUTES,
+        stripe_keys: STRIPE_KEYS,
         tests: data.exam_config.runtime_tests(),
         products,
     };

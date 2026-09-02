@@ -207,6 +207,19 @@
     display: none;
   }
 
+  .my-product-group {
+    @apply bg-card rounded-xl border border-edge;
+  }
+  .my-product-group > summary {
+    @apply cursor-pointer px-4 py-4 sm:px-6 text-lg sm:text-xl font-semibold text-ink tracking-tight;
+  }
+  .my-product-group[open] > summary {
+    @apply border-b border-edge;
+  }
+  .my-product-group .my-grid {
+    @apply p-4 sm:p-6;
+  }
+
   .my-footer {
     @apply mt-auto border-t border-edge bg-surface/80 backdrop-blur-md text-muted;
   }

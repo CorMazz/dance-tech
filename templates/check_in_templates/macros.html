@@ -128,3 +128,46 @@
 </div>
 
 {% endmacro %}
+
+{% macro render_product_card(product, is_admin, roles) %}
+  {% let price = format!("${:.2}", product.dollar_price) %}
+  {% let has_permission = is_admin || product.requires_roles.is_subset(roles) %}
+  {% let live = product.is_live() %}
+  <div class="my-card {% if !has_permission || !live %}opacity-60{% endif %} flex flex-col sm:flex-row sm:items-center gap-4">
+    <div class="flex-1 min-w-0">
+      <h2 class="my-section-title">{{ product.name }}</h2>
+      <p class="my-fineprint mt-1">
+        {{ product.description }}
+        {% if is_admin && !live %}
+          <span class="block mt-2 font-medium text-ink">
+            {{ product.visibility_status() }}
+          </span>
+        {% endif %}
+        {% if !has_permission %}
+          <span class="block text-red-600 dark:text-red-400 mt-2">
+            You don't have access to this product yet.
+          </span>
+        {% endif %}
+      </p>
+    </div>
+    <div class="flex items-center justify-between sm:justify-end gap-4 shrink-0">
+      <span class="my-price">{{ price }}</span>
+      {% if has_permission && live %}
+        <form
+          hx-post="{{ rts.update_cart }}"
+          hx-target="#{{ ids.shopping_cart_container }}"
+        >
+          <input type="hidden" name="product_id" value="{{ product.id }}">
+          <input type="hidden" name="quantity" value="1">
+          <button type="submit" class="my-button">
+            Add
+          </button>
+        </form>
+      {% else %}
+        <button disabled class="my-button opacity-50 cursor-not-allowed">
+          Add
+        </button>
+      {% endif %}
+    </div>
+  </div>
+{% endmacro %}

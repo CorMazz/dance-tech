@@ -3,11 +3,13 @@
 use crate::AppState;
 use crate::auth::models::Roles;
 use crate::check_in::errors::CheckInError;
+use crate::check_in::metadata::STRIPE_KEYS;
 use crate::check_in::models::Product;
 use crate::check_in::models::StripePrice;
 use crate::check_in::models::StripePriceList;
 use crate::check_in::models::StripeProduct;
 use crate::check_in::models::StripeProductSearchResponse;
+use crate::check_in::models::parse_category;
 use crate::check_in::visibility::parse_show_schedule;
 use std::collections::HashMap;
 use std::collections::HashSet;
@@ -81,12 +83,8 @@ pub async fn product_manager_actor_runtime(
     }
 }
 
-/// Use the Stripe search API to get all products that are active and have a metadata key of
-/// `"show-on-dancetech":"true"`.
-/// Will also grab the metadata key "requires-roles":"["advanced-leader", etc...]"
-/// Will also grab the metadata key "show-preview": "true"
-/// Will also grab the metadata key `"sort-level": <int>` and sort products by level and then name.
-/// Will also grab optional `show-timezone`, `show-interval`, and `show-weekly` tags.
+/// Use the Stripe search API to get all products that are active and tagged
+/// `STRIPE_KEYS.show_on_dancetech`. Other catalog tags live on that same struct.
 ///
 /// See the Stripe Dashboard for setting metadata.
 #[tracing::instrument(skip(client, secret_key))]
@@ -119,7 +117,7 @@ pub async fn get_stripe_products(
 
             let requires_roles: HashSet<Roles> = p
                 .metadata
-                .get("requires-roles")
+                .get(STRIPE_KEYS.requires_roles)
                 .map(|csv| {
                     csv.split(',')
                         .map(str::trim)
@@ -132,16 +130,18 @@ pub async fn get_stripe_products(
 
             let show_preview = p
                 .metadata
-                .get("show-preview")
+                .get(STRIPE_KEYS.show_preview)
                 // I don't know if the value will be kept as a string or a bool, so account for
                 // both
                 .is_some_and(|val| val == "true");
 
             let sort_level = p
                 .metadata
-                .get("sort-level")
+                .get(STRIPE_KEYS.sort_level)
                 .and_then(|s| s.parse::<i32>().ok())
                 .unwrap_or(0);
+
+            let (category, category_sort_level) = parse_category(&p.metadata);
 
             Some(Product {
                 name: p.name,
@@ -152,6 +152,8 @@ pub async fn get_stripe_products(
                 requires_roles,
                 show_preview,
                 sort_level,
+                category,
+                category_sort_level,
                 show_schedule: parse_show_schedule(&p.metadata),
             })
         })
@@ -163,13 +165,14 @@ pub async fn get_stripe_products(
 }
 
 /// A utility function used to query the Stripe product search API to get all the products that are
-/// active and have a `show-on-dancetech: true` metadata tag. This lets us update the products
-/// available from the Stripe dashboard rather than from the dance-tech server configuration.
+/// active and tagged `STRIPE_KEYS.show_on_dancetech`. This lets us update the products available
+/// from the Stripe dashboard rather than from the dance-tech server configuration.
 #[tracing::instrument(skip(client, secret_key))]
 pub async fn fetch_all_products(
     client: &reqwest::Client,
     secret_key: &str,
 ) -> Result<Vec<StripeProduct>, CheckInError> {
+    let catalog_query = STRIPE_KEYS.catalog_search_query();
     let mut all_products = vec![];
     let mut page: Option<String> = None;
 
@@ -179,18 +182,9 @@ pub async fn fetch_all_products(
             .basic_auth(secret_key.to_string(), Some(""));
 
         if let Some(ref token) = page {
-            req = req.query(&[
-                (
-                    "query",
-                    "active:'true' AND metadata['show-on-dancetech']:'true'",
-                ),
-                ("page", token),
-            ]);
+            req = req.query(&[("query", catalog_query.as_str()), ("page", token)]);
         } else {
-            req = req.query(&[(
-                "query",
-                "active:'true' AND metadata['show-on-dancetech']:'true'",
-            )]);
+            req = req.query(&[("query", catalog_query.as_str())]);
         }
 
         let res = req.send().await.map_err(|err| {

@@ -1,7 +1,8 @@
-//! Stripe `show-interval` / `show-weekly` windows for Check In products.
+//! Stripe show-window metadata for Check In products.
 //!
-//! Missing both tags means the product is always visible. A bad parse hides the product.
+//! Missing both interval tags means the product is always visible. A bad parse hides the product.
 
+use crate::check_in::metadata::STRIPE_KEYS;
 use chrono::{DateTime, Datelike, Duration, NaiveDateTime, NaiveTime, TimeZone, Utc, Weekday};
 use chrono_tz::Tz;
 use serde::{Deserialize, Serialize};
@@ -159,17 +160,17 @@ impl ShowSchedule {
             .collect()
     }
 
-    /// Raw `show-timezone` from Stripe, or empty.
+    /// Raw timezone tag from Stripe, or empty.
     pub fn raw_timezone(&self) -> &str {
         self.raw_timezone.as_deref().unwrap_or("")
     }
 
-    /// Raw `show-interval` from Stripe, or empty.
+    /// Raw interval tag from Stripe, or empty.
     pub fn raw_interval(&self) -> &str {
         self.raw_interval.as_deref().unwrap_or("")
     }
 
-    /// Raw `show-weekly` from Stripe, or empty.
+    /// Raw weekly tag from Stripe, or empty.
     pub fn raw_weekly(&self) -> &str {
         self.raw_weekly.as_deref().unwrap_or("")
     }
@@ -236,11 +237,11 @@ fn min_dt(current: Option<DateTime<Utc>>, candidate: DateTime<Utc>) -> DateTime<
     }
 }
 
-/// Read `show-timezone`, `show-interval`, and `show-weekly` from Stripe metadata.
+/// Read show-window tags from Stripe metadata.
 pub fn parse_show_schedule(metadata: &HashMap<String, String>) -> ShowSchedule {
-    let interval_raw = nonempty(metadata.get("show-interval")).map(str::to_string);
-    let weekly_raw = nonempty(metadata.get("show-weekly")).map(str::to_string);
-    let timezone_raw = nonempty(metadata.get("show-timezone")).map(str::to_string);
+    let interval_raw = nonempty(metadata.get(STRIPE_KEYS.show_interval)).map(str::to_string);
+    let weekly_raw = nonempty(metadata.get(STRIPE_KEYS.show_weekly)).map(str::to_string);
+    let timezone_raw = nonempty(metadata.get(STRIPE_KEYS.show_timezone)).map(str::to_string);
     if interval_raw.is_none() && weekly_raw.is_none() {
         return ShowSchedule::always();
     }
@@ -400,7 +401,10 @@ mod tests {
 
     #[test]
     fn same_day_interval() {
-        let schedule = parse_show_schedule(&meta(&[("show-interval", "2026-08-14 18:00/22:00")]));
+        let schedule = parse_show_schedule(&meta(&[(
+            STRIPE_KEYS.show_interval,
+            "2026-08-14 18:00/22:00",
+        )]));
         assert!(schedule.parse_error.is_none());
         assert!(schedule.is_visible(ny(2026, 8, 14, 18, 0)));
         assert!(schedule.is_visible(ny(2026, 8, 14, 21, 59)));
@@ -411,7 +415,7 @@ mod tests {
     #[test]
     fn multi_day_interval() {
         let schedule = parse_show_schedule(&meta(&[(
-            "show-interval",
+            STRIPE_KEYS.show_interval,
             "2026-08-14 22:00/2026-08-15 01:00",
         )]));
         assert!(schedule.is_visible(ny(2026, 8, 14, 23, 30)));
@@ -421,7 +425,7 @@ mod tests {
 
     #[test]
     fn weekly_thursday_edt() {
-        let schedule = parse_show_schedule(&meta(&[("show-weekly", "Thu 18:00-23:00")]));
+        let schedule = parse_show_schedule(&meta(&[(STRIPE_KEYS.show_weekly, "Thu 18:00-23:00")]));
         // 2026-08-13 is Thursday, Eastern Daylight Time
         assert!(schedule.is_visible(ny(2026, 8, 13, 18, 0)));
         assert!(schedule.is_visible(ny(2026, 8, 13, 22, 30)));
@@ -431,7 +435,7 @@ mod tests {
 
     #[test]
     fn weekly_thursday_est() {
-        let schedule = parse_show_schedule(&meta(&[("show-weekly", "Thu 18:00-23:00")]));
+        let schedule = parse_show_schedule(&meta(&[(STRIPE_KEYS.show_weekly, "Thu 18:00-23:00")]));
         // 2026-01-15 is Thursday, Eastern Standard Time
         assert!(schedule.is_visible(ny(2026, 1, 15, 18, 0)));
         assert!(!schedule.is_visible(ny(2026, 1, 14, 18, 0)));
@@ -440,8 +444,8 @@ mod tests {
     #[test]
     fn interval_or_weekly_union() {
         let schedule = parse_show_schedule(&meta(&[
-            ("show-interval", "2026-08-16 10:00/12:00"),
-            ("show-weekly", "Thu 18:00-23:00"),
+            (STRIPE_KEYS.show_interval, "2026-08-16 10:00/12:00"),
+            (STRIPE_KEYS.show_weekly, "Thu 18:00-23:00"),
         ]));
         assert!(schedule.is_visible(ny(2026, 8, 13, 19, 0)));
         assert!(schedule.is_visible(ny(2026, 8, 16, 11, 0)));
@@ -450,7 +454,8 @@ mod tests {
 
     #[test]
     fn bad_interval_fails_closed() {
-        let schedule = parse_show_schedule(&meta(&[("show-interval", "thursday evening")]));
+        let schedule =
+            parse_show_schedule(&meta(&[(STRIPE_KEYS.show_interval, "thursday evening")]));
         assert!(schedule.parse_error.is_some());
         assert!(!schedule.is_visible(Utc::now()));
         assert!(
@@ -463,8 +468,8 @@ mod tests {
     #[test]
     fn unknown_timezone_fails_closed() {
         let schedule = parse_show_schedule(&meta(&[
-            ("show-interval", "2026-08-14 18:00/22:00"),
-            ("show-timezone", "Mars/Olympus"),
+            (STRIPE_KEYS.show_interval, "2026-08-14 18:00/22:00"),
+            (STRIPE_KEYS.show_timezone, "Mars/Olympus"),
         ]));
         assert!(schedule.parse_error.is_some());
         assert!(!schedule.is_visible(ny(2026, 8, 14, 19, 0)));
@@ -472,14 +477,17 @@ mod tests {
 
     #[test]
     fn dst_gap_fails_closed() {
-        let schedule = parse_show_schedule(&meta(&[("show-interval", "2026-03-08 02:30/04:00")]));
+        let schedule = parse_show_schedule(&meta(&[(
+            STRIPE_KEYS.show_interval,
+            "2026-03-08 02:30/04:00",
+        )]));
         assert!(schedule.parse_error.is_some());
         assert!(!schedule.is_visible(ny(2026, 3, 8, 3, 30)));
     }
 
     #[test]
     fn hidden_until_uses_next_weekly_start() {
-        let schedule = parse_show_schedule(&meta(&[("show-weekly", "Thu 18:00-23:00")]));
+        let schedule = parse_show_schedule(&meta(&[(STRIPE_KEYS.show_weekly, "Thu 18:00-23:00")]));
         let wednesday = ny(2026, 8, 12, 12, 0);
         assert!(!schedule.is_visible(wednesday));
         assert_eq!(schedule.status_label(wednesday), "Hidden until Thu 18:00");
@@ -488,8 +496,8 @@ mod tests {
     #[test]
     fn admin_summaries_show_timezone_and_parsed_windows() {
         let schedule = parse_show_schedule(&meta(&[
-            ("show-interval", "2026-08-14 18:00/22:00"),
-            ("show-weekly", "Thu 18:00-23:00"),
+            (STRIPE_KEYS.show_interval, "2026-08-14 18:00/22:00"),
+            (STRIPE_KEYS.show_weekly, "Thu 18:00-23:00"),
         ]));
         assert_eq!(schedule.timezone_display(), "America/New_York (default)");
         let intervals = schedule.interval_summaries();

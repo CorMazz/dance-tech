@@ -11,7 +11,9 @@ use crate::check_in::handlers::get_or_create_cart;
 use crate::check_in::handlers::update_cart;
 use crate::check_in::handlers::verify_successful_checkout_session;
 use crate::check_in::models::Product;
+use crate::check_in::models::ProductGroup;
 use crate::check_in::models::ShoppingCart;
+use crate::check_in::models::group_products;
 use askama::Template;
 use axum::Extension;
 use axum::Form;
@@ -54,7 +56,7 @@ pub const IDS: Ids = Ids {
 pub struct CheckInTemplate {
     rts: Routes,
     ids: Ids,
-    products: Vec<Product>,
+    groups: Vec<ProductGroup>,
     shopping_cart: ShoppingCart,
     /// If the current user is an admin or not. Admins can see all products
     is_admin: bool,
@@ -93,22 +95,22 @@ pub async fn get_check_in_page(
         Err(err) => return err.into_response(&headers),
     };
 
-    let something_is_displayed = products.iter().any(|product| {
-        if is_admin {
-            return true;
-        }
-        product.is_live() && (product.requires_roles.is_subset(&roles) || product.show_preview)
-    });
+    let visible: Vec<Product> = products
+        .into_iter()
+        .filter(|product| product.visible_to(is_admin, &roles))
+        .collect();
+    let something_is_displayed = !visible.is_empty();
+    let groups = group_products(visible);
 
     let (cookie_jar, _, shopping_cart) = match get_or_create_cart(&data, cookie_jar).await {
         Ok(res) => res,
         Err(err) => return err.into_response(&headers),
     };
 
-    debug!("Products: {products:#?}\nUser Roles: {roles:#?}\nIs Admin?: {is_admin:#?}");
+    debug!("Product groups: {groups:#?}\nUser Roles: {roles:#?}\nIs Admin?: {is_admin:#?}");
 
     let template = CheckInTemplate {
-        products,
+        groups,
         rts: ROUTES,
         ids: IDS,
         shopping_cart,
@@ -284,4 +286,61 @@ pub async fn post_update_available_products(
     info!("Requesting Stripe Product update.");
 
     StatusCode::OK.into_response()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::check_in::models::Product;
+    use crate::check_in::visibility::ShowSchedule;
+    use askama::Template;
+
+    fn product(name: &str, category: &str) -> Product {
+        Product {
+            name: name.into(),
+            id: name.into(),
+            description: "desc".into(),
+            dollar_price: 10.0,
+            price_id: "price".into(),
+            requires_roles: HashSet::new(),
+            show_preview: false,
+            sort_level: 0,
+            category: category.into(),
+            category_sort_level: 0,
+            show_schedule: ShowSchedule::default(),
+        }
+    }
+
+    fn render_check_in(products: Vec<Product>) -> String {
+        CheckInTemplate {
+            rts: ROUTES,
+            ids: IDS,
+            groups: group_products(products),
+            shopping_cart: ShoppingCart::new(),
+            is_admin: false,
+            roles: HashSet::new(),
+            something_is_displayed: true,
+        }
+        .as_content()
+        .render()
+        .unwrap()
+    }
+
+    #[test]
+    fn named_category_renders_closed_details() {
+        let html = render_check_in(vec![product("Beginner", "Lessons")]);
+        assert!(html.contains("my-product-group"));
+        assert!(html.contains("<summary>Lessons</summary>"));
+        assert!(html.contains("Beginner"));
+        assert!(!html.contains("<details open"));
+        assert!(html.contains("Add"));
+    }
+
+    #[test]
+    fn ungrouped_products_skip_collapsible() {
+        let html = render_check_in(vec![product("Social", "")]);
+        assert!(!html.contains("my-product-group"));
+        assert!(!html.contains("<details"));
+        assert!(html.contains("Social"));
+    }
 }

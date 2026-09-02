@@ -1,4 +1,5 @@
 use crate::auth::models::Roles;
+use crate::check_in::metadata::STRIPE_KEYS;
 use crate::check_in::visibility::ShowSchedule;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
@@ -27,9 +28,15 @@ pub struct Product {
     pub show_preview: bool,
     /// A higher number puts this product further down the list on the check-in page.
     /// If a product doesn't have it specified, the default is 0. All products on the same level
-    /// are sorted lexicographically.
+    /// are sorted lexicographically. When `category` is set, this order applies inside that group.
     pub sort_level: i32,
-    /// Optional Stripe `show-interval` / `show-weekly` windows. Empty means always visible.
+    /// Stripe category tag. Empty means ungrouped on Check In.
+    #[serde(default)]
+    pub category: String,
+    /// Stripe category-sort-level. Smaller numbers appear first. Default 0.
+    #[serde(default)]
+    pub category_sort_level: i32,
+    /// Optional Stripe show windows. Empty means always visible.
     #[serde(default)]
     pub show_schedule: ShowSchedule,
 }
@@ -65,20 +72,90 @@ impl Product {
         self.show_schedule.weekly_summaries()
     }
 
-    /// Raw Stripe `show-timezone` tag, if present.
+    /// Raw Stripe timezone tag, if present.
     pub fn admin_raw_timezone(&self) -> &str {
         self.show_schedule.raw_timezone()
     }
 
-    /// Raw Stripe `show-interval` tag, if present.
+    /// Raw Stripe interval tag, if present.
     pub fn admin_raw_interval(&self) -> &str {
         self.show_schedule.raw_interval()
     }
 
-    /// Raw Stripe `show-weekly` tag, if present.
+    /// Raw Stripe weekly tag, if present.
     pub fn admin_raw_weekly(&self) -> &str {
         self.show_schedule.raw_weekly()
     }
+
+    /// Whether Check In should list this product for the given viewer.
+    pub fn visible_to(&self, is_admin: bool, roles: &HashSet<Roles>) -> bool {
+        is_admin || (self.is_live() && (self.requires_roles.is_subset(roles) || self.show_preview))
+    }
+}
+
+/// One Check In section: uncategorized products (`name` empty) or a named collapsible group.
+#[derive(Debug, Clone)]
+pub struct ProductGroup {
+    pub name: String,
+    pub sort_level: i32,
+    pub products: Vec<Product>,
+}
+
+impl ProductGroup {
+    pub fn is_named(&self) -> bool {
+        !self.name.is_empty()
+    }
+}
+
+/// Read Stripe category tags. Blank or missing category means ungrouped.
+pub fn parse_category(metadata: &HashMap<String, String>) -> (String, i32) {
+    let category = metadata
+        .get(STRIPE_KEYS.category)
+        .map(|s| s.trim())
+        .filter(|s| !s.is_empty())
+        .unwrap_or_default()
+        .to_string();
+    let category_sort_level = metadata
+        .get(STRIPE_KEYS.category_sort_level)
+        .and_then(|s| s.parse::<i32>().ok())
+        .unwrap_or(0);
+    (category, category_sort_level)
+}
+
+/// Bucket products by `category`. Ungrouped first, then named groups by sort level and name.
+/// Products inside a group are ordered by `sort_level` then name.
+pub fn group_products(products: Vec<Product>) -> Vec<ProductGroup> {
+    let mut by_name: HashMap<String, Vec<Product>> = HashMap::new();
+    let mut cat_sort: HashMap<String, i32> = HashMap::new();
+
+    for product in products {
+        let key = product.category.clone();
+        cat_sort
+            .entry(key.clone())
+            .and_modify(|level| *level = (*level).min(product.category_sort_level))
+            .or_insert(product.category_sort_level);
+        by_name.entry(key).or_default().push(product);
+    }
+
+    let mut groups: Vec<ProductGroup> = by_name
+        .into_iter()
+        .map(|(name, mut products)| {
+            products.sort_by_key(|p| (p.sort_level, p.name.to_lowercase()));
+            ProductGroup {
+                sort_level: cat_sort.get(&name).copied().unwrap_or(0),
+                name,
+                products,
+            }
+        })
+        .collect();
+
+    groups.sort_by(|a, b| match (a.name.is_empty(), b.name.is_empty()) {
+        (true, false) => std::cmp::Ordering::Less,
+        (false, true) => std::cmp::Ordering::Greater,
+        _ => (a.sort_level, a.name.to_lowercase()).cmp(&(b.sort_level, b.name.to_lowercase())),
+    });
+
+    groups
 }
 
 /// Store a hashmap of `product_id`: (product, quantity) pairs.
@@ -719,4 +796,116 @@ pub struct StripePrice {
 pub struct StripePriceList {
     pub data: Vec<StripePrice>,
     pub has_more: bool,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::auth::models::Roles;
+
+    fn product(name: &str, sort_level: i32, category: &str, category_sort_level: i32) -> Product {
+        Product {
+            name: name.into(),
+            id: name.into(),
+            description: String::new(),
+            dollar_price: 5.0,
+            price_id: "price".into(),
+            requires_roles: HashSet::new(),
+            show_preview: false,
+            sort_level,
+            category: category.into(),
+            category_sort_level,
+            show_schedule: ShowSchedule::default(),
+        }
+    }
+
+    #[test]
+    fn parse_category_blank_when_missing() {
+        assert_eq!(parse_category(&HashMap::new()), (String::new(), 0));
+    }
+
+    #[test]
+    fn parse_category_trims_and_reads_sort() {
+        let mut metadata = HashMap::new();
+        metadata.insert(STRIPE_KEYS.category.into(), "  Lessons  ".into());
+        metadata.insert(STRIPE_KEYS.category_sort_level.into(), "2".into());
+        assert_eq!(parse_category(&metadata), ("Lessons".into(), 2));
+    }
+
+    #[test]
+    fn parse_category_whitespace_is_ungrouped() {
+        let mut metadata = HashMap::new();
+        metadata.insert(STRIPE_KEYS.category.into(), "   ".into());
+        metadata.insert(STRIPE_KEYS.category_sort_level.into(), "nope".into());
+        assert_eq!(parse_category(&metadata), (String::new(), 0));
+    }
+
+    #[test]
+    fn group_products_keeps_ungrouped_flat_and_sorted() {
+        let groups = group_products(vec![
+            product("Zebra", 0, "", 0),
+            product("Alpha", 0, "", 0),
+            product("Last", 5, "", 0),
+        ]);
+        assert_eq!(groups.len(), 1);
+        assert!(!groups[0].is_named());
+        let names: Vec<_> = groups[0].products.iter().map(|p| p.name.as_str()).collect();
+        assert_eq!(names, ["Alpha", "Zebra", "Last"]);
+    }
+
+    #[test]
+    fn group_products_orders_named_groups_and_items() {
+        let groups = group_products(vec![
+            product("Social", 0, "Nights", 2),
+            product("Beginner", 1, "Lessons", 1),
+            product("Advanced", 0, "Lessons", 1),
+            product("Drop-in", 0, "", 99),
+        ]);
+        assert_eq!(groups.len(), 3);
+        assert!(!groups[0].is_named());
+        assert_eq!(groups[0].products[0].name, "Drop-in");
+        assert_eq!(groups[1].name, "Lessons");
+        let lesson_names: Vec<_> = groups[1].products.iter().map(|p| p.name.as_str()).collect();
+        assert_eq!(lesson_names, ["Advanced", "Beginner"]);
+        assert_eq!(groups[2].name, "Nights");
+    }
+
+    #[test]
+    fn group_products_uses_lowest_category_sort_level() {
+        let groups = group_products(vec![
+            product("A", 0, "Events", 5),
+            product("B", 0, "Events", 1),
+            product("C", 0, "Club", 3),
+        ]);
+        assert_eq!(groups[0].name, "Events");
+        assert_eq!(groups[0].sort_level, 1);
+        assert_eq!(groups[1].name, "Club");
+    }
+
+    #[test]
+    fn old_product_json_defaults_category_fields() {
+        let json = r#"{
+            "name":"A",
+            "id":"1",
+            "description":"",
+            "dollar_price":1.0,
+            "price_id":"p",
+            "requires_roles":[],
+            "show_preview":false,
+            "sort_level":0
+        }"#;
+        let product: Product = serde_json::from_str(json).unwrap();
+        assert!(product.category.is_empty());
+        assert_eq!(product.category_sort_level, 0);
+    }
+
+    #[test]
+    fn visible_to_admin_sees_gated_products() {
+        let mut gated = product("Gated", 0, "", 0);
+        gated.requires_roles.insert(Roles::new("advanced"));
+        assert!(gated.visible_to(true, &HashSet::new()));
+        assert!(!gated.visible_to(false, &HashSet::new()));
+        gated.show_preview = true;
+        assert!(gated.visible_to(false, &HashSet::new()));
+    }
 }
