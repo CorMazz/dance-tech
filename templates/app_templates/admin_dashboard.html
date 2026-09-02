@@ -131,7 +131,7 @@
               <code>{{ stripe_keys.category }}</code>: Optional group name. Products that share the same value appear together in a collapsible section on Check In. Omit to leave the product ungrouped at the top of the page.
             </li>
             <li>
-              <code>{{ stripe_keys.category_sort_level }}</code>: Where that <em>section</em> sits on the page, relative to other sections. Smaller numbers appear first (default 0). This does not order products inside the section. Put the same value on every product in the group; if they disagree, the lowest number wins. Sections with the same level are sorted alphabetically by category name.
+              <code>{{ stripe_keys.category_sort_level }}</code>: Where that <em>section</em> sits on the page, relative to other sections. Smaller numbers appear first (default 0). This does not order products inside the section. Put the same value on every product in the group; if they disagree, the highest number wins, so an omitted tag (default 0) does not override a value set on other products. Sections with the same level are sorted alphabetically by category name.
             </li>
             <li>
               <code>{{ stripe_keys.sort_level }}</code>: Where this <em>product</em> sits inside its section (or among ungrouped products if it has no category). Smaller numbers appear first (default 0). Products with the same sort level are sorted alphabetically by product name. This does not move the section.

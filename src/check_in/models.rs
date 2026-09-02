@@ -132,7 +132,7 @@ pub fn group_products(products: Vec<Product>) -> Vec<ProductGroup> {
         let key = product.category.clone();
         cat_sort
             .entry(key.clone())
-            .and_modify(|level| *level = (*level).min(product.category_sort_level))
+            .and_modify(|level| *level = (*level).max(product.category_sort_level))
             .or_insert(product.category_sort_level);
         by_name.entry(key).or_default().push(product);
     }
@@ -871,15 +871,16 @@ mod tests {
     }
 
     #[test]
-    fn group_products_uses_lowest_category_sort_level() {
+    fn group_products_uses_highest_category_sort_level() {
         let groups = group_products(vec![
             product("A", 0, "Events", 5),
-            product("B", 0, "Events", 1),
+            product("B", 0, "Events", 0),
             product("C", 0, "Club", 3),
         ]);
-        assert_eq!(groups[0].name, "Events");
-        assert_eq!(groups[0].sort_level, 1);
-        assert_eq!(groups[1].name, "Club");
+        assert_eq!(groups[0].name, "Club");
+        assert_eq!(groups[0].sort_level, 3);
+        assert_eq!(groups[1].name, "Events");
+        assert_eq!(groups[1].sort_level, 5);
     }
 
     #[test]
