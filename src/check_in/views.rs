@@ -41,10 +41,13 @@ pub struct Ids {
     /// The master container that holds the shopping cart drawer and the button to access the
     /// drawer
     shopping_cart_container: &'static str,
+    /// Inner cart list + footer. Swapped on update so the open `<dialog>` is not torn down.
+    cart_drawer_body: &'static str,
 }
 
 pub const IDS: Ids = Ids {
     shopping_cart_container: "shopping-cart-container",
+    cart_drawer_body: "cart-drawer-body",
 };
 
 // #######################################################################################################################################################
@@ -131,17 +134,16 @@ pub async fn get_check_in_page(
     }
 }
 
-/// We render the button and the shopping cart together, that way when we call `update-cart` we can
-/// send the updated cart and swap it with one htmx request.
+/// Cart line items + footer, plus an OOB swap for the FAB badge.
+/// The `<dialog>` itself is not in this fragment — replacing an open modal dialog
+/// closes it and can leave the document inert (all HTMX clicks die).
 #[derive(Template)]
 #[template(
     ext = "txt",
     source = r#"
 {% import "./check_in_templates/macros.html" as macros %}
-<div id="shopping-cart-container">
-    {% call macros::render_shopping_cart_button(shopping_cart.items.len()) %}
-    {% call macros::render_shopping_cart(shopping_cart) %}
-</div>
+{% call macros::render_cart_drawer_body(shopping_cart) %}
+{% call macros::render_shopping_cart_button(shopping_cart.total_quantity(), true) %}
 "#
 )]
 pub struct ShoppingCartTemplate {
@@ -155,6 +157,9 @@ pub struct ShoppingCartTemplate {
 pub struct UpdateCartForm {
     pub product_id: String,
     pub quantity: u64,
+    /// When true, `quantity` is the new total. When false, it is added to the current total.
+    #[serde(default)]
+    pub replace: bool,
 }
 
 #[tracing::instrument(skip(data, headers, cookie_jar))]
@@ -175,6 +180,7 @@ pub async fn post_update_cart(
         products,
         &update_data.product_id,
         update_data.quantity,
+        update_data.replace,
     )
     .await
     {
@@ -343,5 +349,35 @@ mod tests {
         assert!(!html.contains("my-product-group"));
         assert!(!html.contains("<details"));
         assert!(html.contains("Social"));
+    }
+
+    #[test]
+    fn check_in_page_keeps_dialog_shell() {
+        let html = render_check_in(vec![product("Social", "")]);
+        assert!(html.contains("id=\"drawer\""));
+        assert!(html.contains("id=\"cart-drawer-body\""));
+        assert!(html.contains("hx-target=\"#cart-drawer-body\""));
+        assert!(!html.contains("hx-target=\"#shopping-cart-container\""));
+        assert!(!html.contains("hx-swap-oob"));
+    }
+
+    #[test]
+    fn cart_update_fragment_does_not_replace_dialog() {
+        let mut cart = ShoppingCart::new();
+        cart.add_item("Social", product("Social", ""), 2);
+        let html = ShoppingCartTemplate {
+            rts: ROUTES,
+            ids: IDS,
+            shopping_cart: cart,
+        }
+        .render()
+        .unwrap();
+        assert!(html.contains("id=\"cart-drawer-body\""));
+        assert!(html.contains("hx-swap-oob=\"outerHTML\""));
+        assert!(html.contains("hx-target=\"#cart-drawer-body\""));
+        assert!(!html.contains("<dialog"));
+        assert!(!html.contains("<el-dialog"));
+        assert!(!html.contains("id=\"shopping-cart-container\""));
+        assert!(!html.contains("id=\"drawer\""));
     }
 }

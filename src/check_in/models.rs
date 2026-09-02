@@ -1016,4 +1016,25 @@ mod tests {
         item.show_role_preview = true;
         assert!(item.visible_to_at(false, &none, before));
     }
+
+    #[test]
+    fn add_item_increments_existing_quantity() {
+        let mut cart = ShoppingCart::new();
+        let item = product("Class", 0, "", 0);
+        cart.add_item("Class", item.clone(), 1);
+        cart.add_item("Class", item, 2);
+        assert_eq!(cart.items["Class"].1, 3);
+        assert_eq!(cart.total_quantity(), 3);
+    }
+
+    #[test]
+    fn update_item_sets_quantity_and_zero_removes() {
+        let mut cart = ShoppingCart::new();
+        let item = product("Class", 0, "", 0);
+        cart.add_item("Class", item, 1);
+        cart.update_item("Class", 4);
+        assert_eq!(cart.items["Class"].1, 4);
+        cart.update_item("Class", 0);
+        assert!(cart.items.is_empty());
+    }
 }

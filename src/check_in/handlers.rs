@@ -63,9 +63,8 @@ pub async fn get_or_create_cart(
 /// If there is no `ShoppingCart` that corresponds to cart-id in the database, we clear that cookie
 /// and create a new one (to update the TTL). This function will communicate with the
 /// `StripeProductActor` and get information about the existing products. The product id must match
-/// one of the existing products. Then, we update the shopping cart in the redis db to add the new
-/// product, or update the quantity if it already exists. If the quantity reaches 0, we remove the
-/// product.
+/// one of the existing products. Then we add `quantity` to the line, or replace it when `replace`
+/// is set. Quantity `0` removes the line.
 #[tracing::instrument(skip(data, cookie_jar))]
 pub async fn update_cart(
     data: &AppState,
@@ -73,6 +72,7 @@ pub async fn update_cart(
     products: Vec<Product>,
     product_id: &str,
     quantity: u64,
+    replace: bool,
 ) -> Result<(CookieJar, ShoppingCart), CheckInError> {
     let (jar, cart_id, cart) = get_or_create_cart(data, cookie_jar).await?;
 
@@ -80,9 +80,12 @@ pub async fn update_cart(
         if quantity > 0 && !product.is_live() {
             return Err(CheckInError::ProductNotAvailable);
         }
-        // 5️⃣ Update cart
         let mut updated_cart = cart;
-        updated_cart.add_item(product_id, product.clone(), quantity);
+        if replace {
+            updated_cart.update_item(product_id, quantity);
+        } else {
+            updated_cart.add_item(product_id, product.clone(), quantity);
+        }
         // 6️⃣ Serialize and save back to Redis
         let cart_json = serde_json::to_string(&updated_cart).map_err(|e| {
             error!("There was an issue serializing the shopping cart: {e}");

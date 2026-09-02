@@ -7,7 +7,7 @@
 {% block content %}
 
   <div id="{{ ids.shopping_cart_container }}">
-    {% call macros::render_shopping_cart_button(shopping_cart.items.len()) %}
+    {% call macros::render_shopping_cart_button(shopping_cart.total_quantity()) %}
     {% call macros::render_shopping_cart(shopping_cart) %}
   </div>
   <div>

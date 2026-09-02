@@ -1,3 +1,111 @@
+{% macro render_cart_drawer_body(cart) %}
+<div id="{{ ids.cart_drawer_body }}" class="flex flex-1 flex-col min-h-0">
+  <div class="flex-1 overflow-y-auto px-4 pb-6 sm:px-6">
+    <div class="flow-root">
+      <ul role="list" class="-my-6 divide-y divide-edge">
+        {% for (product, quantity) in cart.items.values() %}
+          {% let i = ((loop.index - 1) % 6)  + 1 %}
+          {% let price = format!("${:.2}", product.dollar_price) %}
+          <li class="flex py-6">
+            <div class="size-24 shrink-0 overflow-hidden rounded-md border border-edge">
+              <img src="/static/images/shopping_cart_icon_{{ i }}.png" alt="Two people dancing icon" class="size-full object-cover" />
+            </div>
+
+            <div class="ml-4 flex flex-1 flex-col">
+              <div>
+                <div class="flex justify-between text-base font-medium text-ink">
+                  <h3>
+                    {{ product.name }}
+                  </h3>
+                  <p class="ml-4">{{ price }}</p>
+                </div>
+              </div>
+              <div class="flex flex-1 items-end justify-between text-sm gap-3">
+                <div class="flex items-center gap-2">
+                  <button
+                    type="button"
+                    class="inline-flex items-center justify-center size-8 rounded-lg border border-edge text-ink hover:bg-surface"
+                    aria-label="Decrease quantity"
+                    hx-post="{{ rts.update_cart }}"
+                    hx-vals='{"product_id": "{{ product.id }}", "quantity": {{ quantity - 1 }}, "replace": true}'
+                    hx-target="#{{ ids.cart_drawer_body }}"
+                    hx-swap="outerHTML"
+                  >
+                    −
+                  </button>
+                  <span class="text-muted min-w-6 text-center tabular-nums">{{ quantity }}</span>
+                  <button
+                    type="button"
+                    class="inline-flex items-center justify-center size-8 rounded-lg border border-edge text-ink hover:bg-surface"
+                    aria-label="Increase quantity"
+                    hx-post="{{ rts.update_cart }}"
+                    hx-vals='{"product_id": "{{ product.id }}", "quantity": {{ quantity + 1 }}, "replace": true}'
+                    hx-target="#{{ ids.cart_drawer_body }}"
+                    hx-swap="outerHTML"
+                  >
+                    +
+                  </button>
+                </div>
+                <div class="flex">
+                  <button
+                    type="button"
+                    class="font-medium text-primary-400 hover:text-primary-500"
+                    hx-post="{{ rts.update_cart }}"
+                    hx-vals='{"product_id": "{{ product.id }}", "quantity": 0}'
+                    hx-target="#{{ ids.cart_drawer_body }}"
+                    hx-swap="outerHTML"
+                  >
+                    Remove
+                  </button>
+                </div>
+              </div>
+            </div>
+          </li>
+        {% endfor %}
+        {% if cart.items.is_empty() %}
+          <li class="py-16 text-center">
+            <div class="mx-auto inline-flex items-center justify-center size-12 rounded-full bg-surface">
+              <svg class="size-6 text-muted" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round"
+                  d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2 9m12-9l2 9m-6 0a1 1 0 11-2 0m2 0a1 1 0 11-2 0" />
+              </svg>
+            </div>
+            <p class="mt-4 text-ink font-medium">Your cart is empty.</p>
+            <p class="mt-1 text-sm text-muted">Add items to get started.</p>
+          </li>
+        {% endif %}
+      </ul>
+    </div>
+  </div>
+
+  <div class="border-t border-edge px-4 py-6 sm:px-6">
+    <div class="flex justify-between text-base font-medium text-ink">
+      <p>Subtotal</p>
+      {% let subtotal_float = cart.subtotal() %}
+      {% let subtotal = format!("${:.2}", subtotal_float.abs() ) %}
+      <p>{{ subtotal }}</p>
+    </div>
+    <p class="mt-0.5 text-sm text-muted">Taxes calculated at checkout.</p>
+    <div class="mt-6">
+      <form action="{{ rts.create_checkout_session }}" method="POST">
+        <button {% if cart.items.is_empty() %}disabled{% endif %} class="flex w-full items-center justify-center my-button text-base font-medium">
+         Checkout
+        </button>
+      </form>
+    </div>
+    <div class="mt-6 flex justify-center text-center text-sm text-muted">
+      <p>
+        or
+        <button type="button" command="close" commandfor="drawer" class="font-medium text-primary-400 hover:text-primary-500">
+          Continue Shopping
+          <span aria-hidden="true"> &rarr;</span>
+        </button>
+      </p>
+    </div>
+  </div>
+</div>
+{% endmacro %}
+
 {% macro render_shopping_cart(cart) %}
 <el-dialog id="shopping-cart">
   <dialog id="drawer" aria-labelledby="drawer-title" class="fixed inset-0 size-auto max-h-none max-w-none overflow-hidden bg-transparent not-open:hidden backdrop:bg-transparent">
@@ -6,7 +114,7 @@
     <div tabindex="0" class="absolute inset-0 pl-10 focus:outline-none sm:pl-16">
       <el-dialog-panel class="ml-auto block size-full max-w-md transform transition duration-500 ease-in-out data-closed:translate-x-full sm:duration-700">
         <div class="flex h-full flex-col overflow-y-auto my-drawer-panel shadow-xl">
-          <div class="flex-1 overflow-y-auto px-4 py-6 sm:px-6">
+          <div class="px-4 pt-6 sm:px-6">
             <div class="flex items-start justify-between">
               <h2 id="drawer-title" class="text-lg font-medium text-ink">Shopping cart</h2>
               <div class="ml-3 flex h-7 items-center">
@@ -19,86 +127,9 @@
                 </button>
               </div>
             </div>
-
-            <div class="mt-8">
-              <div class="flow-root">
-                <ul role="list" class="-my-6 divide-y divide-edge">
-                  {% for (product, quantity) in cart.items.values() %}
-                    {% let i = ((loop.index - 1) % 6)  + 1 %}
-                    {% let price = format!("${:.2}", product.dollar_price) %}
-                    <li class="flex py-6">
-                      <div class="size-24 shrink-0 overflow-hidden rounded-md border border-edge">
-                        <img src="/static/images/shopping_cart_icon_{{ i }}.png" alt="Two people dancing icon" class="size-full object-cover" />
-                      </div>
-
-                      <div class="ml-4 flex flex-1 flex-col">
-                        <div>
-                          <div class="flex justify-between text-base font-medium text-ink">
-                            <h3>
-                              {{ product.name }}
-                            </h3>
-                            <p class="ml-4">{{ price }}</p>
-                          </div>
-                          {# <p class="mt-1 text-sm text-gray-500">Salmon</p> #}
-                        </div>
-                        <div class="flex flex-1 items-end justify-between text-sm">
-                          <p class="text-muted">Qty {{ quantity }}</p>
-                          <div class="flex">
-                            <button
-                              type="button"
-                              class="font-medium text-primary-400 hover:text-primary-500"
-                              hx-post="{{ rts.update_cart }}"
-                              hx-vals='{"product_id": "{{ product.id }}", "quantity": 0}'
-                              hx-target="#{{ ids.shopping_cart_container }}"
-                            >
-                              Remove
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    </li>
-                  {% endfor %}
-                  {% if cart.items.is_empty() %}
-                    <li class="py-16 text-center">
-                      <div class="mx-auto inline-flex items-center justify-center size-12 rounded-full bg-surface">
-                        <svg class="size-6 text-muted" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
-                          <path stroke-linecap="round" stroke-linejoin="round"
-                            d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2 9m12-9l2 9m-6 0a1 1 0 11-2 0m2 0a1 1 0 11-2 0" />
-                        </svg>
-                      </div>
-                      <p class="mt-4 text-ink font-medium">Your cart is empty.</p>
-                      <p class="mt-1 text-sm text-muted">Add items to get started.</p>
-                    </li>
-                  {% endif %}
-                </ul>
-              </div>
-            </div>
           </div>
-
-          <div class="border-t border-edge px-4 py-6 sm:px-6">
-            <div class="flex justify-between text-base font-medium text-ink">
-              <p>Subtotal</p>
-              {% let subtotal_float = cart.subtotal() %}
-              {% let subtotal = format!("${:.2}", subtotal_float.abs() ) %}
-              <p>{{ subtotal }}</p>
-            </div>
-            <p class="mt-0.5 text-sm text-muted">Taxes calculated at checkout.</p>
-            <div class="mt-6">
-              <form action="{{ rts.create_checkout_session }}" method="POST">
-                <button {% if cart.items.is_empty() %}disabled{% endif %} class="flex w-full items-center justify-center my-button text-base font-medium">
-                 Checkout
-                </button>
-              </form>
-            </div>
-            <div class="mt-6 flex justify-center text-center text-sm text-muted">
-              <p>
-                or
-                <button type="button" command="close" commandfor="drawer" class="font-medium text-primary-400 hover:text-primary-500">
-                  Continue Shopping
-                  <span aria-hidden="true"> &rarr;</span>
-                </button>
-              </p>
-            </div>
+          <div class="mt-8 flex flex-1 flex-col min-h-0">
+            {% call render_cart_drawer_body(cart) %}
           </div>
         </div>
       </el-dialog-panel>
@@ -108,9 +139,9 @@
 <script src="https://cdn.jsdelivr.net/npm/@tailwindplus/elements@1" type="module"></script>
 {% endmacro %}
 
-{% macro render_shopping_cart_button(count) %}
+{% macro render_shopping_cart_button(count, oob=false) %}
 
-<div id="shopping-cart-button" class="relative">
+<div id="shopping-cart-button" class="relative"{% if oob %} hx-swap-oob="outerHTML"{% endif %}>
   <button 
       command="show-modal" 
       commandfor="drawer"
@@ -160,7 +191,8 @@
       {% if has_permission && live %}
         <form
           hx-post="{{ rts.update_cart }}"
-          hx-target="#{{ ids.shopping_cart_container }}"
+          hx-target="#{{ ids.cart_drawer_body }}"
+          hx-swap="outerHTML"
         >
           <input type="hidden" name="product_id" value="{{ product.id }}">
           <input type="hidden" name="quantity" value="1">
