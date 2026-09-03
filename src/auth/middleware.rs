@@ -49,6 +49,17 @@ impl AuthStatus {
             Self::Unauthorized(err) => Err(err),
         }
     }
+
+    /// Return the user if they are an Admin. Anyone else is sent to login.
+    ///
+    /// Matches the existing admin-dashboard behavior: non-admins are not told
+    /// the page exists (`Forbidden`); they get the login redirect.
+    pub fn require_admin(self) -> Result<User, Redirect> {
+        match self {
+            Self::Authorized(user) if user.is_admin() => Ok(user),
+            _ => Err(Redirect::to(ROUTES.login)),
+        }
+    }
 }
 
 /// This function checks if the user is authorized. This is not to be used directly as middleware.
@@ -149,7 +160,7 @@ pub async fn require_auth_middleware(
         }
         Err(e) => match e {
             AuthError::NotLoggedIn | AuthError::ExpiredSession => {
-                Redirect::to("/login").into_response()
+                Redirect::to(ROUTES.login).into_response()
             }
             _ => e.into_response(req.headers()),
         },
@@ -195,5 +206,44 @@ mod tests {
             AuthStatus::Unauthorized(AuthError::NotLoggedIn).require_superuser(),
             Err(AuthError::NotLoggedIn)
         ));
+    }
+
+    fn redirect_location(redirect: Redirect) -> String {
+        redirect
+            .into_response()
+            .headers()
+            .get(header::LOCATION)
+            .unwrap()
+            .to_str()
+            .unwrap()
+            .to_string()
+    }
+
+    #[test]
+    fn require_admin_allows_admin_only() {
+        let admin = user_with_roles(HashSet::from([Roles::Admin]));
+        assert!(AuthStatus::Authorized(admin).require_admin().is_ok());
+    }
+
+    #[test]
+    fn require_admin_redirects_proctor_dancer_and_anonymous_to_login() {
+        let proctor = user_with_roles(HashSet::from([Roles::Proctor]));
+        let dancer = user_with_roles(HashSet::new());
+        assert_eq!(
+            redirect_location(AuthStatus::Authorized(proctor).require_admin().unwrap_err()),
+            ROUTES.login
+        );
+        assert_eq!(
+            redirect_location(AuthStatus::Authorized(dancer).require_admin().unwrap_err()),
+            ROUTES.login
+        );
+        assert_eq!(
+            redirect_location(
+                AuthStatus::Unauthorized(AuthError::NotLoggedIn)
+                    .require_admin()
+                    .unwrap_err()
+            ),
+            ROUTES.login
+        );
     }
 }

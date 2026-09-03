@@ -10,9 +10,10 @@ use super::utils::{
     remove_user_from_test_queue, retrieve_test_queue,
 };
 use crate::AppState;
-use crate::app::utils::ErrorTemplate;
-use crate::app::utils::is_htmx_request;
+use crate::app::utils::htmx_page;
+use crate::app::utils::htmx_triggered;
 use crate::app::utils::render;
+use crate::app::utils::render_error;
 use crate::auth::errors::AuthError;
 use crate::auth::middleware::AuthStatus;
 use crate::auth::models::User;
@@ -99,39 +100,20 @@ pub async fn get_test_page(
         return err.into_response(&headers);
     }
 
-    data.exam_config
-        .runtime_test(test_index)
-        .map_or_else(
-            || {
-                let template = ErrorTemplate {
-                    error_message: "There is no test with that ID number.".to_string(),
-                    rts: ROUTES,
-                };
+    let Some(test) = data.exam_config.runtime_test(test_index) else {
+        return render_error(&headers, "There is no test with that ID number.");
+    };
 
-                if is_htmx_request(&headers) {
-                    (StatusCode::OK, Html(render(template.as_content())))
-                } else {
-                    (StatusCode::OK, Html(render(template)))
-                }
-            },
-            |test| {
-                let template = AdministerExamTemplate {
-                    test,
-                    test_index,
-                    is_demo_mode: data.app_config.is_demo_mode,
-                    // email_functionality_active: data.smtp_config.is_some(),
-                    testee_email: testee_email.email,
-                    rts: ROUTES,
-                };
+    let template = AdministerExamTemplate {
+        test,
+        test_index,
+        is_demo_mode: data.app_config.is_demo_mode,
+        // email_functionality_active: data.smtp_config.is_some(),
+        testee_email: testee_email.email,
+        rts: ROUTES,
+    };
 
-                if is_htmx_request(&headers) {
-                    (StatusCode::OK, Html(render(template.as_content())))
-                } else {
-                    (StatusCode::OK, Html(render(template)))
-                }
-            },
-        )
-        .into_response()
+    htmx_page!(&headers, template).into_response()
 }
 
 /// Handles parsing the test form, saving the graded test to the database, and emailing test results to the testee.
@@ -220,11 +202,7 @@ pub async fn get_graded_test_page(
                     rts: ROUTES,
                 };
 
-                if is_htmx_request(&headers) {
-                    (StatusCode::OK, Html(render(template.as_content()))).into_response()
-                } else {
-                    (StatusCode::OK, Html(render(template))).into_response()
-                }
+                htmx_page!(&headers, template).into_response()
             },
         )
 }
@@ -293,11 +271,7 @@ pub async fn get_proctor_dashboard_page(
         test_names,
     };
 
-    if is_htmx_request(&headers) {
-        (StatusCode::OK, Html(render(template.as_content()))).into_response()
-    } else {
-        (StatusCode::OK, Html(render(template))).into_response()
-    }
+    htmx_page!(&headers, template).into_response()
 }
 
 #[derive(Template)]
@@ -313,11 +287,7 @@ pub async fn get_user_dashboard_page(headers: axum::http::HeaderMap) -> impl Int
         ids: IDS,
     };
 
-    if is_htmx_request(&headers) {
-        (StatusCode::OK, Html(render(template.as_content())))
-    } else {
-        (StatusCode::OK, Html(render(template)))
-    }
+    htmx_page!(&headers, template)
 }
 
 /// The queue is only ever intended to be rendered within another page, so it has no content block.
@@ -652,10 +622,7 @@ pub async fn get_search_tests_widget(
             is_superuser: false,
             is_signed_in: false,
         };
-        if is_htmx_request(&headers) {
-            return (StatusCode::OK, Html(render(template.as_content()))).into_response();
-        }
-        return (StatusCode::OK, Html(render(template))).into_response();
+        return htmx_page!(&headers, template).into_response();
     };
 
     let (graded_tests, has_next_page) =
@@ -674,13 +641,7 @@ pub async fn get_search_tests_widget(
         is_signed_in: true,
     };
 
-    if matches!(headers.get("HX-Trigger"), Some(div_id) if div_id == IDS.test_form) {
-        (StatusCode::OK, Html(render(template.as_table()))).into_response()
-    } else if is_htmx_request(&headers) {
-        (StatusCode::OK, Html(render(template.as_content()))).into_response()
-    } else {
-        (StatusCode::OK, Html(render(template))).into_response()
-    }
+    htmx_triggered!(&headers, IDS.test_form, template, as_table).into_response()
 }
 
 #[cfg(test)]

@@ -395,7 +395,7 @@ pub async fn logout_handler(
         logged_in_cookie.to_string().parse().unwrap(),
     );
 
-    let mut response = Redirect::to("/").into_response();
+    let mut response = Redirect::to(ROUTES.root).into_response();
     response.headers_mut().extend(headers);
     Ok(response)
 }

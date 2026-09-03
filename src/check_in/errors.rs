@@ -1,12 +1,7 @@
 //! Error types for check-in operations.
 
-use crate::app::{
-    router::ROUTES,
-    utils::{ErrorTemplate, is_htmx_request, render},
-};
-use axum::response::IntoResponse;
+use crate::app::utils::render_error;
 use thiserror::Error;
-use tracing::error;
 
 #[derive(Debug, Clone, Error)]
 pub enum CheckInError {
@@ -44,15 +39,6 @@ impl CheckInError {
         self,
         headers: &axum::http::HeaderMap,
     ) -> axum::http::Response<axum::body::Body> {
-        let template = ErrorTemplate {
-            error_message: self.to_string(),
-            rts: ROUTES,
-        };
-
-        if is_htmx_request(headers) {
-            render(template.as_content()).into_response()
-        } else {
-            render(template).into_response()
-        }
+        render_error(headers, self.to_string())
     }
 }

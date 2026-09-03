@@ -1,7 +1,7 @@
 use crate::AppState;
 use crate::app::router::ROUTES;
 use crate::app::router::Routes;
-use crate::app::utils::is_htmx_request;
+use crate::app::utils::htmx_page;
 use crate::app::utils::render;
 use crate::auth::middleware::AuthStatus;
 use crate::auth::models::Roles;
@@ -19,7 +19,6 @@ use axum::Extension;
 use axum::Form;
 use axum::extract::Query;
 use axum::extract::State;
-use axum::response::Redirect;
 use axum::{
     http::StatusCode,
     response::{Html, IntoResponse},
@@ -122,16 +121,8 @@ pub async fn get_check_in_page(
         something_is_displayed,
     };
 
-    if is_htmx_request(&headers) {
-        (
-            StatusCode::OK,
-            cookie_jar,
-            Html(render(template.as_content())),
-        )
-            .into_response()
-    } else {
-        (StatusCode::OK, cookie_jar, Html(render(template))).into_response()
-    }
+    let (status, html) = htmx_page!(&headers, template);
+    (status, cookie_jar, html).into_response()
 }
 
 /// Cart line items + footer, plus an OOB swap for the FAB badge.
@@ -279,10 +270,8 @@ pub async fn post_update_available_products(
     State(data): State<Arc<AppState>>,
     Extension(auth_status): Extension<AuthStatus>,
 ) -> impl IntoResponse {
-    if matches!(auth_status, AuthStatus::Unauthorized(..))
-        || matches!(auth_status, AuthStatus::Authorized(user) if !user.is_admin())
-    {
-        return Redirect::to(ROUTES.login).into_response();
+    if let Err(redirect) = auth_status.require_admin() {
+        return redirect.into_response();
     }
 
     if let Err(err) = data.check_in_config.trigger_update_tx.send(()).await {

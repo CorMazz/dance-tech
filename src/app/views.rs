@@ -1,7 +1,8 @@
 use crate::AppState;
 use crate::app::router::ROUTES;
 use crate::app::router::Routes;
-use crate::app::utils::is_htmx_request;
+use crate::app::utils::htmx_page;
+use crate::app::utils::htmx_triggered;
 use crate::app::utils::render;
 use crate::auth::middleware::AuthStatus;
 use crate::auth::models::DisplayRoles;
@@ -19,7 +20,6 @@ use axum::Form;
 use axum::extract::Path;
 use axum::extract::Query;
 use axum::extract::State;
-use axum::response::Redirect;
 use axum::{
     http::StatusCode,
     response::{Html, IntoResponse},
@@ -73,11 +73,7 @@ pub async fn get_home_page(
         hero_source: data.hero_gallery.source_url().to_string(),
     };
 
-    if is_htmx_request(&headers) {
-        (StatusCode::OK, Html(render(template.as_content())))
-    } else {
-        (StatusCode::OK, Html(render(template)))
-    }
+    htmx_page!(&headers, template)
 }
 
 #[derive(Template)]
@@ -96,10 +92,8 @@ pub async fn get_admin_dashboard(
     headers: axum::http::HeaderMap,
     Extension(auth_status): Extension<AuthStatus>,
 ) -> impl IntoResponse {
-    if matches!(auth_status, AuthStatus::Unauthorized(..))
-        || matches!(auth_status, AuthStatus::Authorized(user) if !user.is_admin())
-    {
-        return Redirect::to(ROUTES.login).into_response();
+    if let Err(redirect) = auth_status.require_admin() {
+        return redirect.into_response();
     }
 
     let products = match get_products_from_actor(&data).await {
@@ -114,11 +108,7 @@ pub async fn get_admin_dashboard(
         products,
     };
 
-    if is_htmx_request(&headers) {
-        (StatusCode::OK, Html(render(template.as_content()))).into_response()
-    } else {
-        (StatusCode::OK, Html(render(template))).into_response()
-    }
+    htmx_page!(&headers, template).into_response()
 }
 
 #[derive(Template)]
@@ -142,10 +132,8 @@ pub async fn post_toggle_test_display(
     Extension(auth_status): Extension<AuthStatus>,
     Form(form): Form<ToggleTestDisplayForm>,
 ) -> impl IntoResponse {
-    if matches!(auth_status, AuthStatus::Unauthorized(..))
-        || matches!(auth_status, AuthStatus::Authorized(user) if !user.is_admin())
-    {
-        return Redirect::to(ROUTES.login).into_response();
+    if let Err(redirect) = auth_status.require_admin() {
+        return redirect.into_response();
     }
 
     let Some(test) = data.exam_config.toggle_display(test_index, form.flag) else {
@@ -184,10 +172,8 @@ pub async fn get_user_roles_widget(
     Query(user_query): Query<UserQuery>,
     Extension(auth_status): Extension<AuthStatus>,
 ) -> impl IntoResponse {
-    if matches!(auth_status, AuthStatus::Unauthorized(..))
-        || matches!(auth_status, AuthStatus::Authorized(user) if !user.is_admin())
-    {
-        return Redirect::to(ROUTES.login).into_response();
+    if let Err(redirect) = auth_status.require_admin() {
+        return redirect.into_response();
     }
 
     let users = match user_query.query {
@@ -205,13 +191,7 @@ pub async fn get_user_roles_widget(
         known_roles: known_grantable_roles(&data.exam_config.tests),
     };
 
-    if matches!(headers.get("HX-Trigger"), Some(div_id) if div_id == IDS.user_role_form) {
-        (StatusCode::OK, Html(render(template.as_table_body()))).into_response()
-    } else if is_htmx_request(&headers) {
-        (StatusCode::OK, Html(render(template.as_content()))).into_response()
-    } else {
-        (StatusCode::OK, Html(render(template))).into_response()
-    }
+    htmx_triggered!(&headers, IDS.user_role_form, template, as_table_body).into_response()
 }
 
 /// A struct used to either add or remove roles from a user
@@ -243,10 +223,8 @@ pub async fn post_user_roles_bulk(
     Extension(auth_status): Extension<AuthStatus>,
     Form(form): Form<BulkGrantForm>,
 ) -> impl IntoResponse {
-    if matches!(auth_status, AuthStatus::Unauthorized(..))
-        || matches!(auth_status, AuthStatus::Authorized(user) if !user.is_admin())
-    {
-        return Redirect::to(ROUTES.login).into_response();
+    if let Err(redirect) = auth_status.require_admin() {
+        return redirect.into_response();
     }
 
     match post_user_roles_bulk_handler(form, &data.db).await {
@@ -271,10 +249,8 @@ pub async fn delete_user_roles_widget(
     Query(query): Query<ModifyUserQuery>,
     Extension(auth_status): Extension<AuthStatus>,
 ) -> impl IntoResponse {
-    if matches!(auth_status, AuthStatus::Unauthorized(..))
-        || matches!(auth_status, AuthStatus::Authorized(user) if !user.is_admin())
-    {
-        return Redirect::to(ROUTES.login).into_response();
+    if let Err(redirect) = auth_status.require_admin() {
+        return redirect.into_response();
     }
 
     match delete_user_roles_widget_handler(query, &data.db).await {
@@ -292,10 +268,8 @@ pub async fn post_user_roles_widget(
     Extension(auth_status): Extension<AuthStatus>,
     Form(query): Form<ModifyUserQuery>,
 ) -> impl IntoResponse {
-    if matches!(auth_status, AuthStatus::Unauthorized(..))
-        || matches!(auth_status, AuthStatus::Authorized(user) if !user.is_admin())
-    {
-        return Redirect::to(ROUTES.login).into_response();
+    if let Err(redirect) = auth_status.require_admin() {
+        return redirect.into_response();
     }
 
     match post_user_roles_widget_handler(query, &data.db).await {
@@ -320,12 +294,7 @@ pub struct ContactTemplate {
 
 pub async fn get_contact_page(headers: axum::http::HeaderMap) -> impl IntoResponse {
     let template = ContactTemplate { rts: ROUTES };
-
-    if is_htmx_request(&headers) {
-        (StatusCode::OK, Html(render(template.as_content()))).into_response()
-    } else {
-        (StatusCode::OK, Html(render(template))).into_response()
-    }
+    htmx_page!(&headers, template)
 }
 
 #[derive(Template)]
@@ -336,12 +305,7 @@ pub struct TermsTemplate {
 
 pub async fn get_terms_page(headers: axum::http::HeaderMap) -> impl IntoResponse {
     let template = TermsTemplate { rts: ROUTES };
-
-    if is_htmx_request(&headers) {
-        (StatusCode::OK, Html(render(template.as_content()))).into_response()
-    } else {
-        (StatusCode::OK, Html(render(template))).into_response()
-    }
+    htmx_page!(&headers, template)
 }
 
 #[derive(Template)]
@@ -352,12 +316,7 @@ pub struct PrivacyTemplate {
 
 pub async fn get_privacy_page(headers: axum::http::HeaderMap) -> impl IntoResponse {
     let template = PrivacyTemplate { rts: ROUTES };
-
-    if is_htmx_request(&headers) {
-        (StatusCode::OK, Html(render(template.as_content()))).into_response()
-    } else {
-        (StatusCode::OK, Html(render(template))).into_response()
-    }
+    htmx_page!(&headers, template)
 }
 
 /// Serve the error 404 not found page

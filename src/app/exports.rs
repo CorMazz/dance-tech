@@ -1,7 +1,6 @@
 //! Admin CSV downloads of accounts and graded exam sittings.
 
 use crate::AppState;
-use crate::app::router::ROUTES;
 use crate::auth::errors::AuthError;
 use crate::auth::middleware::AuthStatus;
 use crate::auth::models::{DisplayRoles, Roles, User};
@@ -12,7 +11,7 @@ use axum::Extension;
 use axum::body::Body;
 use axum::extract::State;
 use axum::http::{StatusCode, header};
-use axum::response::{IntoResponse, Redirect, Response};
+use axum::response::{IntoResponse, Response};
 use chrono::{DateTime, Utc};
 use serde::Serialize;
 use std::collections::HashMap;
@@ -29,8 +28,8 @@ pub async fn get_export_users(
     headers: axum::http::HeaderMap,
     Extension(auth_status): Extension<AuthStatus>,
 ) -> Response {
-    if !is_admin(&auth_status) {
-        return Redirect::to(ROUTES.login).into_response();
+    if let Err(redirect) = auth_status.require_admin() {
+        return redirect.into_response();
     }
 
     let users = match list_all_users(&data.db).await {
@@ -54,8 +53,8 @@ pub async fn get_export_exams(
     headers: axum::http::HeaderMap,
     Extension(auth_status): Extension<AuthStatus>,
 ) -> Response {
-    if !is_admin(&auth_status) {
-        return Redirect::to(ROUTES.login).into_response();
+    if let Err(redirect) = auth_status.require_admin() {
+        return redirect.into_response();
     }
 
     let exams = match query_all_graded_exams(&data.db).await {
@@ -79,8 +78,8 @@ pub async fn get_export_user_roles(
     headers: axum::http::HeaderMap,
     Extension(auth_status): Extension<AuthStatus>,
 ) -> Response {
-    if !is_admin(&auth_status) {
-        return Redirect::to(ROUTES.login).into_response();
+    if let Err(redirect) = auth_status.require_admin() {
+        return redirect.into_response();
     }
 
     let users = match list_all_users(&data.db).await {
@@ -99,10 +98,6 @@ pub async fn get_export_user_roles(
             ExamError::FatalInternalServerError.into_response(&headers)
         }
     }
-}
-
-fn is_admin(auth_status: &AuthStatus) -> bool {
-    matches!(auth_status, AuthStatus::Authorized(user) if user.is_admin())
 }
 
 fn csv_attachment(stem: &str, bytes: Vec<u8>) -> Response {

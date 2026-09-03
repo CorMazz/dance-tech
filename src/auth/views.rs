@@ -7,7 +7,7 @@ use std::sync::Arc;
 
 use crate::AppState;
 use crate::app::router::{ROUTES, Routes};
-use crate::app::utils::{is_htmx_request, render};
+use crate::app::utils::htmx_page;
 use crate::auth::handlers::{
     GoogleOAuthCallbackParams, google_oauth_callback_handler, google_oauth_init_flow_handler,
     login_user_handler, logout_handler, post_request_password_reset_handler,
@@ -86,12 +86,7 @@ pub struct SignUpTemplate {
 
 pub async fn get_signup_page(headers: axum::http::HeaderMap) -> impl IntoResponse {
     let template = SignUpTemplate { rts: ROUTES };
-
-    if is_htmx_request(&headers) {
-        (StatusCode::OK, Html(render(template.as_content())))
-    } else {
-        (StatusCode::OK, Html(render(template)))
-    }
+    htmx_page!(&headers, template)
 }
 
 #[derive(Debug, Deserialize)]
@@ -123,7 +118,7 @@ pub async fn post_signup_form(
     .await;
 
     match user_registered {
-        Ok(..) => Redirect::to("/login").into_response(),
+        Ok(..) => Redirect::to(ROUTES.login).into_response(),
         Err(e) => e.into_response(&headers),
     }
 }
@@ -150,11 +145,7 @@ pub async fn get_login_page(
         google_oauth_enabled: data.google_oauth_config.is_some(),
     };
 
-    if is_htmx_request(&headers) {
-        (StatusCode::OK, Html(render(template.as_content())))
-    } else {
-        (StatusCode::OK, Html(render(template)))
-    }
+    htmx_page!(&headers, template)
 }
 
 #[derive(Debug, Deserialize)]
@@ -226,11 +217,7 @@ pub async fn get_request_password_reset_page(
         email_functionality_active: data.smtp_config.is_some(),
     };
 
-    if is_htmx_request(&headers) {
-        (StatusCode::OK, Html(render(template.as_content())))
-    } else {
-        (StatusCode::OK, Html(render(template)))
-    }
+    htmx_page!(&headers, template)
 }
 
 #[derive(Debug, Deserialize)]
@@ -295,11 +282,7 @@ pub async fn get_reset_password_page(
         token: query.token,
     };
 
-    if is_htmx_request(&headers) {
-        (StatusCode::OK, Html(render(template.as_content()))).into_response()
-    } else {
-        (StatusCode::OK, Html(render(template))).into_response()
-    }
+    htmx_page!(&headers, template).into_response()
 }
 
 #[derive(Deserialize)]
@@ -344,7 +327,7 @@ pub async fn get_logout_page(
     match logout_handler(cookie_jar, &headers, data).await {
         Ok(response) => response.into_response(),
         Err(e) => match e {
-            AuthError::NotLoggedIn => Redirect::to("/").into_response(),
+            AuthError::NotLoggedIn => Redirect::to(ROUTES.root).into_response(),
             _ => e.into_response(&headers),
         },
     }
