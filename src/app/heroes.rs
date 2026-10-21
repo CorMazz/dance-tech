@@ -122,7 +122,13 @@ impl HeroGallery {
 
 fn local_hero_urls() -> Vec<String> {
     let dir = Path::new("static/images");
-    let skip = ["dance_tech_logo", "default_pfp", "shopping_cart_icon"];
+    let skip = [
+        "dance_tech_logo",
+        "default_pfp",
+        "shopping_cart_icon",
+        "favicon",
+        "apple-touch-icon",
+    ];
     let Ok(entries) = std::fs::read_dir(dir) else {
         return Vec::new();
     };
